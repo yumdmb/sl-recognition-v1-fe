@@ -92,10 +92,10 @@ export default function LandingPage() {
             <Link href="/about" className="text-gray-600 hover:text-gray-900">About</Link>
             <Link href="/contact" className="text-gray-600 hover:text-gray-900">Contact</Link>
             <Button variant="ghost" className="hover:bg-signlang-primary hover:text-gray-900" asChild>
-              <Link href="/login">Login</Link>
+              <Link href="/auth/login">Login</Link>
             </Button>
             <Button className="bg-signlang-primary text-gray-900 hover:bg-signlang-primary/90" asChild>
-              <Link href="/register">Sign Up</Link>
+              <Link href="/auth/register">Sign Up</Link>
             </Button>
           </nav>
         </div>
@@ -130,11 +130,11 @@ export default function LandingPage() {
               >
                 <Button size="lg" className="bg-signlang-primary text-gray-900 hover:bg-signlang-primary/90" asChild>
                   <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Link href="/register">Get Started</Link>
-                  </motion.div>
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+>
+  <Link href="/auth/register">Get Started</Link>
+</motion.div>
                 </Button>
                 <Button
                   size="lg"
@@ -230,8 +230,8 @@ export default function LandingPage() {
             <div>
               <h4 className="text-lg font-semibold mb-4">Connect</h4>
               <ul className="space-y-2">
-                <li><Link href="/login" className="text-gray-400 hover:text-white">Login</Link></li>
-                <li><Link href="/register" className="text-gray-400 hover:text-white">Sign Up</Link></li>
+                <li><Link href="/auth/login" className="text-gray-400 hover:text-white">Login</Link></li>
+                <li><Link href="/auth/register" className="text-gray-400 hover:text-white">Sign Up</Link></li>
                 <li><Link href="/support" className="text-gray-400 hover:text-white">Support</Link></li>
               </ul>
             </div>
