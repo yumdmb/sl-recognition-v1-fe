@@ -6,16 +6,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const images = [
   {
-    src: '/slideshow/slide1.jpg',
-    alt: 'Sign Language Learning',
+    src: '/family-talking.png',
+    alt: 'Family using sign language',
   },
   {
-    src: '/slideshow/slide2.jpg',
-    alt: 'Gesture Recognition',
-  },
-  {
-    src: '/slideshow/slide3.jpg',
-    alt: 'Community Learning',
+    src: '/group-of-people.png',
+    alt: 'Group of people learning sign language',
   },
 ];
 

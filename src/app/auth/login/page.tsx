@@ -74,9 +74,9 @@ export default function Login() {
                   required 
                 />
               </div>
-              <Button 
+              <Button
                 type="submit" 
-                className="w-full bg-signlang-primary text-gray-900 hover:bg-signlang-primary/90"
+                className="w-full"
                 disabled={isLoading}
               >
                 {isLoading ? (

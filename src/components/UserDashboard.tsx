@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { BookOpen, Award } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface UserDashboardProps {
   userRole: 'user' | 'deaf';
@@ -26,9 +27,7 @@ const QuickAccessPanel = ({ userRole }: { userRole: 'user' | 'deaf' }) => (
       <CardContent className="p-6">
         <h3 className="text-lg font-medium mb-2">Recognize Sign Language</h3>
         <p className="text-gray-500 mb-4">Upload images to identify signs</p>
-        <button className="bg-signlang-primary text-gray-900 px-4 py-2 rounded w-full">
-          Start Recognition
-        </button>
+        <Button className="w-full">Start Recognition</Button>
       </CardContent>
     </Card>
     
@@ -36,9 +35,7 @@ const QuickAccessPanel = ({ userRole }: { userRole: 'user' | 'deaf' }) => (
       <CardContent className="p-6">
         <h3 className="text-lg font-medium mb-2">Continue Learning</h3>
         <p className="text-gray-500 mb-4">Resume your sign language lessons</p>
-        <button className="bg-signlang-primary text-gray-900 px-4 py-2 rounded w-full">
-          Go to Lessons
-        </button>
+        <Button className="w-full">Go to Lessons</Button>
       </CardContent>
     </Card>
   </div>

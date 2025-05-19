@@ -31,18 +31,33 @@ const AuthContext = createContext<AuthContextProps | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Initialize on mount - check if user is saved in localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedUser = localStorage.getItem('currentUser');
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        setCurrentUser(user);
-        setIsAuthenticated(true);
+    const initializeAuth = () => {
+      try {
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          setCurrentUser(user);
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        localStorage.removeItem('currentUser');
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
+
+    initializeAuth();
   }, []);
+
+  // If still loading, don't render children
+  if (isLoading) {
+    return null; // or a loading spinner
+  }
 
   // Login function
   const login = async (email: string, password: string): Promise<boolean> => {

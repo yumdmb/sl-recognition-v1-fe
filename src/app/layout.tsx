@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";
+import { SidebarProvider } from "@/context/SidebarContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,6 +20,21 @@ export const metadata: Metadata = {
   description: "Learn sign language with AI",
 };
 
+// Client-side Providers component
+
+function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthProvider>
+      <SidebarProvider>
+        <div className="min-h-screen">
+          {children}
+          <Toaster position="bottom-right" />
+        </div>
+      </SidebarProvider>
+    </AuthProvider>
+  );
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,10 +45,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          {children}
-          <Toaster />
-        </AuthProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

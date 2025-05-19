@@ -3,9 +3,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/context/SidebarContext";
 import AppSidebar from "@/components/AppSidebar";
-import SidebarOpenButton from '@/components/SidebarOpenButton';
 
 export default function MainLayout({
   children,
@@ -27,15 +26,14 @@ export default function MainLayout({
   }
 
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <SidebarOpenButton />
         <AppSidebar userRole={currentUser?.role || 'user'} />
 
         {/* Main Content */}
-        <div className="flex-1">
+        <div className="flex-1 transition-all duration-300">
           {/* Top Bar */}
-          <div className="bg-white border-b border-gray-200 p-4">
+          <div className="bg-white border-b border-gray-200 p-4 sticky top-0 z-30 h-[65px] flex items-center">
             <div className="container mx-auto">
               <div className="flex items-center space-x-2">
                 <h1 className="text-2xl font-bold">SignBridge</h1>
