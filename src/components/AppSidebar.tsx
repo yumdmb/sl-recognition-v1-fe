@@ -71,7 +71,7 @@ const AppSidebar: React.FC<Props> = ({ userRole }) => {
         icon: BookOpen,
         subItems: [
           { title: 'Tutorials', href: '/learning/tutorials' },
-          { title: 'Quizzes', href: '/learning/quiz' },
+          { title: 'Quizzes', href: '/learning/quizzes' },
           { title: 'Download Materials', href: '/learning/materials' }
         ]
       },
