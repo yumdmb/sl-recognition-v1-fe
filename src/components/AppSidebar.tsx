@@ -72,7 +72,7 @@ const AppSidebar: React.FC<Props> = ({ userRole }) => {
         subItems: [
           { title: 'Tutorials', href: '/learning/tutorials' },
           { title: 'Quizzes', href: '/learning/quizzes' },
-          { title: 'Download Materials', href: '/learning/materials' }
+          { title: 'Materials', href: '/learning/materials' }
         ]
       },
       {

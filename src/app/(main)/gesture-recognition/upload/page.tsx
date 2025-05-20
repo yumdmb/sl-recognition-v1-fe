@@ -14,12 +14,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 
 const GestureRecognitionUpload: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [recognitionResult, setRecognitionResult] = useState<string | null>(null);
+  const [recognitionResult, setRecognitionResult] = useState<{
+    word: string;
+    confidence: number;
+    imageUrl: string;
+  } | null>(null);
   const [activeTab, setActiveTab] = useState<string>("upload");
   const [language, setLanguage] = useState<"ASL" | "MSL">("ASL");
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -43,7 +48,7 @@ const GestureRecognitionUpload: React.FC = () => {
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) {
+    if (!selectedFile || !previewUrl) {
       toast.error("No file selected", {
         description: "Please select an image to upload"
       });
@@ -51,8 +56,51 @@ const GestureRecognitionUpload: React.FC = () => {
     }
 
     setIsLoading(true);
+    setRecognitionResult(null);
 
     try {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Mock recognition results
+      const mockResults = {
+        ASL: [
+          { word: "Hello", confidence: 0.95 },
+          { word: "Thank you", confidence: 0.88 },
+          { word: "Please", confidence: 0.92 },
+          { word: "Goodbye", confidence: 0.85 },
+          { word: "Yes", confidence: 0.97 },
+          { word: "No", confidence: 0.94 }
+        ],
+        MSL: [
+          { word: "Selamat", confidence: 0.93 },
+          { word: "Terima kasih", confidence: 0.89 },
+          { word: "Sila", confidence: 0.91 },
+          { word: "Selamat tinggal", confidence: 0.86 },
+          { word: "Ya", confidence: 0.96 },
+          { word: "Tidak", confidence: 0.95 }
+        ]
+      };
+
+      // Randomly select a result from the mock data
+      const results = mockResults[language];
+      const randomResult = results[Math.floor(Math.random() * results.length)];
+
+      // Create mock response
+      const mockResponse = {
+        word: randomResult.word,
+        confidence: randomResult.confidence,
+        imageUrl: previewUrl // previewUrl is guaranteed to be string here due to the check above
+      };
+
+      setRecognitionResult(mockResponse);
+      toast.success("Recognition complete", {
+        description: `The gesture has been recognized successfully in ${language}.`
+      });
+
+      /* 
+      // TODO: Uncomment this section to use the actual API instead of mock data
+      // API Implementation
       const formData = new FormData();
       formData.append('image', selectedFile);
       formData.append('language', language);
@@ -67,10 +115,12 @@ const GestureRecognitionUpload: React.FC = () => {
       }
 
       const data = await response.json();
-      setRecognitionResult(data.word);
+      setRecognitionResult(data);
       toast.success("Recognition complete", {
         description: `The gesture has been recognized successfully in ${language}.`
       });
+      */
+
     } catch (error) {
       toast.error("Recognition failed", {
         description: "Unable to recognize the gesture. Please try again."
@@ -270,28 +320,77 @@ const GestureRecognitionUpload: React.FC = () => {
           </CardContent>
         </Card>
 
-        {recognitionResult && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <AlertCircle className="mr-2 h-5 w-5" /> Recognition Result
-              </CardTitle>
-              <CardDescription>
-                The recognized word from your gesture image
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center">
-                <p className="text-4xl font-bold text-primary mb-4">
-                  {recognitionResult}
-                </p>
-                <p className="text-sm text-gray-500">
-                  in {language} Sign Language
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <AlertCircle className="mr-2 h-5 w-5" /> Recognition Result
+            </CardTitle>
+            <CardDescription>
+              The recognized word from your gesture image
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-r-transparent mb-4"></div>
+                <p className="text-gray-500">Processing your gesture...</p>
+              </div>
+            ) : recognitionResult ? (
+              <div className="space-y-6">
+                <div className="text-center">
+                  <p className="text-4xl font-bold text-primary mb-2">
+                    {recognitionResult.word}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    in {language} Sign Language
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Confidence</span>
+                    <span className="text-sm text-gray-500">
+                      {Math.round(recognitionResult.confidence * 100)}%
+                    </span>
+                  </div>
+                  <Progress 
+                    value={recognitionResult.confidence * 100} 
+                    className="h-2"
+                  />
+                </div>
+
+                <div className="border-t pt-4">
+                  <h4 className="font-medium mb-2">Preview</h4>
+                  <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-50">
+                    <img
+                      src={recognitionResult.imageUrl}
+                      alt="Recognized gesture"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                </div>
+
+                <Button 
+                  className="w-full"
+                  onClick={() => {
+                    setSelectedFile(null);
+                    setPreviewUrl(null);
+                    setRecognitionResult(null);
+                  }}
+                >
+                  Try Another Gesture
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <ImageIcon className="h-12 w-12 text-gray-400 mb-4" />
+                <p className="text-gray-500">
+                  Upload or capture a gesture image to see the recognition result
                 </p>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
