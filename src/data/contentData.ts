@@ -44,6 +44,27 @@ export interface QuizData {
   [key: string]: QuizQuestion[];
 }
 
+// Progress tracking interfaces
+export interface TutorialProgress {
+  tutorialId: string;
+  progress: number; // 0-100
+  lastUpdated: string;
+}
+
+export interface QuizProgress {
+  quizId: string;
+  completed: boolean;
+  score: number;
+  totalQuestions: number;
+  lastAttempted: string;
+}
+
+export interface UserProgress {
+  userId: string;
+  tutorials: TutorialProgress[];
+  quizzes: QuizProgress[];
+}
+
 // Initial data
 const initialTutorials: Tutorial[] = [
   {
@@ -438,6 +459,145 @@ export const deleteQuizQuestion = (setId: string, questionId: string): QuizQuest
   
   saveToStorage('quizData', quizData);
   return quizData[setId];
+};
+
+// User progress functions
+export const getUserProgress = (userId: string): UserProgress => {
+  const defaultProgress: UserProgress = {
+    userId,
+    tutorials: [],
+    quizzes: []
+  };
+  
+  return getFromStorage(`user_progress_${userId}`, defaultProgress);
+};
+
+export const updateTutorialProgress = (userId: string, tutorialId: string, progress: number): UserProgress => {
+  const userProgress = getUserProgress(userId);
+  
+  const tutorialIndex = userProgress.tutorials.findIndex(t => t.tutorialId === tutorialId);
+  
+  if (tutorialIndex >= 0) {
+    userProgress.tutorials[tutorialIndex] = {
+      tutorialId,
+      progress,
+      lastUpdated: new Date().toISOString()
+    };
+  } else {
+    userProgress.tutorials.push({
+      tutorialId,
+      progress,
+      lastUpdated: new Date().toISOString()
+    });
+  }
+  
+  saveToStorage(`user_progress_${userId}`, userProgress);
+  return userProgress;
+};
+
+export const updateQuizProgress = (
+  userId: string, 
+  quizId: string, 
+  score: number, 
+  totalQuestions: number
+): UserProgress => {
+  const userProgress = getUserProgress(userId);
+  
+  const quizIndex = userProgress.quizzes.findIndex(q => q.quizId === quizId);
+  
+  if (quizIndex >= 0) {
+    userProgress.quizzes[quizIndex] = {
+      quizId,
+      completed: true,
+      score,
+      totalQuestions,
+      lastAttempted: new Date().toISOString()
+    };
+  } else {
+    userProgress.quizzes.push({
+      quizId,
+      completed: true,
+      score,
+      totalQuestions,
+      lastAttempted: new Date().toISOString()
+    });
+  }
+  
+  saveToStorage(`user_progress_${userId}`, userProgress);
+  return userProgress;
+};
+
+export const getOverallTutorialProgress = (userId: string, language?: 'ASL' | 'MSL'): number => {
+  const userProgress = getUserProgress(userId);
+  const tutorials = getTutorials();
+  
+  // Filter tutorials by language if provided
+  const filteredTutorials = language 
+    ? tutorials.filter(t => t.language === language)
+    : tutorials;
+  
+  // If no tutorials or progress, return 0
+  if (filteredTutorials.length === 0 || userProgress.tutorials.length === 0) {
+    return 0;
+  }
+  
+  // Map tutorial IDs for easier lookup
+  const tutorialProgressMap = new Map<string, number>();
+  userProgress.tutorials.forEach(t => tutorialProgressMap.set(t.tutorialId, t.progress));
+  
+  // Calculate overall progress
+  let totalProgress = 0;
+  filteredTutorials.forEach(tutorial => {
+    totalProgress += tutorialProgressMap.get(tutorial.id) || 0;
+  });
+  
+  return Math.round(totalProgress / filteredTutorials.length);
+};
+
+export const getOverallQuizProgress = (userId: string, language?: 'ASL' | 'MSL'): { 
+  completion: number, 
+  score: number 
+} => {
+  const userProgress = getUserProgress(userId);
+  const quizSets = getQuizSets();
+  
+  // Filter quiz sets by language if provided
+  const filteredQuizSets = language 
+    ? quizSets.filter(q => q.language === language)
+    : quizSets;
+  
+  // If no quizzes or progress, return 0
+  if (filteredQuizSets.length === 0) {
+    return { completion: 0, score: 0 };
+  }
+  
+  // Map quiz IDs for easier lookup
+  const quizProgressMap = new Map<string, QuizProgress>();
+  userProgress.quizzes.forEach(q => quizProgressMap.set(q.quizId, q));
+  
+  // Calculate overall progress
+  let completedQuizzes = 0;
+  let totalScore = 0;
+  let totalPossibleScore = 0;
+  
+  filteredQuizSets.forEach(quizSet => {
+    const progress = quizProgressMap.get(quizSet.id);
+    if (progress && progress.completed) {
+      completedQuizzes++;
+      totalScore += progress.score;
+      totalPossibleScore += progress.totalQuestions;
+    }
+  });
+  
+  const completion = filteredQuizSets.length > 0 
+    ? Math.round((completedQuizzes / filteredQuizSets.length) * 100)
+    : 0;
+    
+  const score = totalPossibleScore > 0 
+    ? Math.round((totalScore / totalPossibleScore) * 100)
+    : 0;
+  
+  return { completion, score };
 };
 
 // Initialize data in localStorage on first load
