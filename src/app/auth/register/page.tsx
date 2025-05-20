@@ -17,7 +17,7 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<'user' | 'deaf'>('user');
+  const [role, setRole] = useState<'non-deaf' | 'deaf'>('non-deaf');
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
   const router = useRouter();
@@ -123,13 +123,13 @@ export default function Register() {
               <div className="space-y-2">
                 <Label>Account Type</Label>
                 <RadioGroup 
-                  defaultValue="user"
+                  defaultValue="non-deaf"
                   className="flex space-x-4"
-                  onValueChange={(value) => setRole(value as 'user' | 'deaf')}
+                  onValueChange={(value) => setRole(value as 'non-deaf' | 'deaf')}
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="user" id="user" />
-                    <Label htmlFor="user">Regular User</Label>
+                    <RadioGroupItem value="non-deaf" id="non-deaf" />
+                    <Label htmlFor="non-deaf">Non-Deaf Person</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="deaf" id="deaf" />

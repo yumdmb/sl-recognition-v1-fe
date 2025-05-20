@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 
 type Props = {
-  userRole: 'admin' | 'user' | 'deaf'
+  userRole: 'admin' | 'non-deaf' | 'deaf'
 }
 
 const AppSidebar: React.FC<Props> = ({ userRole }) => {
@@ -40,7 +40,7 @@ const AppSidebar: React.FC<Props> = ({ userRole }) => {
     router.push(href);
   };
 
-  const getMenuItems = (userRole: 'admin' | 'user' | 'deaf') => {
+  const getMenuItems = (userRole: 'admin' | 'non-deaf' | 'deaf') => {
     const baseItems = [
       {
         title: 'Dashboard',

@@ -26,7 +26,7 @@ export default function MainLayout({
       <LanguageProvider>
         <AdminProvider>
           <div className="flex min-h-screen w-full">
-            <AppSidebar userRole={currentUser?.role || 'user'} />
+            <AppSidebar userRole={currentUser?.role || 'non-deaf'} />
 
             {/* Main Content */}
             <div className="flex-1 transition-all duration-300">

@@ -9,7 +9,7 @@ export interface User {
   name: string;
   email: string;
   password: string;
-  role: 'user' | 'admin' | 'deaf';
+  role: 'non-deaf' | 'admin' | 'deaf';
   isVerified?: boolean;
 }
 
@@ -19,7 +19,7 @@ interface AuthContextProps {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  register: (name: string, email: string, password: string, role: 'user' | 'deaf') => Promise<boolean>;
+  register: (name: string, email: string, password: string, role: 'non-deaf' | 'deaf') => Promise<boolean>;
   updateUser: (user: User) => void;
   resetPassword: (email: string) => Promise<boolean>;
 }
@@ -112,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     name: string, 
     email: string, 
     password: string, 
-    role: 'user' | 'deaf'
+    role: 'non-deaf' | 'deaf'
   ): Promise<boolean> => {
     // Check if email already exists
     const storedUsers = localStorage.getItem('users');

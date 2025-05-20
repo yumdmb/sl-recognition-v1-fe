@@ -15,7 +15,7 @@ import {
 } from '@/data/contentData';
 
 interface UserDashboardProps {
-  userRole: 'user' | 'deaf';
+  userRole: 'non-deaf' | 'deaf';
 }
 
 interface CourseProgress {
@@ -28,7 +28,7 @@ interface CourseProgress {
 }
 
 // These components would be implemented separately as needed
-const QuickAccessPanel = ({ userRole }: { userRole: 'user' | 'deaf' }) => (
+const QuickAccessPanel = ({ userRole }: { userRole: 'non-deaf' | 'deaf' }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
     <Card>
       <CardContent className="p-6">
@@ -48,7 +48,7 @@ const QuickAccessPanel = ({ userRole }: { userRole: 'user' | 'deaf' }) => (
   </div>
 );
 
-const NotificationCenter = ({ userRole }: { userRole: 'user' | 'deaf' }) => (
+const NotificationCenter = ({ userRole }: { userRole: 'non-deaf' | 'deaf' }) => (
   <Card>
     <CardContent className="p-6">
       <h3 className="text-lg font-medium mb-4">Recent Notifications</h3>
@@ -76,7 +76,7 @@ const NotificationCenter = ({ userRole }: { userRole: 'user' | 'deaf' }) => (
   </Card>
 );
 
-const ActivitySummary = ({ userRole }: { userRole: 'user' | 'deaf' }) => (
+const ActivitySummary = ({ userRole }: { userRole: 'non-deaf' | 'deaf' }) => (
   <Card>
     <CardContent className="p-6">
       <h3 className="text-lg font-medium mb-4">Recent Activity</h3>
@@ -98,7 +98,7 @@ const ActivitySummary = ({ userRole }: { userRole: 'user' | 'deaf' }) => (
   </Card>
 );
 
-const ProgressChart = ({ userRole }: { userRole: 'user' | 'deaf' }) => (
+const ProgressChart = ({ userRole }: { userRole: 'non-deaf' | 'deaf' }) => (
   <Card>
     <CardContent className="p-6">
       <h3 className="text-lg font-medium mb-4">Learning Progress</h3>
@@ -304,7 +304,7 @@ const LearningProgress: React.FC = () => {
 const UserDashboard: React.FC<UserDashboardProps> = ({ userRole }) => {
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold">{userRole === 'deaf' ? 'Deaf Person Dashboard' : 'User Dashboard'}</h2>
+      <h2 className="text-3xl font-bold">{userRole === 'deaf' ? 'Deaf Person Dashboard' : 'Non-Deaf Person Dashboard'}</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <LearningProgress />

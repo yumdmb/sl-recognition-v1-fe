@@ -12,7 +12,7 @@ export default function Dashboard() {
       {currentUser?.role === 'admin' ? (
         <AdminDashboard />
       ) : (
-        <UserDashboard userRole={currentUser?.role as 'user' | 'deaf' || 'user'} />
+        <UserDashboard userRole={currentUser?.role as 'non-deaf' | 'deaf' || 'non-deaf'} />
       )}
     </>
   );
