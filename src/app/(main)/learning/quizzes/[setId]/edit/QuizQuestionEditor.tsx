@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Edit, Trash } from "lucide-react";
 import { useAdmin } from '@/context/AdminContext';
-import { getQuizQuestions, saveQuizQuestion, deleteQuizQuestion, QuizQuestion } from '@/data/contentData';
+import { getQuizQuestions, saveQuizQuestion, deleteQuizQuestion, QuizQuestion, getQuizSets } from '@/data/contentData';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,20 +33,29 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
       if (savedAdminStatus !== 'true') {
         router.push('/learning/quizzes');
         return;
-      }
-    }
+      }    }
 
-    // If no quizTitle, redirect back to quiz list
-    if (!quizTitle) {
-      router.push('/learning/quizzes');
-      return;
-    }
-
-    // Get quiz questions
+    // Get quiz questions - don't wait for quizTitle as it might be loading
     const quizQuestions = getQuizQuestions(setId);
     setQuestions(quizQuestions);
     setIsLoading(false);
-  }, [setId, quizTitle, router]);
+  }, [setId, router]);
+
+  // Separate effect to handle redirect when no quizTitle is found after loading
+  useEffect(() => {
+    // Only redirect if we have loaded and still no title
+    if (!isLoading && !quizTitle && setId) {
+      // Check if quiz set exists
+      if (typeof window !== 'undefined') {
+        const quizSets = getQuizSets();
+        const quizSet = quizSets.find(set => set.id === setId);
+        if (!quizSet) {
+          router.push('/learning/quizzes');
+          return;
+        }
+      }
+    }
+  }, [isLoading, quizTitle, setId, router]);
 
   // Function to handle adding a new question
   const handleAddQuestion = () => {
@@ -119,10 +128,8 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
         <Button variant="outline" onClick={() => router.push('/learning/quizzes')}>
           <ArrowLeft className="h-4 w-4 mr-2" /> Back to Quiz Sets
         </Button>
-      </div>
-
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Edit Questions: {quizTitle}</h1>
+      </div>      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Edit Questions: {quizTitle || setId}</h1>
         <Button onClick={handleAddQuestion}>
           <Plus className="h-4 w-4 mr-2" /> Add Question
         </Button>
