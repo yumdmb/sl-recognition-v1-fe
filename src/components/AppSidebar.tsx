@@ -11,7 +11,10 @@ import {
   ChevronDown,
   ChevronRight,
   Menu,
-  X
+  X,
+  MessageCircle, // Add this import for the new icon
+  Users // Add this import for the new icon
+
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useSidebar } from '@/context/SidebarContext';
@@ -75,6 +78,18 @@ const AppSidebar: React.FC<Props> = ({ userRole }) => {
           { title: 'Materials', href: '/learning/materials' }
         ]
       },
+// --- Add this block for the interaction module ---
+      {
+        title: 'Interaction',
+        href: '/interaction',
+        icon: MessageCircle,
+        subItems: [
+          { title: 'Personal Chat', href: '/interaction/chat' },
+          { title: 'Forum', href: '/interaction/forum' }
+        ]
+      },
+    // --- End interaction module block ---
+
       {
         title: 'Word Contributions',
         href: '/word',
