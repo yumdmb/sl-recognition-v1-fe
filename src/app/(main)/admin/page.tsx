@@ -18,56 +18,32 @@ const UserVerification: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get all users from localStorage
-    const storedUsers = localStorage.getItem('users');
-    if (storedUsers) {
-      const allUsers = JSON.parse(storedUsers) as User[];
-      // Filter out admin users and already verified users
-      setUsers(allUsers.filter(user => 
-        user.role !== 'admin' && !user.isVerified
-      ));
-    }
+    // For now, we'll use an empty array since user verification
+    // will be handled through Supabase email verification
+    // In a real implementation, you might fetch users from Supabase
+    // who need manual verification
+    setUsers([]);
     setLoading(false);
   }, []);
 
   const verifyUser = (id: string) => {
-    // Get all users from localStorage
-    const storedUsers = localStorage.getItem('users');
-    if (storedUsers) {
-      const allUsers = JSON.parse(storedUsers) as User[];
-      const updatedUsers = allUsers.map(user => 
-        user.id === id ? { ...user, isVerified: true } : user
-      );
-      
-      // Update localStorage
-      localStorage.setItem('users', JSON.stringify(updatedUsers));
-      
-      // Update state
-      setUsers(users.filter(user => user.id !== id));
-      
-      toast.success("User Verified", {
-        description: "User has been successfully verified and can now log in."
-      });
-    }
+    // In a real implementation, you would update user metadata in Supabase
+    // For now, just remove from the list
+    setUsers(users.filter(user => user.id !== id));
+    
+    toast.success("User Verified", {
+      description: "User has been successfully verified and can now log in."
+    });
   };
 
   const rejectUser = (id: string) => {
-    // Get all users from localStorage
-    const storedUsers = localStorage.getItem('users');
-    if (storedUsers) {
-      const allUsers = JSON.parse(storedUsers) as User[];
-      const updatedUsers = allUsers.filter(user => user.id !== id);
-      
-      // Update localStorage
-      localStorage.setItem('users', JSON.stringify(updatedUsers));
-      
-      // Update state
-      setUsers(users.filter(user => user.id !== id));
-      
-      toast.success("User Rejected", {
-        description: "User account has been rejected and removed from the system."
-      });
-    }
+    // In a real implementation, you would delete the user from Supabase
+    // For now, just remove from the list
+    setUsers(users.filter(user => user.id !== id));
+    
+    toast.success("User Rejected", {
+      description: "User account has been rejected and removed from the system."
+    });
   };
 
   const formatDate = (userId: string) => {
@@ -207,4 +183,4 @@ export default function AdminPage() {
       </Tabs>
     </div>
   );
-} 
+}

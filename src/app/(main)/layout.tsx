@@ -1,20 +1,34 @@
-'use client'
+'use client';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { SidebarProvider } from "@/context/SidebarContext";
+import { LanguageProvider } from "@/context/LanguageContext";
+import { AdminProvider } from "@/context/AdminContext";
+import AppSidebar from "@/components/AppSidebar";
+import { Loader2 } from 'lucide-react';
 
-import { useEffect } from 'react';import { useRouter } from 'next/navigation';import { useAuth } from '@/context/AuthContext';import { SidebarProvider } from "@/context/SidebarContext";import { LanguageProvider } from "@/context/LanguageContext";import { AdminProvider } from "@/context/AdminContext";import AppSidebar from "@/components/AppSidebar";
-
-export default function MainLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { currentUser, isAuthenticated } = useAuth();
+export default function MainLayout({ children }: { children: React.ReactNode }) {
+  const { currentUser, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       router.push('/auth/login');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isLoading, router]);
+
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-signlang-primary mx-auto" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // If not authenticated, show nothing during redirect
   if (!isAuthenticated) {
@@ -60,4 +74,4 @@ export default function MainLayout({
       </LanguageProvider>
     </SidebarProvider>
   );
-} 
+}
