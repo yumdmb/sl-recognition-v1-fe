@@ -118,12 +118,8 @@ const AppSidebar: React.FC<Props> = ({ userRole }) => {
   };
 
   const menuItems = getMenuItems(userRole);
-
   const handleLogout = () => {
     logout();
-    toast.success("Logged Out", {
-      description: "You have been logged out successfully"
-    });
   };
 
   return (

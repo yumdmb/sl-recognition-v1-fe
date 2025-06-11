@@ -17,7 +17,6 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -25,9 +24,6 @@ export default function Login() {
     try {
       const success = await login(email, password);
       if (success) {
-        toast.success("Login successful", {
-          description: "Welcome back!"
-        });
         router.push('/dashboard');
       }
     } finally {
