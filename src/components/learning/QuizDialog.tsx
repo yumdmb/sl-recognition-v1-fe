@@ -7,14 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { QuizSet } from '@/data/contentData';
+import { QuizSetWithProgress } from '@/types/database';
 
 interface QuizDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  quizSet: QuizSet | null;
-  onQuizSetChange: (quizSet: QuizSet) => void;
-  onSave: (quizSet: QuizSet) => void;
+  quizSet: QuizSetWithProgress | null;
+  onQuizSetChange: (quizSet: QuizSetWithProgress) => void;
+  onSave: (quizSet: QuizSetWithProgress) => void;
 }
 
 const QuizDialog: React.FC<QuizDialogProps> = ({
@@ -26,7 +26,7 @@ const QuizDialog: React.FC<QuizDialogProps> = ({
 }) => {
   if (!quizSet) return null;
 
-  const handleFieldChange = (field: keyof QuizSet, value: string | number) => {
+  const handleFieldChange = (field: string, value: string | number) => {
     onQuizSetChange({
       ...quizSet,
       [field]: value

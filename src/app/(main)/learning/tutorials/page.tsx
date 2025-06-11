@@ -20,10 +20,9 @@ export default function TutorialsPage() {
   
   const { language } = useLanguage();
   const { isAdmin } = useAdmin();
-  const { currentUser } = useAuth();
-  const { 
+  const { currentUser } = useAuth();  const { 
     tutorials, 
-    isLoading, 
+    tutorialsLoading, 
     getTutorials, 
     createTutorial, 
     updateTutorial, 
@@ -124,7 +123,7 @@ export default function TutorialsPage() {
         onAddTutorial={handleAddTutorial}
       />
       
-      {isLoading ? (
+      {tutorialsLoading ? (
         <TutorialLoadingState />
       ) : filteredTutorials.length > 0 ? (
         <TutorialGrid

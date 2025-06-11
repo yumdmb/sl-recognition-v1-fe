@@ -4,30 +4,39 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from '@/context/LanguageContext';
 import { useAdmin } from '@/context/AdminContext';
-import { QuizSet, getQuizSets, saveQuizSet, deleteQuizSet } from '@/data/contentData';
+import { useAuth } from '@/context/AuthContext';
+import { useLearning } from '@/context/LearningContext';
 import { toast } from 'sonner';
 import QuizHeader from '@/components/learning/QuizHeader';
 import QuizGrid from '@/components/learning/QuizGrid';
 import QuizEmptyState from '@/components/learning/QuizEmptyState';
 import QuizLoadingState from '@/components/learning/QuizLoadingState';
 import QuizDialog from '@/components/learning/QuizDialog';
+import { QuizSetWithProgress } from '@/types/database';
 
 export default function QuizzesPage() {
     const router = useRouter();
     const { language } = useLanguage();
     const { isAdmin } = useAdmin();
-    const [quizSets, setQuizSets] = useState<QuizSet[]>([]);
+    const { currentUser } = useAuth();
+    const { 
+        quizSets,
+        quizSetsLoading,
+        getQuizSets,
+        createQuizSet,
+        updateQuizSet,
+        deleteQuizSet
+    } = useLearning();
+    
     const [editDialogOpen, setEditDialogOpen] = useState(false);
-    const [currentQuizSet, setCurrentQuizSet] = useState<QuizSet | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [currentQuizSet, setCurrentQuizSet] = useState<QuizSetWithProgress | null>(null);
     
     useEffect(() => {
-        // Get quiz sets from localStorage via our data service
-        setQuizSets(getQuizSets());
-        setIsLoading(false);
-    }, []);
+        // Get quiz sets from Supabase via our service
+        getQuizSets(language);
+    }, [language]); // Removed getQuizSets from dependencies to prevent infinite loop
 
-    // Filter quiz sets based on selected language
+    // Filter quiz sets based on selected language (redundant now, but kept for safety)
     const filteredQuizSets = quizSets.filter(set => set.language === language);
 
     // Function to handle adding a new quiz set
@@ -37,28 +46,36 @@ export default function QuizzesPage() {
             title: '',
             description: '',
             questionCount: 0,
-            language: language
+            language: language,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            created_by: currentUser?.id || null,
+            progress: undefined  // We use undefined instead of null
         });
         setEditDialogOpen(true);
     };
 
     // Function to handle editing a quiz set
-    const handleEditQuizSet = (quizSet: QuizSet) => {
+    const handleEditQuizSet = (quizSet: QuizSetWithProgress) => {
         setCurrentQuizSet({...quizSet});
         setEditDialogOpen(true);
     };
 
     // Function to handle deleting a quiz set
-    const handleDeleteQuizSet = (id: string) => {
+    const handleDeleteQuizSet = async (id: string) => {
         if (confirm('Are you sure you want to delete this quiz set? This will also delete all associated questions.')) {
-            const updatedQuizSets = deleteQuizSet(id);
-            setQuizSets(updatedQuizSets);
-            toast.success('Quiz set deleted successfully');
+            try {
+                await deleteQuizSet(id);
+                toast.success('Quiz set deleted successfully');
+            } catch (error) {
+                toast.error('Error deleting quiz set');
+                console.error(error);
+            }
         }
     };
 
     // Function to save quiz set (add or update)
-    const handleSaveQuizSet = (quizSet: QuizSet) => {
+    const handleSaveQuizSet = async (quizSet: QuizSetWithProgress) => {
         // Form validation
         if (!quizSet.title || !quizSet.description) {
             toast.error('Please fill in all required fields');
@@ -66,15 +83,22 @@ export default function QuizzesPage() {
         }
 
         try {
-            const isNewQuizSet = !quizSet.id;
+            const isNewQuizSet = !quizSet.id || quizSet.id === '';
+            
             if (isNewQuizSet) {
-                // Generate an ID for new quiz sets based on language and title
-                const titleSlug = quizSet.title.toLowerCase().replace(/\s+/g, '-');
-                quizSet.id = `${quizSet.language.toLowerCase()}-${titleSlug}`;
+                await createQuizSet({
+                    title: quizSet.title,
+                    description: quizSet.description,
+                    language: quizSet.language
+                });
+            } else {
+                await updateQuizSet(quizSet.id, {
+                    title: quizSet.title,
+                    description: quizSet.description,
+                    language: quizSet.language
+                });
             }
             
-            const updatedQuizSets = saveQuizSet(quizSet);
-            setQuizSets(updatedQuizSets);
             setEditDialogOpen(false);
             toast.success(`Quiz set ${isNewQuizSet ? 'added' : 'updated'} successfully`);
         } catch (error) {
@@ -100,7 +124,7 @@ export default function QuizzesPage() {
                 onAddQuizSet={handleAddQuizSet}
             />
 
-            {isLoading ? (
+            {quizSetsLoading ? (
                 <QuizLoadingState />
             ) : filteredQuizSets.length > 0 ? (
                 <QuizGrid
@@ -124,4 +148,4 @@ export default function QuizzesPage() {
             />
         </>
     );
-} 
+}

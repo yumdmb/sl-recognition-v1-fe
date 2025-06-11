@@ -1,15 +1,15 @@
 'use client'
 
 import React from 'react';
-import { QuizSet } from '@/data/contentData';
+import { QuizSetWithProgress } from '@/types/database';
 import QuizCard from './QuizCard';
 
 interface QuizGridProps {
-  quizSets: QuizSet[];
+  quizSets: QuizSetWithProgress[];
   isAdmin: boolean;
   onStartQuiz: (setId: string) => void;
   onEditQuestions: (setId: string) => void;
-  onEditQuizSet: (quizSet: QuizSet) => void;
+  onEditQuizSet: (quizSet: QuizSetWithProgress) => void;
   onDeleteQuizSet: (id: string) => void;
 }
 

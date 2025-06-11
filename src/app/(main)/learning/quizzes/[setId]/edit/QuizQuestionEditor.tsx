@@ -6,12 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Edit, Trash } from "lucide-react";
 import { useAdmin } from '@/context/AdminContext';
-import { getQuizQuestions, saveQuizQuestion, deleteQuizQuestion, QuizQuestion, getQuizSets } from '@/data/contentData';
+import { useLearning } from '@/context/LearningContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from 'sonner';
+import { QuizQuestion } from '@/types/database';
 
 interface QuizQuestionEditorProps {
   setId: string;
@@ -21,260 +22,294 @@ interface QuizQuestionEditorProps {
 export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEditorProps) {
   const router = useRouter();
   const { isAdmin } = useAdmin();
+  const { getQuizSetWithQuestions, createQuizQuestion, updateQuizQuestion, deleteQuizQuestion } = useLearning();
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState<QuizQuestion | null>(null);
-
   useEffect(() => {
     // Redirect non-admin users
-    if (typeof window !== 'undefined') {
-      const savedAdminStatus = localStorage.getItem('isAdmin');
-      if (savedAdminStatus !== 'true') {
-        router.push('/learning/quizzes');
-        return;
-      }    }
+    if (!isAdmin) {
+      router.push('/learning/quizzes');
+      return;
+    }
 
-    // Get quiz questions - don't wait for quizTitle as it might be loading
-    const quizQuestions = getQuizQuestions(setId);
-    setQuestions(quizQuestions);
-    setIsLoading(false);
-  }, [setId, router]);
-
-  // Separate effect to handle redirect when no quizTitle is found after loading
-  useEffect(() => {
-    // Only redirect if we have loaded and still no title
-    if (!isLoading && !quizTitle && setId) {
-      // Check if quiz set exists
-      if (typeof window !== 'undefined') {
-        const quizSets = getQuizSets();
-        const quizSet = quizSets.find(set => set.id === setId);
+    // Get quiz questions from Supabase
+    async function fetchQuestions() {
+      try {
+        setIsLoading(true);
+        const quizSet = await getQuizSetWithQuestions(setId);
         if (!quizSet) {
           router.push('/learning/quizzes');
           return;
         }
+        setQuestions(quizSet.questions);
+      } catch (error) {
+        console.error('Error fetching questions:', error);
+        toast.error('Failed to load questions');
+      } finally {
+        setIsLoading(false);
       }
     }
-  }, [isLoading, quizTitle, setId, router]);
 
-  // Function to handle adding a new question
+    fetchQuestions();
+  }, [setId, router, isAdmin]); // Removed getQuizSetWithQuestions from dependencies
+
+  // Handle adding a new question
   const handleAddQuestion = () => {
     setCurrentQuestion({
       id: '',
+      quiz_set_id: setId,
       question: '',
       options: ['', '', '', ''],
-      correctAnswer: '',
+      correct_answer: '',
       explanation: '',
+      video_url: null,
+      image_url: null,
+      order_index: questions.length,
+      created_at: new Date().toISOString()
     });
     setEditDialogOpen(true);
   };
 
-  // Function to handle editing a question
+  // Handle editing an existing question
   const handleEditQuestion = (question: QuizQuestion) => {
     setCurrentQuestion({...question});
     setEditDialogOpen(true);
   };
+  // Handle deleting a question
+  const handleDeleteQuestion = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this question?')) return;
 
-  // Function to handle deleting a question
-  const handleDeleteQuestion = (questionId: string) => {
-    if (confirm('Are you sure you want to delete this question?')) {
-      const updatedQuestions = deleteQuizQuestion(setId, questionId);
-      setQuestions(updatedQuestions);
-      toast.success('Question deleted successfully');
+    try {
+      await deleteQuizQuestion(id);
+      setQuestions(questions.filter(q => q.id !== id));
+      // Note: Success toast is shown in LearningContext
+    } catch (error) {
+      console.error('Error deleting question:', error);
+      toast.error('Failed to delete question');
     }
   };
+  // Handle saving a question (new or updated)
+  const handleSaveQuestion = async () => {
+    if (!currentQuestion) return;
 
-  // Function to save question (add or update)
-  const handleSaveQuestion = (question: QuizQuestion) => {
-    // Form validation
-    if (!question.question || !question.explanation || question.options.some(option => !option) || !question.correctAnswer) {
-      toast.error('Please fill in all required fields');
+    // Validation
+    if (!currentQuestion.question) {
+      toast.error('Question text is required');
       return;
     }
 
-    // Validate correctAnswer is one of the options
-    if (!question.options.includes(question.correctAnswer)) {
-      toast.error('The correct answer must be one of the options');
+    if (!currentQuestion.options.every(option => option.trim())) {
+      toast.error('All options must be filled in');
+      return;
+    }
+
+    if (!currentQuestion.correct_answer) {
+      toast.error('Please select a correct answer');
+      return;
+    }
+
+    if (!currentQuestion.explanation) {
+      toast.error('Explanation is required');
       return;
     }
 
     try {
-      const updatedQuestions = saveQuizQuestion(setId, question);
-      setQuestions(updatedQuestions);
+      if (!currentQuestion.id) {
+        // Create new question
+        await createQuizQuestion({
+          quiz_set_id: setId,
+          question: currentQuestion.question,
+          options: currentQuestion.options,
+          correct_answer: currentQuestion.correct_answer,
+          explanation: currentQuestion.explanation,
+          video_url: currentQuestion.video_url,
+          image_url: currentQuestion.image_url,
+          order_index: currentQuestion.order_index
+        });
+        
+        // Refresh questions after creating a new one
+        const updatedQuizSet = await getQuizSetWithQuestions(setId);
+        if (updatedQuizSet) {
+          setQuestions(updatedQuizSet.questions);
+        }
+        // Note: Success toast is shown in LearningContext
+      } else {
+        // Update existing question
+        await updateQuizQuestion(currentQuestion.id, {
+          question: currentQuestion.question,
+          options: currentQuestion.options,
+          correct_answer: currentQuestion.correct_answer,
+          explanation: currentQuestion.explanation,
+          video_url: currentQuestion.video_url,
+          image_url: currentQuestion.image_url,
+          order_index: currentQuestion.order_index
+        });
+        
+        // Refresh questions after updating
+        const refreshedQuizSet = await getQuizSetWithQuestions(setId);
+        if (refreshedQuizSet) {
+          setQuestions(refreshedQuizSet.questions);
+        }
+        // Note: Success toast is shown in LearningContext
+      }
       setEditDialogOpen(false);
-      toast.success(`Question ${question.id ? 'updated' : 'added'} successfully`);
     } catch (error) {
-      toast.error('Error saving question');
-      console.error(error);
+      console.error('Error saving question:', error);
+      toast.error('Failed to save question');
     }
   };
 
-  // Function to update option at specific index
-  const updateOption = (index: number, value: string) => {
+  // Handle updating the current question being edited
+  const handleQuestionChange = (field: string, value: any) => {
     if (!currentQuestion) return;
-    
-    const newOptions = [...currentQuestion.options];
-    newOptions[index] = value;
-    
-    setCurrentQuestion({
-      ...currentQuestion,
-      options: newOptions
-    });
+
+    if (field === 'options') {
+      const newOptions = [...currentQuestion.options];
+      newOptions[value.index] = value.text;
+      setCurrentQuestion({...currentQuestion, options: newOptions});
+    } else {
+      setCurrentQuestion({...currentQuestion, [field]: value});
+    }
   };
 
+  // Handle setting the correct answer
+  const handleSetCorrectAnswer = (option: string) => {
+    if (!currentQuestion) return;
+    setCurrentQuestion({...currentQuestion, correct_answer: option});
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container py-8">
+        <h1 className="text-2xl font-bold mb-4">Loading questions...</h1>
+      </div>
+    );
+  }
+
   return (
-    <>
-      <div className="mb-6">
+    <div className="container py-8">
+      <div className="flex justify-between items-center mb-6">
         <Button variant="outline" onClick={() => router.push('/learning/quizzes')}>
-          <ArrowLeft className="h-4 w-4 mr-2" /> Back to Quiz Sets
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Quizzes
         </Button>
-      </div>      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Edit Questions: {quizTitle || setId}</h1>
-        <Button onClick={handleAddQuestion}>
-          <Plus className="h-4 w-4 mr-2" /> Add Question
-        </Button>
+        <h1 className="text-2xl font-bold">{quizTitle ? `Edit ${quizTitle} Questions` : 'Edit Questions'}</h1>
       </div>
 
-      {isLoading ? (
-        <div className="text-center py-10">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-solid border-primary border-r-transparent"></div>
-          <p className="mt-4 text-gray-500">Loading questions...</p>
-        </div>
-      ) : questions.length > 0 ? (
-        <div className="space-y-6">
-          {questions.map((question, index) => (
-            <Card key={question.id}>
-              <CardHeader>
-                <CardTitle className="text-lg">Question {index + 1}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="font-medium mb-4">{question.question}</p>
-                <div className="space-y-2 mb-6">
-                  {question.options.map((option, optIndex) => (
-                    <div 
-                      key={optIndex} 
-                      className={`p-3 border rounded-md ${
-                        option === question.correctAnswer 
-                          ? 'border-green-500 bg-green-50'
-                          : 'border-gray-200'
-                      }`}
-                    >
-                      {option}
-                      {option === question.correctAnswer && (
-                        <span className="ml-2 text-green-600 text-sm">(Correct Answer)</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <div className="bg-gray-50 p-4 rounded-md">
-                  <h4 className="font-medium text-sm mb-1">Explanation:</h4>
-                  <p className="text-sm text-gray-600">{question.explanation}</p>
-                </div>
-                {question.videoUrl && (
-                  <div className="mt-4">
-                    <h4 className="font-medium text-sm mb-1">Video:</h4>
-                    <p className="text-sm text-blue-600">{question.videoUrl}</p>
-                  </div>
-                )}
-              </CardContent>
-              <CardFooter className="flex justify-end space-x-2">
-                <Button variant="outline" size="sm" onClick={() => handleEditQuestion(question)}>
-                  <Edit className="h-4 w-4 mr-2" /> Edit
-                </Button>
-                <Button variant="destructive" size="sm" onClick={() => handleDeleteQuestion(question.id)}>
-                  <Trash className="h-4 w-4 mr-2" /> Delete
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <Card>
-          <CardContent className="text-center py-8">
-            <p className="text-gray-500">No questions available for this quiz. Add a question to get started.</p>
+      {/* Add new question button */}
+      <Button onClick={handleAddQuestion} className="mb-8">
+        <Plus className="h-4 w-4 mr-2" />
+        Add New Question
+      </Button>
+
+      {/* Questions list */}
+      {questions.length === 0 ? (
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <p className="text-center text-gray-500">No questions added yet. Click "Add New Question" to get started.</p>
           </CardContent>
         </Card>
+      ) : (
+        questions.map((question, index) => (
+          <Card key={question.id} className="mb-6">
+            <CardHeader>
+              <div className="flex justify-between">
+                <CardTitle>Question {index + 1}</CardTitle>
+                <div className="space-x-2">
+                  <Button size="sm" variant="ghost" onClick={() => handleEditQuestion(question)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => handleDeleteQuestion(question.id)}>
+                    <Trash className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
+                </div>
+              </div>
+              <CardDescription className="text-lg font-medium text-black pt-2">
+                {question.question}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {question.options.map((option, i) => (
+                  <div 
+                    key={i} 
+                    className={`p-3 border rounded-md ${option === question.correct_answer ? 'border-green-500 bg-green-50' : ''}`}
+                  >
+                    {option} {option === question.correct_answer && '✓'}
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 text-gray-600">
+                <p><span className="font-medium">Explanation:</span> {question.explanation}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))
       )}
 
-      {/* Add/Edit Question Dialog */}
+      {/* Edit dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{currentQuestion?.id ? 'Edit' : 'Add'} Question</DialogTitle>
           </DialogHeader>
-          {currentQuestion && (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="question" className="text-right">Question</Label>
-                <Textarea
-                  id="question"
-                  value={currentQuestion.question}
-                  onChange={(e) => setCurrentQuestion({...currentQuestion, question: e.target.value})}
-                  className="col-span-3"
-                />
-              </div>
-              
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label className="text-right mt-2">Options</Label>
-                <div className="col-span-3 space-y-3">
-                  {currentQuestion.options.map((option, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <Input
-                        value={option}
-                        onChange={(e) => updateOption(index, e.target.value)}
-                        placeholder={`Option ${index + 1}`}
-                        className="flex-1"
-                      />
-                      <Button 
-                        type="button" 
-                        variant={currentQuestion.correctAnswer === option ? "default" : "outline"}
-                        onClick={() => setCurrentQuestion({...currentQuestion, correctAnswer: option})}
-                        size="sm"
-                      >
-                        {currentQuestion.correctAnswer === option ? "Correct" : "Mark Correct"}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="explanation" className="text-right">Explanation</Label>
-                <Textarea
-                  id="explanation"
-                  value={currentQuestion.explanation}
-                  onChange={(e) => setCurrentQuestion({...currentQuestion, explanation: e.target.value})}
-                  className="col-span-3"
-                />
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="videoUrl" className="text-right">Video URL (optional)</Label>
-                <Input
-                  id="videoUrl"
-                  value={currentQuestion.videoUrl || ''}
-                  onChange={(e) => setCurrentQuestion({...currentQuestion, videoUrl: e.target.value})}
-                  className="col-span-3"
-                />
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="imageUrl" className="text-right">Image URL (optional)</Label>
-                <Input
-                  id="imageUrl"
-                  value={currentQuestion.imageUrl || ''}
-                  onChange={(e) => setCurrentQuestion({...currentQuestion, imageUrl: e.target.value})}
-                  className="col-span-3"
-                />
-              </div>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="question">Question</Label>
+              <Textarea 
+                id="question"
+                value={currentQuestion?.question || ''}
+                onChange={(e) => handleQuestionChange('question', e.target.value)}
+                placeholder="Enter question text"
+              />
             </div>
-          )}
+
+            <div className="space-y-4">
+              <Label>Options</Label>
+              {currentQuestion?.options.map((option, idx) => (
+                <div key={idx} className="flex space-x-2">
+                  <Input 
+                    value={option}
+                    onChange={(e) => handleQuestionChange('options', { index: idx, text: e.target.value })}
+                    placeholder={`Option ${idx + 1}`}
+                    className="flex-1"
+                  />
+                  <Button 
+                    type="button" 
+                    variant={option === currentQuestion?.correct_answer ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleSetCorrectAnswer(option)}
+                  >
+                    {option === currentQuestion?.correct_answer ? '✓ Correct' : 'Set as Correct'}
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="explanation">Explanation</Label>
+              <Textarea 
+                id="explanation"
+                value={currentQuestion?.explanation || ''}
+                onChange={(e) => handleQuestionChange('explanation', e.target.value)}
+                placeholder="Explain the correct answer"
+              />
+            </div>
+            
+            {/* Difficulty level field has been removed as it doesn't exist in the database schema */}
+          </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-            <Button onClick={() => currentQuestion && handleSaveQuestion(currentQuestion)}>Save</Button>
+            <Button onClick={handleSaveQuestion}>Save Question</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
-} 
+}

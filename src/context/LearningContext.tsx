@@ -18,8 +18,11 @@ import type {
 } from '@/types/database';
 
 interface LearningContextProps {
-  // Loaders
-  isLoading: boolean;
+  // Loaders - separate loading states for each section
+  isLoading: boolean; // Keep for backward compatibility
+  tutorialsLoading: boolean;
+  materialsLoading: boolean;
+  quizSetsLoading: boolean;
   
   // Tutorials
   tutorials: TutorialWithProgress[];
@@ -53,7 +56,10 @@ const LearningContext = createContext<LearningContextProps | null>(null);
 
 export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { currentUser } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Keep for backward compatibility
+  const [tutorialsLoading, setTutorialsLoading] = useState(false);
+  const [materialsLoading, setMaterialsLoading] = useState(false);
+  const [quizSetsLoading, setQuizSetsLoading] = useState(false);
   const [tutorials, setTutorials] = useState<TutorialWithProgress[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [quizSets, setQuizSets] = useState<QuizSetWithProgress[]>([]);
@@ -95,23 +101,22 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       description: errorMessage
     });
   };
-
   // Tutorials
   const getTutorials = async (language?: 'ASL' | 'MSL') => {
     try {
-      setIsLoading(true);
+      setTutorialsLoading(true);
       const data = await TutorialService.getTutorials(currentUser?.id, language);
       setTutorials(data);
     } catch (error) {
       handleError(error, 'fetch tutorials');
     } finally {
-      setIsLoading(false);
+      setTutorialsLoading(false);
     }
   };
 
   const createTutorial = async (tutorial: Database['public']['Tables']['tutorials']['Insert']) => {
     try {
-      setIsLoading(true);
+      setTutorialsLoading(true);
       const newTutorial = await TutorialService.createTutorial({
         ...tutorial,
         created_by: currentUser?.id
@@ -121,13 +126,13 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     } catch (error) {
       handleError(error, 'create tutorial');
     } finally {
-      setIsLoading(false);
+      setTutorialsLoading(false);
     }
   };
 
   const updateTutorial = async (id: string, updates: Database['public']['Tables']['tutorials']['Update']) => {
     try {
-      setIsLoading(true);
+      setTutorialsLoading(true);
       const updatedTutorial = await TutorialService.updateTutorial(id, updates);
       setTutorials(prev => prev.map(t => 
         t.id === id ? { ...updatedTutorial, progress: t.progress } : t
@@ -136,20 +141,20 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     } catch (error) {
       handleError(error, 'update tutorial');
     } finally {
-      setIsLoading(false);
+      setTutorialsLoading(false);
     }
   };
 
   const deleteTutorial = async (id: string) => {
     try {
-      setIsLoading(true);
+      setTutorialsLoading(true);
       await TutorialService.deleteTutorial(id);
       setTutorials(prev => prev.filter(t => t.id !== id));
       toast.success('Tutorial deleted successfully');
     } catch (error) {
       handleError(error, 'delete tutorial');
     } finally {
-      setIsLoading(false);
+      setTutorialsLoading(false);
     }
   };
 
@@ -164,23 +169,22 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       handleError(error, 'update tutorial progress');
     }
   };
-
   // Materials
   const getMaterials = async (language?: 'ASL' | 'MSL') => {
     try {
-      setIsLoading(true);
+      setMaterialsLoading(true);
       const data = await MaterialService.getMaterials(language);
       setMaterials(data);
     } catch (error) {
       handleError(error, 'fetch materials');
     } finally {
-      setIsLoading(false);
+      setMaterialsLoading(false);
     }
   };
 
   const createMaterial = async (material: Database['public']['Tables']['materials']['Insert']) => {
     try {
-      setIsLoading(true);
+      setMaterialsLoading(true);
       const newMaterial = await MaterialService.createMaterial({
         ...material,
         created_by: currentUser?.id
@@ -190,46 +194,45 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     } catch (error) {
       handleError(error, 'create material');
     } finally {
-      setIsLoading(false);
+      setMaterialsLoading(false);
     }
   };
 
   const updateMaterial = async (id: string, updates: Database['public']['Tables']['materials']['Update']) => {
     try {
-      setIsLoading(true);
+      setMaterialsLoading(true);
       const updatedMaterial = await MaterialService.updateMaterial(id, updates);
       setMaterials(prev => prev.map(m => m.id === id ? updatedMaterial : m));
       toast.success('Material updated successfully');
     } catch (error) {
       handleError(error, 'update material');
     } finally {
-      setIsLoading(false);
+      setMaterialsLoading(false);
     }
   };
 
   const deleteMaterial = async (id: string) => {
     try {
-      setIsLoading(true);
+      setMaterialsLoading(true);
       await MaterialService.deleteMaterial(id);
       setMaterials(prev => prev.filter(m => m.id !== id));
       toast.success('Material deleted successfully');
     } catch (error) {
       handleError(error, 'delete material');
     } finally {
-      setIsLoading(false);
+      setMaterialsLoading(false);
     }
   };
-
   // Quizzes
   const getQuizSets = async (language?: 'ASL' | 'MSL') => {
     try {
-      setIsLoading(true);
+      setQuizSetsLoading(true);
       const data = await QuizService.getQuizSets(currentUser?.id, language);
       setQuizSets(data);
     } catch (error) {
       handleError(error, 'fetch quiz sets');
     } finally {
-      setIsLoading(false);
+      setQuizSetsLoading(false);
     }
   };
 
@@ -244,7 +247,7 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const createQuizSet = async (quizSet: Database['public']['Tables']['quiz_sets']['Insert']) => {
     try {
-      setIsLoading(true);
+      setQuizSetsLoading(true);
       const newQuizSet = await QuizService.createQuizSet({
         ...quizSet,
         created_by: currentUser?.id
@@ -254,13 +257,13 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     } catch (error) {
       handleError(error, 'create quiz set');
     } finally {
-      setIsLoading(false);
+      setQuizSetsLoading(false);
     }
   };
 
   const updateQuizSet = async (id: string, updates: Database['public']['Tables']['quiz_sets']['Update']) => {
     try {
-      setIsLoading(true);
+      setQuizSetsLoading(true);
       const updatedQuizSet = await QuizService.updateQuizSet(id, updates);
       setQuizSets(prev => prev.map(q => 
         q.id === id ? { ...updatedQuizSet, questionCount: q.questionCount, progress: q.progress } : q
@@ -269,28 +272,26 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     } catch (error) {
       handleError(error, 'update quiz set');
     } finally {
-      setIsLoading(false);
+      setQuizSetsLoading(false);
     }
   };
 
   const deleteQuizSet = async (id: string) => {
     try {
-      setIsLoading(true);
+      setQuizSetsLoading(true);
       await QuizService.deleteQuizSet(id);
       setQuizSets(prev => prev.filter(q => q.id !== id));
       toast.success('Quiz set deleted successfully');
     } catch (error) {
       handleError(error, 'delete quiz set');
     } finally {
-      setIsLoading(false);
+      setQuizSetsLoading(false);
     }
   };
-
   const createQuizQuestion = async (question: Database['public']['Tables']['quiz_questions']['Insert']) => {
     try {
       await QuizService.createQuizQuestion(question);
-      // Refresh quiz sets to update question count
-      await getQuizSets();
+      // Don't refresh quiz sets here - let the calling component handle it
       toast.success('Question created successfully');
     } catch (error) {
       handleError(error, 'create question');
@@ -305,12 +306,10 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       handleError(error, 'update question');
     }
   };
-
   const deleteQuizQuestion = async (id: string) => {
     try {
       await QuizService.deleteQuizQuestion(id);
-      // Refresh quiz sets to update question count
-      await getQuizSets();
+      // Don't refresh quiz sets here - let the calling component handle it
       toast.success('Question deleted successfully');
     } catch (error) {
       handleError(error, 'delete question');
@@ -359,11 +358,13 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       throw error;
     }
   };
-
   return (
     <LearningContext.Provider
       value={{
-        isLoading,
+        isLoading: tutorialsLoading || materialsLoading || quizSetsLoading, // Computed from individual states
+        tutorialsLoading,
+        materialsLoading,
+        quizSetsLoading,
         tutorials,
         getTutorials,
         createTutorial,
