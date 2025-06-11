@@ -7,14 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Tutorial } from '@/data/contentData';
+import { TutorialWithProgress } from '@/types/database';
 
 interface TutorialDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  tutorial: Tutorial | null;
-  onTutorialChange: (tutorial: Tutorial) => void;
-  onSave: (tutorial: Tutorial) => void;
+  tutorial: TutorialWithProgress | null;
+  onTutorialChange: (tutorial: TutorialWithProgress) => void;
+  onSave: (tutorial: TutorialWithProgress) => void;
 }
 
 const TutorialDialog: React.FC<TutorialDialogProps> = ({
@@ -25,8 +25,7 @@ const TutorialDialog: React.FC<TutorialDialogProps> = ({
   onSave
 }) => {
   if (!tutorial) return null;
-
-  const handleFieldChange = (field: keyof Tutorial, value: string) => {
+  const handleFieldChange = (field: keyof TutorialWithProgress, value: string) => {
     onTutorialChange({
       ...tutorial,
       [field]: value
@@ -71,13 +70,12 @@ const TutorialDialog: React.FC<TutorialDialogProps> = ({
               onChange={(e) => handleFieldChange('description', e.target.value)}
               className="col-span-3"
             />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
+          </div>          <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="videoUrl" className="text-right">Video URL</Label>
             <Input
               id="videoUrl"
-              value={tutorial.videoUrl}
-              onChange={(e) => handleFieldChange('videoUrl', e.target.value)}
+              value={tutorial.video_url}
+              onChange={(e) => handleFieldChange('video_url', e.target.value)}
               className="col-span-3"
             />
           </div>
@@ -85,8 +83,8 @@ const TutorialDialog: React.FC<TutorialDialogProps> = ({
             <Label htmlFor="thumbnailUrl" className="text-right">Thumbnail URL</Label>
             <Input
               id="thumbnailUrl"
-              value={tutorial.thumbnailUrl}
-              onChange={(e) => handleFieldChange('thumbnailUrl', e.target.value)}
+              value={tutorial.thumbnail_url || ''}
+              onChange={(e) => handleFieldChange('thumbnail_url', e.target.value)}
               className="col-span-3"
             />
           </div>

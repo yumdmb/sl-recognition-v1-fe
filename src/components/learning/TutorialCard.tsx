@@ -5,12 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Play, Edit, Trash } from 'lucide-react';
-import { Tutorial } from '@/data/contentData';
+import { TutorialWithProgress } from '@/types/database';
 
 interface TutorialCardProps {
-  tutorial: Tutorial;
+  tutorial: TutorialWithProgress;
   isAdmin: boolean;
-  onEdit: (tutorial: Tutorial) => void;
+  onEdit: (tutorial: TutorialWithProgress) => void;
   onDelete: (id: string) => void;
 }
 
@@ -21,10 +21,9 @@ const TutorialCard: React.FC<TutorialCardProps> = ({
   onDelete
 }) => {
   return (
-    <Card className="overflow-hidden">
-      <div className="relative">
+    <Card className="overflow-hidden">      <div className="relative">
         <img 
-          src={tutorial.thumbnailUrl} 
+          src={tutorial.thumbnail_url || 'https://placehold.co/400x225?text=Tutorial'} 
           alt={tutorial.title} 
           className="w-full h-48 object-cover" 
         />

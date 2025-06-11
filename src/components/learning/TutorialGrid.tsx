@@ -1,13 +1,13 @@
 'use client'
 
 import React from 'react';
-import { Tutorial } from '@/data/contentData';
+import { TutorialWithProgress } from '@/types/database';
 import TutorialCard from './TutorialCard';
 
 interface TutorialGridProps {
-  tutorials: Tutorial[];
+  tutorials: TutorialWithProgress[];
   isAdmin: boolean;
-  onEditTutorial: (tutorial: Tutorial) => void;
+  onEditTutorial: (tutorial: TutorialWithProgress) => void;
   onDeleteTutorial: (id: string) => void;
 }
 

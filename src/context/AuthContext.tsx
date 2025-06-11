@@ -4,6 +4,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from "sonner";
 import { createClient } from '@/utils/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
+import { UserService } from '@/lib/services/userService';
+import type { UserProfile } from '@/types/database';
 
 // Define our user type - extending Supabase user with custom metadata
 export interface User {
@@ -36,21 +38,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClient();
+  const supabase = createClient();  // Convert Supabase user to our User type with database profile
+  const convertSupabaseUser = async (supabaseUser: SupabaseUser): Promise<User> => {
+    try {
+      // Try to get user profile from database
+      const profile = await UserService.getUserProfile(supabaseUser.id);
+      
+      if (profile) {
+        console.info('Successfully loaded user profile from database');
+        return {
+          id: profile.id,
+          name: profile.name,
+          email: profile.email,
+          role: profile.role,
+          isVerified: !!supabaseUser.email_confirmed_at,
+          email_confirmed_at: supabaseUser.email_confirmed_at
+        };
+      } else {
+        console.info('No profile found in database, using metadata fallback');
+      }
+    } catch (error) {
+      console.info('Failed to fetch user profile from database, using fallback. This is normal during RLS policy issues.');
+      // Continue to fallback without throwing
+    }
 
-  // Convert Supabase user to our User type
-  const convertSupabaseUser = (supabaseUser: SupabaseUser): User => {
+    // Fallback to metadata if profile doesn't exist or RLS blocks access
     const metadata = supabaseUser.user_metadata || {};
-    return {
+    const fallbackUser = {
       id: supabaseUser.id,
       name: metadata.name || metadata.full_name || supabaseUser.email?.split('@')[0] || 'User',
       email: supabaseUser.email || '',
-      role: metadata.role || 'non-deaf',
+      role: (metadata.role as 'non-deaf' | 'admin' | 'deaf') || 'non-deaf',
       isVerified: !!supabaseUser.email_confirmed_at,
       email_confirmed_at: supabaseUser.email_confirmed_at
     };
+    
+    console.info('Using fallback user data:', { 
+      id: fallbackUser.id, 
+      name: fallbackUser.name, 
+      email: fallbackUser.email, 
+      role: fallbackUser.role 
+    });
+    
+    return fallbackUser;
   };
-
   // Initialize auth state
   useEffect(() => {
     const initializeAuth = async () => {
@@ -61,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (error) {
           console.error('Error getting session:', error);
         } else if (session?.user) {
-          const user = convertSupabaseUser(session.user);
+          const user = await convertSupabaseUser(session.user);
           setCurrentUser(user);
           setIsAuthenticated(true);
         }
@@ -80,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('Auth state changed:', event, session?.user?.email);
         
         if (session?.user) {
-          const user = convertSupabaseUser(session.user);
+          const user = await convertSupabaseUser(session.user);
           setCurrentUser(user);
           setIsAuthenticated(true);
         } else {
@@ -208,28 +239,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Logout error:', error);
     }
   };
-
   // Update user information
   const updateUser = async (updates: Partial<User>) => {
     try {
-      const { error } = await supabase.auth.updateUser({
+      if (!currentUser) throw new Error('No user logged in');
+
+      // Update auth metadata
+      const { error: authError } = await supabase.auth.updateUser({
         data: {
           name: updates.name,
           role: updates.role,
         }
       });
 
-      if (error) {
-        toast.error("Update failed", {
-          description: error.message
-        });
-      } else {
-        toast.success("Profile updated successfully");
-      }
+      if (authError) throw authError;
+
+      // Update database profile
+      const updatedProfile = await UserService.updateUserProfile(currentUser.id, {
+        name: updates.name,
+        role: updates.role,
+      });
+
+      // Update local state
+      setCurrentUser(prev => prev ? { ...prev, ...updates } : null);
+
+      toast.success("Profile updated successfully");
     } catch (error) {
       console.error('Update user error:', error);
       toast.error("Update failed", {
-        description: "An unexpected error occurred. Please try again."
+        description: error instanceof Error ? error.message : "An unexpected error occurred. Please try again."
       });
     }
   };

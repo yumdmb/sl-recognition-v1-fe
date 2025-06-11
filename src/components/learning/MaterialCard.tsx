@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { FileDown, FileText, Book, Video, Edit, Trash } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
-import { Material } from '@/data/contentData';
+import { Material } from '@/types/database';
 
 interface MaterialCardProps {
   material: Material;
@@ -62,10 +62,9 @@ const MaterialCard: React.FC<MaterialCardProps> = ({ material, isAdmin, onEdit, 
           </Badge>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="flex justify-between items-center">
+      <CardContent>        <div className="flex justify-between items-center">
           <span className="text-sm text-gray-500">
-            {material.fileSize ? `File size: ${material.fileSize}` : ''}
+            {material.file_size ? `File size: ${material.file_size}` : ''}
           </span>
           <Button>
             <FileDown className="mr-2 h-4 w-4" /> Download

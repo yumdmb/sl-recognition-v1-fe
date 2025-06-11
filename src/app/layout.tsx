@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";
 import { SidebarProvider } from "@/context/SidebarContext";
+import { LearningProvider } from "@/context/LearningContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,12 +26,14 @@ export const metadata: Metadata = {
 function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
-      <SidebarProvider>
-        <div className="min-h-screen">
-          {children}
-          <Toaster position="bottom-right" />
-        </div>
-      </SidebarProvider>
+      <LearningProvider>
+        <SidebarProvider>
+          <div className="min-h-screen">
+            {children}
+            <Toaster position="bottom-right" />
+          </div>
+        </SidebarProvider>
+      </LearningProvider>
     </AuthProvider>
   );
 }

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Material } from '@/data/contentData';
+import { Material } from '@/types/database';
 
 interface MaterialDialogProps {
   open: boolean;
@@ -73,13 +73,12 @@ const MaterialDialog: React.FC<MaterialDialogProps> = ({
                 <SelectItem value="document">Document</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
+          </div>          <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="fileSize" className="text-right">File Size</Label>
             <Input
               id="fileSize"
-              value={material.fileSize}
-              onChange={(e) => handleFieldChange('fileSize', e.target.value)}
+              value={material.file_size || ''}
+              onChange={(e) => handleFieldChange('file_size', e.target.value)}
               className="col-span-3"
             />
           </div>
@@ -87,8 +86,8 @@ const MaterialDialog: React.FC<MaterialDialogProps> = ({
             <Label htmlFor="downloadUrl" className="text-right">Download URL</Label>
             <Input
               id="downloadUrl"
-              value={material.downloadUrl}
-              onChange={(e) => handleFieldChange('downloadUrl', e.target.value)}
+              value={material.download_url}
+              onChange={(e) => handleFieldChange('download_url', e.target.value)}
               className="col-span-3"
             />
           </div>

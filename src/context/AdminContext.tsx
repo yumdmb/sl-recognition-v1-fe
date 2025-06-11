@@ -18,9 +18,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (currentUser) {
       // Check if user has admin role in their metadata or email is admin
-      const isAdminUser = currentUser.email === 'elvissawing.muran@gmail.com' || 
-                         currentUser.user_metadata?.role === 'admin' ||
-                         currentUser.app_metadata?.role === 'admin';
+      const isAdminUser = currentUser.email === 'elvissawing.muran@gmail.com'
       setIsAdmin(isAdminUser);
     } else {
       setIsAdmin(false);
