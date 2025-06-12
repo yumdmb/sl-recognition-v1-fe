@@ -17,27 +17,33 @@ export default function TutorialsPage() {
   const [activeTab, setActiveTab] = useState<string>('all');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [currentTutorial, setCurrentTutorial] = useState<TutorialWithProgress | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   const { language } = useLanguage();
   const { isAdmin } = useAdmin();
-  const { currentUser } = useAuth();  const { 
+  const { currentUser } = useAuth();const { 
     tutorials, 
     tutorialsLoading, 
     getTutorials, 
     createTutorial, 
     updateTutorial, 
     deleteTutorial: deleteFromDB
-  } = useLearning();
-  useEffect(() => {
+  } = useLearning();  useEffect(() => {
     // Load tutorials when component mounts or language changes
     getTutorials(language);
   }, [language, getTutorials]);
 
+  // Reset saving state when tutorialsLoading changes
+  useEffect(() => {
+    if (!tutorialsLoading && isSaving) {
+      setIsSaving(false);
+    }
+  }, [tutorialsLoading, isSaving]);
+
   // Filter tutorials by level
   const filteredTutorials = tutorials.filter(tutorial => 
     activeTab === 'all' || tutorial.level === activeTab
-  );
-  // Function to handle adding a new tutorial
+  );  // Function to handle adding a new tutorial
   const handleAddTutorial = () => {    setCurrentTutorial({
       id: '',
       title: '',
@@ -60,7 +66,6 @@ export default function TutorialsPage() {
     setCurrentTutorial({...tutorial});
     setEditDialogOpen(true);
   };
-
   // Function to handle deleting a tutorial
   const handleDeleteTutorial = async (id: string) => {
     if (confirm('Are you sure you want to delete this tutorial?')) {
@@ -71,15 +76,29 @@ export default function TutorialsPage() {
       }
     }
   };
-
-  // Function to save tutorial (add or update)
+  // Function to handle dialog close
+  const handleDialogClose = (open: boolean) => {
+    // Don't allow closing dialog while saving
+    if (!open && isSaving) return;
+    
+    setEditDialogOpen(open);
+    if (!open) {
+      // Reset current tutorial and saving state when dialog is closed
+      setCurrentTutorial(null);
+      setIsSaving(false);
+    }
+  };// Function to save tutorial (add or update)
   const handleSaveTutorial = async (tutorial: TutorialWithProgress) => {
+    // Prevent multiple simultaneous saves
+    if (isSaving) return;
+    
     // Form validation
     if (!tutorial.title || !tutorial.description || !tutorial.video_url) {
       toast.error('Please fill in all required fields');
       return;
     }
 
+    setIsSaving(true);
     try {
       if (tutorial.id) {
         // Update existing tutorial
@@ -104,9 +123,15 @@ export default function TutorialsPage() {
           language: tutorial.language
         });
       }
+      // Close dialog only after successful save
       setEditDialogOpen(false);
+      setCurrentTutorial(null);
     } catch (error) {
       console.error('Error saving tutorial:', error);
+      toast.error('Failed to save tutorial. Please try again.');
+      // Don't close dialog on error so user can retry
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -130,14 +155,13 @@ export default function TutorialsPage() {
         />
       ) : (
         <TutorialEmptyState language={language} />
-      )}
-
-      <TutorialDialog
+      )}      <TutorialDialog
         open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
+        onOpenChange={handleDialogClose}
         tutorial={currentTutorial}
         onTutorialChange={setCurrentTutorial}
         onSave={handleSaveTutorial}
+        isSaving={isSaving}
       />
     </>
   );

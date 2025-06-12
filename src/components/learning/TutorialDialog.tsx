@@ -19,6 +19,7 @@ interface TutorialDialogProps {
   tutorial: TutorialWithProgress | null;
   onTutorialChange: (tutorial: TutorialWithProgress) => void;
   onSave: (tutorial: TutorialWithProgress) => void;
+  isSaving?: boolean;
 }
 
 const TutorialDialog: React.FC<TutorialDialogProps> = ({
@@ -26,17 +27,23 @@ const TutorialDialog: React.FC<TutorialDialogProps> = ({
   onOpenChange,
   tutorial,
   onTutorialChange,
-  onSave
-}) => {
-  const [videoUrlDebounce, setVideoUrlDebounce] = useState('');
+  onSave,
+  isSaving = false
+}) => {const [videoUrlDebounce, setVideoUrlDebounce] = useState('');
   const { isLoading: isLoadingMetadata, metadata, error, fetchMetadata } = useYouTubeMetadata();
 
+  // Reset video URL debounce when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setVideoUrlDebounce('');
+    }
+  }, [open]);
   // Debounce video URL changes to avoid too many API calls
   useEffect(() => {
     if (!tutorial?.video_url) return;
     
     const timer = setTimeout(() => {
-      if (tutorial.video_url && tutorial.video_url !== videoUrlDebounce) {
+      if (tutorial.video_url && tutorial.video_url !== videoUrlDebounce && tutorial.video_url.trim() !== '') {
         setVideoUrlDebounce(tutorial.video_url);
         if (isValidYouTubeUrl(tutorial.video_url)) {
           handleFetchMetadata(tutorial.video_url);
@@ -49,21 +56,25 @@ const TutorialDialog: React.FC<TutorialDialogProps> = ({
 
   // Early return AFTER all hooks
   if (!tutorial) return null;
-
   const handleFetchMetadata = async (url: string) => {
-    const metadata = await fetchMetadata(url);
-    
-    if (metadata) {      // Auto-populate fields if they're empty
-      onTutorialChange({
-        ...tutorial,
-        title: tutorial.title || metadata.title,
-        thumbnail_url: metadata.thumbnail,
-        duration: metadata.duration || tutorial.duration || '0:00',
-      });
+    try {
+      const metadata = await fetchMetadata(url);
+      
+      if (metadata) {      // Auto-populate fields if they're empty
+        onTutorialChange({
+          ...tutorial,
+          title: tutorial.title || metadata.title,
+          thumbnail_url: metadata.thumbnail,
+          duration: metadata.duration || tutorial.duration || '0:00',
+        });
 
-      toast.success('Video metadata loaded', {
-        description: 'Title, thumbnail, and duration have been automatically detected.'
-      });
+        toast.success('Video metadata loaded', {
+          description: 'Title, thumbnail, and duration have been automatically detected.'
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching video metadata:', error);
+      // Silently fail for metadata fetching to not interrupt the save process
     }
   };
 
@@ -207,10 +218,28 @@ const TutorialDialog: React.FC<TutorialDialogProps> = ({
               </SelectContent>
             </Select>
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={() => onSave(tutorial)}>Save</Button>
+        </div>        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={() => onSave(tutorial)}
+            disabled={!tutorial.title || !tutorial.description || !tutorial.video_url || isLoadingMetadata || isSaving}
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : isLoadingMetadata ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              'Save'
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
