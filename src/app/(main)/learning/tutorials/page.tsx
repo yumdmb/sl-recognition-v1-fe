@@ -41,14 +41,13 @@ export default function TutorialsPage() {
   );
 
   // Function to handle adding a new tutorial
-  const handleAddTutorial = () => {
-    setCurrentTutorial({
+  const handleAddTutorial = () => {    setCurrentTutorial({
       id: '',
       title: '',
       description: '',
       thumbnail_url: null,
       video_url: '',
-      duration: '00:00',
+      duration: '0:00',
       level: 'beginner',
       language: language,
       created_by: currentUser?.id || null,
