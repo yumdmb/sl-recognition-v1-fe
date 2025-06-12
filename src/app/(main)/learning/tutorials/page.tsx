@@ -26,20 +26,17 @@ export default function TutorialsPage() {
     getTutorials, 
     createTutorial, 
     updateTutorial, 
-    deleteTutorial: deleteFromDB,
-    updateTutorialProgress 
+    deleteTutorial: deleteFromDB
   } = useLearning();
-
   useEffect(() => {
     // Load tutorials when component mounts or language changes
     getTutorials(language);
-  }, [language]);
+  }, [language, getTutorials]);
 
   // Filter tutorials by level
   const filteredTutorials = tutorials.filter(tutorial => 
     activeTab === 'all' || tutorial.level === activeTab
   );
-
   // Function to handle adding a new tutorial
   const handleAddTutorial = () => {    setCurrentTutorial({
       id: '',
@@ -53,7 +50,7 @@ export default function TutorialsPage() {
       created_by: currentUser?.id || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      progress: 0
+      status: 'not-started'
     });
     setEditDialogOpen(true);
   };

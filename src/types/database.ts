@@ -176,13 +176,12 @@ export interface Database {
           order_index?: number;
           created_at?: string;
         };
-      };
-      tutorial_progress: {
+      };      tutorial_progress: {
         Row: {
           id: string;
           user_id: string;
           tutorial_id: string;
-          progress: number;
+          status: 'started' | 'completed';
           last_watched_at: string;
           created_at: string;
           updated_at: string;
@@ -191,7 +190,7 @@ export interface Database {
           id?: string;
           user_id: string;
           tutorial_id: string;
-          progress?: number;
+          status?: 'started' | 'completed';
           last_watched_at?: string;
           created_at?: string;
           updated_at?: string;
@@ -200,7 +199,7 @@ export interface Database {
           id?: string;
           user_id?: string;
           tutorial_id?: string;
-          progress?: number;
+          status?: 'started' | 'completed';
           last_watched_at?: string;
           created_at?: string;
           updated_at?: string;
@@ -265,7 +264,7 @@ export type QuizProgress = Database['public']['Tables']['quiz_progress']['Row'];
 
 // Extended types with additional computed properties
 export interface TutorialWithProgress extends Tutorial {
-  progress?: number;
+  status?: 'not-started' | 'started' | 'completed';
   questionCount?: number;
 }
 

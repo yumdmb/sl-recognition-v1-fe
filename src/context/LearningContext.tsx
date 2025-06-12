@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { toast } from "sonner";
 import { useAuth } from './AuthContext';
 import { TutorialService } from '@/lib/services/tutorialService';
@@ -23,14 +23,15 @@ interface LearningContextProps {
   tutorialsLoading: boolean;
   materialsLoading: boolean;
   quizSetsLoading: boolean;
-  
-  // Tutorials
+    // Tutorials
   tutorials: TutorialWithProgress[];
   getTutorials: (language?: 'ASL' | 'MSL') => Promise<void>;
   createTutorial: (tutorial: Database['public']['Tables']['tutorials']['Insert']) => Promise<void>;
   updateTutorial: (id: string, updates: Database['public']['Tables']['tutorials']['Update']) => Promise<void>;
   deleteTutorial: (id: string) => Promise<void>;
-  updateTutorialProgress: (tutorialId: string, progress: number) => Promise<void>;
+  startTutorial: (tutorialId: string) => Promise<void>;
+  markTutorialDone: (tutorialId: string) => Promise<void>;
+  getOverallProgress: () => Promise<{ totalStarted: number; totalCompleted: number; completionPercentage: number; }>;
   
   // Materials
   materials: Material[];
@@ -100,9 +101,8 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     toast.error(`Failed to ${operation}`, {
       description: errorMessage
     });
-  };
-  // Tutorials
-  const getTutorials = async (language?: 'ASL' | 'MSL') => {
+  };  // Tutorials
+  const getTutorials = useCallback(async (language?: 'ASL' | 'MSL') => {
     try {
       setTutorialsLoading(true);
       const data = await TutorialService.getTutorials(currentUser?.id, language);
@@ -112,7 +112,7 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     } finally {
       setTutorialsLoading(false);
     }
-  };
+  }, [currentUser?.id]);
 
   const createTutorial = async (tutorial: Database['public']['Tables']['tutorials']['Insert']) => {
     try {
@@ -121,7 +121,7 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
         ...tutorial,
         created_by: currentUser?.id
       });
-      setTutorials(prev => [{ ...newTutorial, progress: 0 }, ...prev]);
+      setTutorials(prev => [{ ...newTutorial, status: 'not-started' }, ...prev]);
       toast.success('Tutorial created successfully');
     } catch (error) {
       handleError(error, 'create tutorial');
@@ -133,9 +133,8 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
   const updateTutorial = async (id: string, updates: Database['public']['Tables']['tutorials']['Update']) => {
     try {
       setTutorialsLoading(true);
-      const updatedTutorial = await TutorialService.updateTutorial(id, updates);
-      setTutorials(prev => prev.map(t => 
-        t.id === id ? { ...updatedTutorial, progress: t.progress } : t
+      const updatedTutorial = await TutorialService.updateTutorial(id, updates);      setTutorials(prev => prev.map(t => 
+        t.id === id ? { ...updatedTutorial, status: t.status } : t
       ));
       toast.success('Tutorial updated successfully');
     } catch (error) {
@@ -152,25 +151,42 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       setTutorials(prev => prev.filter(t => t.id !== id));
       toast.success('Tutorial deleted successfully');
     } catch (error) {
-      handleError(error, 'delete tutorial');
-    } finally {
+      handleError(error, 'delete tutorial');    } finally {
       setTutorialsLoading(false);
     }
   };
 
-  const updateTutorialProgress = async (tutorialId: string, progress: number) => {
+  const startTutorial = async (tutorialId: string) => {
     try {
       if (!currentUser) return;
-      await TutorialService.updateProgress(currentUser.id, tutorialId, progress);
+      await TutorialService.startTutorial(currentUser.id, tutorialId);
       setTutorials(prev => prev.map(t => 
-        t.id === tutorialId ? { ...t, progress } : t
+        t.id === tutorialId ? { ...t, status: 'started' } : t
       ));
+      toast.success('Tutorial started! Track your progress.');
     } catch (error) {
-      handleError(error, 'update tutorial progress');
+      handleError(error, 'start tutorial');
     }
   };
-  // Materials
-  const getMaterials = async (language?: 'ASL' | 'MSL') => {
+
+  const markTutorialDone = async (tutorialId: string) => {
+    try {
+      if (!currentUser) return;
+      await TutorialService.markTutorialDone(currentUser.id, tutorialId);
+      setTutorials(prev => prev.map(t => 
+        t.id === tutorialId ? { ...t, status: 'completed' } : t
+      ));
+      toast.success('Tutorial marked as completed!');
+    } catch (error) {
+      handleError(error, 'mark tutorial as done');
+    }
+  };
+
+  const getOverallProgress = async () => {
+    if (!currentUser) return { totalStarted: 0, totalCompleted: 0, completionPercentage: 0 };
+    return await TutorialService.getOverallProgress(currentUser.id);
+  };  // Materials
+  const getMaterials = useCallback(async (language?: 'ASL' | 'MSL') => {
     try {
       setMaterialsLoading(true);
       const data = await MaterialService.getMaterials(language);
@@ -180,7 +196,7 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     } finally {
       setMaterialsLoading(false);
     }
-  };
+  }, []);
 
   const createMaterial = async (material: Database['public']['Tables']['materials']['Insert']) => {
     try {
@@ -222,9 +238,8 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     } finally {
       setMaterialsLoading(false);
     }
-  };
-  // Quizzes
-  const getQuizSets = async (language?: 'ASL' | 'MSL') => {
+  };  // Quizzes
+  const getQuizSets = useCallback(async (language?: 'ASL' | 'MSL') => {
     try {
       setQuizSetsLoading(true);
       const data = await QuizService.getQuizSets(currentUser?.id, language);
@@ -234,7 +249,7 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     } finally {
       setQuizSetsLoading(false);
     }
-  };
+  }, [currentUser?.id]);
 
   const getQuizSetWithQuestions = async (id: string): Promise<QuizSetWithQuestions | null> => {
     try {
@@ -364,13 +379,14 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
         isLoading: tutorialsLoading || materialsLoading || quizSetsLoading, // Computed from individual states
         tutorialsLoading,
         materialsLoading,
-        quizSetsLoading,
-        tutorials,
+        quizSetsLoading,        tutorials,
         getTutorials,
         createTutorial,
         updateTutorial,
         deleteTutorial,
-        updateTutorialProgress,
+        startTutorial,
+        markTutorialDone,
+        getOverallProgress,
         materials,
         getMaterials,
         createMaterial,
