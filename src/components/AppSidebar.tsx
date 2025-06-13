@@ -55,7 +55,7 @@ const AppSidebar: React.FC<Props> = ({ userRole }) => {
         href: '/gesture-recognition',
         icon: Search,
         subItems: [
-          { title: 'Upload Image → Get Word', href: '/gesture-recognition/upload' },
+          { title: 'Recognize Gesture', href: '/gesture-recognition/upload' },
           { title: 'Search Word → View Gesture Image', href: '/gesture-recognition/search' }
         ]
       },

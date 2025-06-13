@@ -7,9 +7,10 @@ import { toast } from "sonner";
 
 interface CameraCaptureProps {
   isActive: boolean;
+  language: "ASL" | "MSL"; // Add language prop
 }
 
-export const CameraCapture: React.FC<CameraCaptureProps> = ({ isActive }) => {
+export const CameraCapture: React.FC<CameraCaptureProps> = ({ isActive, language }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -53,6 +54,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ isActive }) => {
       if (!blob) return;
       const formData = new FormData();
       formData.append("file", blob, "frame.jpg");
+      formData.append("language", language); // Add language to formData
 
       try {
         const res = await fetch("http://localhost:8000/predict-image", {
@@ -64,6 +66,8 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ isActive }) => {
         setPrediction(`${data.label} (${(data.confidence * 100).toFixed(1)}%)`);
       } catch (error) {
         console.error("Error sending frame:", error);
+        // Optionally, provide user feedback here via toast or by setting an error state
+        // toast.error("Prediction Error", { description: "Could not get prediction from server." });
       }
     }, "image/jpeg");
   };
@@ -73,19 +77,22 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ isActive }) => {
 
     if (isActive) {
       startCamera();
+      // Clear previous prediction when camera starts/restarts
+      setPrediction(null);
 
       interval = setInterval(() => {
         sendFrameToServer();
-      }, 300);
+      }, 300); // Consider making interval configurable or adjusting based on performance
     } else {
       stopCamera();
+      setPrediction(null); // Clear prediction when camera stops
     }
 
     return () => {
       clearInterval(interval);
       stopCamera();
     };
-  }, [isActive]);
+  }, [isActive, language]); // Add language to dependency array to re-setup if it changes
 
   return (
     <div className="space-y-4">
@@ -103,9 +110,6 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ isActive }) => {
           Prediction: {prediction}
         </div>
       )}
-      <Button onClick={stopCamera} className="w-full">
-        <Camera className="mr-2 h-4 w-4" /> Stop Camera
-      </Button>
     </div>
   );
 };
