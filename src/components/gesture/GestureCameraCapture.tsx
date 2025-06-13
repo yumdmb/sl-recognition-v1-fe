@@ -48,28 +48,84 @@ export default function GestureCameraCapture({
       });
     }
   };
-
   const startRecording = () => {
     if (videoRef.current?.srcObject) {
       chunksRef.current = [];
-      const mediaRecorder = new MediaRecorder(videoRef.current.srcObject as MediaStream);
-      mediaRecorderRef.current = mediaRecorder;
       
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          chunksRef.current.push(e.data);
+      // Try different MIME types in order of preference
+      const mimeTypes = [
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm',
+        'video/mp4'
+      ];
+      
+      let options = {};
+      for (const mimeType of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+          options = { mimeType };
+          console.log(`Using supported MIME type: ${mimeType}`);
+          break;
         }
-      };
+      }
+      
+      try {
+        const mediaRecorder = new MediaRecorder(videoRef.current.srcObject as MediaStream, options);
+        mediaRecorderRef.current = mediaRecorder;
+        
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) {
+            chunksRef.current.push(e.data);
+            console.log(`Received data chunk: ${e.data.size} bytes`);
+          }
+        };
 
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'video/webm' });
-        const file = new File([blob], 'gesture-recording.webm', { type: 'video/webm' });
-        const previewUrl = URL.createObjectURL(blob);
-        onMediaCaptured(file, previewUrl);
-      };
+        mediaRecorder.onstop = () => {
+          console.log(`Recording stopped. Total chunks: ${chunksRef.current.length}`);
+          if (chunksRef.current.length === 0) {
+            toast.error("Recording Error", {
+              description: "No video data was captured. Please try again."
+            });
+            return;
+          }
+          
+          // Determine output format based on browser support
+          const mimeType = mediaRecorder.mimeType || 'video/webm';
+          const fileExtension = mimeType.includes('mp4') ? 'mp4' : 'webm';
+          
+          const blob = new Blob(chunksRef.current, { type: mimeType });
+          console.log(`Created blob: ${blob.size} bytes, type: ${mimeType}`);
+          
+          const file = new File([blob], `gesture-recording.${fileExtension}`, { 
+            type: mimeType,
+            lastModified: Date.now()
+          });
+          
+          const previewUrl = URL.createObjectURL(blob);
+          onMediaCaptured(file, previewUrl);
+        };
+        
+        mediaRecorder.onerror = (event) => {
+          console.error("MediaRecorder error:", event);
+          toast.error("Recording Error", { 
+            description: "An error occurred during recording. Please try again." 
+          });
+        };
 
-      mediaRecorder.start();
-      onRecordingStateChange(true);
+        // Request data every second to ensure we get data even if stop fails
+        mediaRecorder.start(1000);
+        console.log("MediaRecorder started");
+        onRecordingStateChange(true);
+      } catch (error) {
+        console.error("Failed to create MediaRecorder:", error);
+        toast.error("Recording Error", {
+          description: "Your browser may not support video recording. Try using Chrome or Firefox."
+        });
+      }
+    } else {
+      toast.error("Camera Error", {
+        description: "Camera is not available. Please start the camera first."
+      });
     }
   };
 

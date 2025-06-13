@@ -1,5 +1,5 @@
 -- Create gesture_contributions table
-CREATE TABLE gesture_contributions (
+CREATE TABLE IF NOT EXISTS gesture_contributions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT NOT NULL,
     description TEXT NOT NULL,
@@ -11,6 +11,7 @@ CREATE TABLE gesture_contributions (
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
     rejection_reason TEXT,
     reviewed_by UUID REFERENCES public.user_profiles(id), -- Changed to reference user_profiles
+    reviewed_at TIMESTAMPTZ, -- Added missing reviewed_at column
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

@@ -10,25 +10,56 @@ export class GestureContributionService {
     try {
       let mediaUrl = '';
       const { data: userSession } = await supabase.auth.getUser();
-      if (!userSession.user) throw new Error('User not authenticated');
-
-      // Upload media file if provided
+      if (!userSession.user) throw new Error('User not authenticated');      // Upload media file if provided
       if (data.file) {
+        console.log(`Uploading file: ${data.file.name}, type: ${data.file.type}, size: ${data.file.size} bytes`);
+        
         const fileExt = data.file.name.split('.').pop();
         const fileName = `${userSession.user.id}/${Date.now()}.${fileExt}`;
         const filePath = `gesture-contributions/${fileName}`;
         
-        const { error: uploadError } = await supabase.storage
-          .from('media') // Ensure this is your correct bucket name
-          .upload(filePath, data.file);
+        // Set content type explicitly to avoid incorrect MIME type detection
+        const uploadOptions = {
+          contentType: data.file.type,
+          cacheControl: '3600'
+        };
+        
+        // Try upload with retries
+        let uploadError;
+        let retryCount = 0;
+        const maxRetries = 2;
+        
+        while (retryCount <= maxRetries) {
+          const { error: error } = await supabase.storage
+            .from('media') // Ensure this is your correct bucket name
+            .upload(filePath, data.file, uploadOptions);
           
-        if (uploadError) throw uploadError;
+          if (!error) {
+            uploadError = null;
+            break;
+          } else {
+            console.error(`Upload attempt ${retryCount + 1} failed:`, error);
+            uploadError = error;
+            retryCount++;
+            
+            if (retryCount <= maxRetries) {
+              // Wait before retry (exponential backoff)
+              await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
+            }
+          }
+        }
+        
+        if (uploadError) {
+          console.error("All upload attempts failed:", uploadError);
+          throw new Error(`File upload failed after ${maxRetries + 1} attempts: ${uploadError.message}`);
+        }
         
         const { data: { publicUrl } } = supabase.storage
-          .from('media') // Ensure this is your correct bucket name
+          .from('media')
           .getPublicUrl(filePath);
           
         mediaUrl = publicUrl;
+        console.log(`File uploaded successfully. Public URL: ${mediaUrl}`);
       } else {
         throw new Error('Media file is required.');
       }
