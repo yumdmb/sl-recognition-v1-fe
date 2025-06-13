@@ -31,10 +31,11 @@ export type ForumComment = {
   replies?: ForumComment[];
 };
 
-export class ForumService {  // Posts CRUD operations
+export class ForumService {
+  // Posts CRUD operations
   static async getPosts(): Promise<ForumPost[]> {
     try {
-      // First, try to get posts without the profile join to isolate the issue
+      // First, let's try without the join to see if basic query works
       const { data, error } = await supabase
         .from('forum_posts')
         .select('*')
@@ -45,16 +46,43 @@ export class ForumService {  // Posts CRUD operations
         throw error;
       }
       
-      // Return posts without user profile for now
-      return (data || []).map(post => ({
-        ...post,
-        user_profile: undefined
-      }));
+      // If we have posts, get the user profiles separately
+      if (data && data.length > 0) {
+        const userIds = [...new Set(data.map(post => post.user_id))];
+        
+        const { data: profiles, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('id, name')
+          .in('id', userIds);
+
+        if (profileError) {
+          console.error('Error fetching user profiles:', profileError);
+          // Continue without profiles if there's an error
+          return data.map(post => ({
+            ...post,
+            user_profile: { username: 'Anonymous', avatar_url: undefined }
+          }));
+        }
+
+        // Create a map of user profiles
+        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+        
+        return data.map(post => ({
+          ...post,
+          user_profile: {
+            username: profileMap.get(post.user_id)?.name || 'Anonymous',
+            avatar_url: undefined
+          }
+        }));
+      }
+      
+      return [];
     } catch (error) {
       console.error('Error fetching forum posts:', error);
       throw error;
     }
   }
+  
   static async getPostById(id: string): Promise<ForumPost | null> {
     try {
       const { data, error } = await supabase
@@ -70,9 +98,19 @@ export class ForumService {  // Posts CRUD operations
       
       if (!data) return null;
       
+      // Get user profile separately
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('name')
+        .eq('id', data.user_id)
+        .single();
+      
       return {
         ...data,
-        user_profile: undefined
+        user_profile: {
+          username: profile?.name || 'Anonymous',
+          avatar_url: undefined
+        }
       };
     } catch (error) {
       console.error(`Error fetching post with id ${id}:`, error);
@@ -150,6 +188,7 @@ export class ForumService {  // Posts CRUD operations
       throw error;
     }
   }
+  
   // Comments CRUD operations
   static async getCommentsByPostId(postId: string): Promise<ForumComment[]> {
     try {
@@ -164,10 +203,21 @@ export class ForumService {  // Posts CRUD operations
         throw error;
       }
       
-      // Process the data without user profiles for now
-      const processedData = (data || []).map(comment => ({
-        ...comment,
-        user_profile: undefined
+      // Process the data with user profiles
+      const processedData = await Promise.all((data || []).map(async (comment) => {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('name')
+          .eq('id', comment.user_id)
+          .single();
+
+        return {
+          ...comment,
+          user_profile: {
+            username: profile?.name || 'Anonymous',
+            avatar_url: undefined
+          }
+        };
       }));
       
       // Organize comments into a hierarchical structure
@@ -216,7 +266,7 @@ export class ForumService {  // Posts CRUD operations
           post_id: comment.post_id,
           content: comment.content,
           user_id: user.id,
-          parent_comment_id: comment.parent_comment_id || null
+          parent_comment_id: comment.parent_comment_id
         }])
         .select()
         .single();
@@ -224,7 +274,7 @@ export class ForumService {  // Posts CRUD operations
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Error creating comment:', error);
+      console.error('Error creating forum comment:', error);
       throw error;
     }
   }
@@ -233,9 +283,9 @@ export class ForumService {  // Posts CRUD operations
     try {
       const { data, error } = await supabase
         .from('forum_comments')
-        .update({ 
-          content, 
-          updated_at: new Date().toISOString() 
+        .update({
+          content,
+          updated_at: new Date().toISOString()
         })
         .eq('id', id)
         .select()
@@ -251,19 +301,6 @@ export class ForumService {  // Posts CRUD operations
 
   static async deleteComment(id: string): Promise<void> {
     try {
-      // First, recursively delete all child comments
-      const { data: childComments } = await supabase
-        .from('forum_comments')
-        .select('id')
-        .eq('parent_comment_id', id);
-      
-      if (childComments && childComments.length > 0) {
-        for (const childComment of childComments) {
-          await this.deleteComment(childComment.id);
-        }
-      }
-      
-      // Then delete the comment itself
       const { error } = await supabase
         .from('forum_comments')
         .delete()
