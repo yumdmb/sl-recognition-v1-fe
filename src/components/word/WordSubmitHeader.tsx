@@ -8,10 +8,10 @@ const WordSubmitHeader: React.FC = () => {
   return (
     <CardHeader>
       <CardTitle className="flex items-center">
-        <Upload className="mr-2 h-5 w-5" /> Contribute Word
+        <Upload className="mr-2 h-5 w-5" /> Contribute New Gesture
       </CardTitle>
       <CardDescription>
-        Submit a new sign language word to our database
+        Submit a new  gesture to our database
       </CardDescription>
     </CardHeader>
   );

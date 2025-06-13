@@ -13,8 +13,8 @@ import {
   Menu,
   X,
   MessageCircle, // Add this import for the new icon
-  Users // Add this import for the new icon
-
+  Users, // Add this import for the new icon
+  HandHeart // Add this import for gesture contributions
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useSidebar } from '@/context/SidebarContext';
@@ -76,8 +76,7 @@ const AppSidebar: React.FC<Props> = ({ userRole }) => {
           { title: 'Tutorials', href: '/learning/tutorials' },
           { title: 'Quizzes', href: '/learning/quizzes' },
           { title: 'Materials', href: '/learning/materials' }
-        ]
-      },
+        ]      },
 // --- Add this block for the interaction module ---
       {
         title: 'Interaction',
@@ -89,14 +88,14 @@ const AppSidebar: React.FC<Props> = ({ userRole }) => {
         ]
       },
     // --- End interaction module block ---
-
       {
-        title: 'Word Contributions',
-        href: '/word',
-        icon: BookOpen,
+        title: 'Gesture Contributions',
+        href: '/gesture',
+        icon: HandHeart,
         subItems: [
-          { title: 'Submit New Word', href: '/word/submit' },
-          { title: userRole === 'admin' ? 'All Submissions' : 'View Own Submissions', href: '/word/view' }
+          { title: 'Submit New Gesture', href: '/gesture/submit' },
+          { title: 'Browse Gestures', href: '/gesture/browse' },
+          { title: userRole === 'admin' ? 'Manage Submissions' : 'My Submissions', href: '/gesture/view' }
         ]
       },
       {
