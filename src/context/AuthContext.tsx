@@ -73,11 +73,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email_confirmed_at: supabaseUser.email_confirmed_at
     };
     
-    console.info('Using fallback user data:', { 
-      id: fallbackUser.id, 
-      name: fallbackUser.name, 
-      email: fallbackUser.email, 
-      role: fallbackUser.role 
+    console.info('Using fallback user data:', {
+      id: fallbackUser.id,
+      name: fallbackUser.name,
+      email: fallbackUser.email,
+      role: fallbackUser.role
     });
     
     return fallbackUser;
