@@ -1,30 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-
-// Type definitions for Forum Topic and Comment
-type Topic = {
-  id: number;
-  title: string;
-  content: string;
-  fileUrl?: string;     // Optional URL for attached file
-  fileType?: string;    // MIME type of the attached file
-  fileName?: string;    // Original file name (added for display after post creation)
-  comments: Comment[];  // Array of top-level comments associated with the topic
-  author: string;       // Author of the topic
-  timestamp: number;    // Timestamp for when the topic was created (added)
-};
-
-type Comment = {
-  id: number;
-  user: string;     // User who posted the comment
-  text: string;     // Content of the comment
-  timestamp: number; // Timestamp for when the comment was created (added)
-  replies?: Comment[]; // Optional array for nested replies
-};
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { ForumService, ForumPost } from '@/lib/services/forumService';
+import type { ForumComment } from '@/lib/services/forumService';
+import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 // Recursive helper function to add a reply to a specific comment (or its children)
-const addReplyToComment = (comments: Comment[], parentCommentId: number, newComment: Comment): Comment[] => {
+const addReplyToComment = (comments: ForumComment[], parentCommentId: string, newComment: ForumComment): ForumComment[] => {
   return comments.map(comment => {
     if (comment.id === parentCommentId) {
       return {
@@ -42,7 +27,7 @@ const addReplyToComment = (comments: Comment[], parentCommentId: number, newComm
 };
 
 // Recursive helper function to remove a comment from a nested structure
-const removeCommentRecursive = (comments: Comment[], commentIdToDelete: number): Comment[] => {
+const removeCommentRecursive = (comments: ForumComment[], commentIdToDelete: string): ForumComment[] => {
   const updatedComments = [];
   for (const comment of comments) {
     if (comment.id === commentIdToDelete) {
@@ -59,10 +44,10 @@ const removeCommentRecursive = (comments: Comment[], commentIdToDelete: number):
 };
 
 // Recursive helper function to update a comment's text in a nested structure
-const updateCommentRecursive = (comments: Comment[], commentIdToEdit: number, newText: string): Comment[] => {
+const updateCommentRecursive = (comments: ForumComment[], commentIdToEdit: string, newText: string): ForumComment[] => {
   return comments.map(comment => {
     if (comment.id === commentIdToEdit) {
-      return { ...comment, text: newText }; // Found the comment, update its text
+      return { ...comment, content: newText }; // Found the comment, update its text
     } else if (comment.replies && comment.replies.length > 0) {
       return {
         ...comment,
@@ -75,70 +60,114 @@ const updateCommentRecursive = (comments: Comment[], commentIdToEdit: number, ne
 
 // --- Comment Component for Recursive Rendering ---
 interface ForumCommentProps {
-  comment: Comment;
-  onReply: (parentCommentId: number, replyText: string) => void;
-  onDelete: (commentId: number) => void;
-  onEdit: (commentId: number, newText: string) => void;
+  comment: ForumComment;
+  onReply: (parentCommentId: string, replyText: string) => void;
+  onDelete: (commentId: string) => void;
+  onEdit: (commentId: string, newText: string) => void;
+  currentUserId: string | undefined;
 }
 
-const ForumComment: React.FC<ForumCommentProps> = ({ comment, onReply, onDelete, onEdit }) => {
+const ForumComment: React.FC<ForumCommentProps> = ({ comment, onReply, onDelete, onEdit, currentUserId }) => {
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [editedText, setEditedText] = useState(comment.text);
+  const [editedText, setEditedText] = useState(comment.content);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleReplySubmit = (e: React.FormEvent) => {
+  const handleReplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (replyText.trim()) {
-      onReply(comment.id, replyText);
-      setReplyText('');
-      setShowReplyInput(false);
+    if (replyText.trim() && !isSubmitting) {
+      setIsSubmitting(true);
+      try {
+        await onReply(comment.id, replyText);
+        setReplyText('');
+        setShowReplyInput(false);
+      } catch (error) {
+        console.error('Error submitting reply:', error);
+        toast.error('Failed to submit reply. Please try again.');
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
-  const handleEditSubmit = (e: React.FormEvent) => {
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editedText.trim() && editedText !== comment.text) {
-      onEdit(comment.id, editedText);
+    if (editedText.trim() && editedText !== comment.content && !isSubmitting) {
+      setIsSubmitting(true);
+      try {
+        await onEdit(comment.id, editedText);
+      } catch (error) {
+        console.error('Error updating comment:', error);
+        toast.error('Failed to update comment. Please try again.');
+      } finally {
+        setIsSubmitting(false);
+        setIsEditing(false);
+      }
+    } else {
+      setIsEditing(false);
     }
-    setIsEditing(false);
   };
+
+  const handleDelete = async () => {
+    if (!isDeleting) {
+      setIsDeleting(true);
+      try {
+        await onDelete(comment.id);
+      } catch (error) {
+        console.error('Error deleting comment:', error);
+        toast.error('Failed to delete comment. Please try again.');
+        setIsDeleting(false);
+      }
+    }
+  };
+
+  const isOwnComment = currentUserId === comment.user_id;
+  const authorName = comment.user_profile?.username || 'Anonymous';
 
   return (
     <div className="bg-gray-100 rounded-lg p-4 border border-gray-200 shadow-sm mb-3">
       {isEditing ? (
-        <form onSubmit={handleEditSubmit} className="flex gap-2 items-center">
-          <input
-            className="flex-1 border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+        <form onSubmit={handleEditSubmit} className="flex flex-col gap-2">
+          <textarea
+            className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
             value={editedText}
             onChange={(e) => setEditedText(e.target.value)}
             required
             autoFocus
+            rows={3}
           />
-          <button
-            type="submit"
-            className="bg-green-500 hover:bg-green-600 text-white text-sm px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
-            disabled={!editedText.trim()}
-          >
-            Save
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsEditing(false)}
-            className="bg-gray-300 hover:bg-gray-400 text-gray-800 text-sm px-4 py-2 rounded-lg transition duration-200"
-          >
-            Cancel
-          </button>
+          <div className="flex gap-2 justify-end">
+            <button
+              type="submit"
+              className="bg-green-500 hover:bg-green-600 text-white text-sm px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 flex items-center"
+              disabled={!editedText.trim() || isSubmitting}
+            >
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsEditing(false)}
+              className="bg-gray-300 hover:bg-gray-400 text-gray-800 text-sm px-4 py-2 rounded-lg transition duration-200"
+              disabled={isSubmitting}
+            >
+              Cancel
+            </button>
+          </div>
         </form>
       ) : (
         <>
           <div className="flex items-baseline justify-between mb-1">
-            <span className="font-semibold text-gray-800">{comment.user}: </span>
+            <span className="font-semibold text-gray-800">{authorName}: </span>
             <span className="text-xs text-gray-500 ml-2">
-              {new Date(comment.timestamp).toLocaleString()} {/* Display timestamp */}
+              {new Date(comment.created_at).toLocaleString()}
+              {comment.updated_at && comment.updated_at !== comment.created_at && 
+                ' (edited)'}
             </span>
           </div>
-          <p className="text-gray-700">{comment.text}</p>
+          <p className="text-gray-700">{comment.content}</p>
         </>
       )}
 
@@ -151,7 +180,7 @@ const ForumComment: React.FC<ForumCommentProps> = ({ comment, onReply, onDelete,
             >
               {showReplyInput ? 'Cancel Reply' : 'Reply'}
             </button>
-            {comment.user === 'me' && (
+            {isOwnComment && (
               <>
                 <button
                   onClick={() => setIsEditing(true)}
@@ -160,9 +189,11 @@ const ForumComment: React.FC<ForumCommentProps> = ({ comment, onReply, onDelete,
                   Edit
                 </button>
                 <button
-                  onClick={() => onDelete(comment.id)}
-                  className="text-red-500 hover:text-red-700 text-sm font-medium focus:outline-none"
+                  onClick={handleDelete}
+                  className="text-red-500 hover:text-red-700 text-sm font-medium focus:outline-none flex items-center"
+                  disabled={isDeleting}
                 >
+                  {isDeleting && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
                   Delete
                 </button>
               </>
@@ -172,21 +203,25 @@ const ForumComment: React.FC<ForumCommentProps> = ({ comment, onReply, onDelete,
       </div>
 
       {showReplyInput && (
-        <form onSubmit={handleReplySubmit} className="mt-3 flex gap-2 items-center">
-          <input
-            className="flex-1 border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
-            placeholder={`Reply to ${comment.user}...`}
+        <form onSubmit={handleReplySubmit} className="mt-3 flex flex-col gap-2">
+          <textarea
+            className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+            placeholder={`Reply to ${authorName}...`}
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
+            rows={2}
             required
           />
-          <button
-            type="submit"
-            className="bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
-            disabled={!replyText.trim()}
-          >
-            Submit
-          </button>
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              className="bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 flex items-center"
+              disabled={!replyText.trim() || isSubmitting}
+            >
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Submit
+            </button>
+          </div>
         </form>
       )}
 
@@ -199,6 +234,7 @@ const ForumComment: React.FC<ForumCommentProps> = ({ comment, onReply, onDelete,
               onReply={onReply}
               onDelete={onDelete}
               onEdit={onEdit}
+              currentUserId={currentUserId}
             />
           ))}
         </div>
@@ -208,199 +244,299 @@ const ForumComment: React.FC<ForumCommentProps> = ({ comment, onReply, onDelete,
 };
 
 // --- Main ForumPage Component ---
-export default function ForumPage() {
-  const [topics, setTopics] = useState<Topic[]>([]);
+export default function ForumPage() {  const [posts, setPosts] = useState<ForumPost[]>([]);
   const [newTitle, setNewTitle] = useState('');
-  const [newContent, setNewContent] = useState('');
-  const [newFile, setNewFile] = useState<File | null>(null);
-  const [selectedTopicIdForComment, setSelectedTopicIdForComment] = useState<number | null>(null);
+  const [newContent, setNewContent] = useState('');  
+  const [selectedPostIdForComment, setSelectedPostIdForComment] = useState<string | null>(null);
   const [topLevelCommentText, setTopLevelCommentText] = useState('');
+  const [postComments, setPostComments] = useState<Record<string, ForumComment[]>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [showCreateFormModal, setShowCreateFormModal] = useState(false);
-  const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
+  const [editingPost, setEditingPost] = useState<ForumPost | null>(null);
+  const { currentUser } = useAuth();
+  const router = useRouter();
 
+  // Load all posts on mount
   useEffect(() => {
-    if (editingTopic) {
-      setNewTitle(editingTopic.title);
-      setNewContent(editingTopic.content);
-      setNewFile(null);
+    const loadPosts = async () => {
+      try {
+        const fetchedPosts = await ForumService.getPosts();
+        setPosts(fetchedPosts);
+      } catch (error) {
+        console.error('Error loading forum posts:', error);
+        toast.error('Failed to load forum posts. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPosts();
+  }, []);
+  // Set up form values when editing a post
+  useEffect(() => {
+    if (editingPost) {
+      setNewTitle(editingPost.title);
+      setNewContent(editingPost.content);
     } else {
       setNewTitle('');
       setNewContent('');
-      setNewFile(null);
     }
-  }, [editingTopic]);
+  }, [editingPost]);
 
+  // Load comments for a post when it's selected
+  useEffect(() => {
+    if (selectedPostIdForComment) {
+      const loadComments = async () => {
+        try {
+          if (!postComments[selectedPostIdForComment]) {
+            const fetchedComments = await ForumService.getCommentsByPostId(selectedPostIdForComment);
+            setPostComments(prev => ({
+              ...prev,
+              [selectedPostIdForComment]: fetchedComments
+            }));
+          }
+        } catch (error) {
+          console.error(`Error loading comments for post ${selectedPostIdForComment}:`, error);
+          toast.error('Failed to load comments. Please try again later.');
+        }
+      };
 
+      loadComments();
+    }
+  }, [selectedPostIdForComment, postComments]);
   /**
-   * Handles the creation of a new forum topic.
+   * Handles the creation of a new forum post.
    * @param e The form submission event.
    */
-  const handleCreateTopic = (e: React.FormEvent) => {
+  const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle.trim() || !newContent.trim()) {
-      return;
-    }
+    if (!newTitle.trim() || !newContent.trim() || isSubmitting) return;
 
-    setTopics(prevTopics => [
-      {
-        id: Date.now(),
+    setIsSubmitting(true);
+    try {
+      const newPost = await ForumService.createPost({
         title: newTitle,
-        content: newContent,
-        fileUrl: newFile ? URL.createObjectURL(newFile) : undefined,
-        fileType: newFile ? newFile.type : undefined,
-        fileName: newFile ? newFile.name : undefined,
-        comments: [],
-        author: 'me',
-        timestamp: Date.now(), // Set timestamp on creation
-      },
-      ...prevTopics
-    ]);
+        content: newContent
+      });
 
-    setNewTitle('');
-    setNewContent('');
-    setNewFile(null);
-    setShowCreateFormModal(false);
+      // Add to local state
+      setPosts(prevPosts => [newPost, ...prevPosts]);
+        // Reset form
+      setNewTitle('');
+      setNewContent('');
+      setShowCreateFormModal(false);
+      
+      toast.success('Post created successfully!');
+    } catch (error) {
+      console.error('Error creating post:', error);
+      toast.error('Failed to create post. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
   /**
-   * Handles updating an existing forum topic.
+   * Handles updating an existing forum post.
    * @param e The form submission event.
    */
-  const handleUpdateTopic = (e: React.FormEvent) => {
+  const handleUpdatePost = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingTopic || !newTitle.trim() || !newContent.trim()) {
-      return;
+    if (!editingPost || !newTitle.trim() || !newContent.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      // Update the post in the database
+      const updatedPost = await ForumService.updatePost(editingPost.id, {
+        title: newTitle,
+        content: newContent
+      });
+
+      // Update local state
+      setPosts(prevPosts => 
+        prevPosts.map(post => post.id === updatedPost.id ? updatedPost : post)
+      );
+        // Reset form
+      setNewTitle('');
+      setNewContent('');
+      setEditingPost(null);
+      setShowCreateFormModal(false);
+      
+      toast.success('Post updated successfully!');
+    } catch (error) {
+      console.error('Error updating post:', error);
+      toast.error('Failed to update post. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setTopics(prevTopics => prevTopics.map(topic => {
-      if (topic.id === editingTopic.id) {
-        return {
-          ...topic,
-          title: newTitle,
-          content: newContent,
-          fileUrl: newFile ? URL.createObjectURL(newFile) : topic.fileUrl,
-          fileType: newFile ? newFile.type : topic.fileType,
-          fileName: newFile ? newFile.name : topic.fileName,
-          // No timestamp update on edit for simplicity, but could add 'lastEdited'
-        };
-      }
-      return topic;
-    }));
-
-    setNewTitle('');
-    setNewContent('');
-    setNewFile(null);
-    setEditingTopic(null);
-    setShowCreateFormModal(false);
   };
 
   /**
-   * Handles initiating the edit process for a topic.
-   * @param topicToEdit The topic object to be edited.
+   * Handles initiating the edit process for a post.
+   * @param postToEdit The post object to be edited.
    */
-  const handleEditTopicClick = (topicToEdit: Topic) => {
-    setEditingTopic(topicToEdit);
+  const handleEditPostClick = (postToEdit: ForumPost) => {
+    setEditingPost(postToEdit);
     setShowCreateFormModal(true);
   };
-
-
   /**
-   * Handles deleting a forum topic.
-   * @param topicIdToDelete The ID of the topic to delete.
+   * Handles deleting a forum post.
+   * @param postIdToDelete The ID of the post to delete.
    */
-  const handleDeleteTopic = (topicIdToDelete: number) => {
-    setTopics(prevTopics => prevTopics.filter(topic => topic.id !== topicIdToDelete));
+  const handleDeletePost = async (postIdToDelete: string) => {
+    try {
+      // Delete from database
+      await ForumService.deletePost(postIdToDelete);
+      
+      // Remove from local state
+      setPosts(prevPosts => prevPosts.filter(post => post.id !== postIdToDelete));
+      
+      toast.success('Post deleted successfully');
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      toast.error('Failed to delete post. Please try again.');
+    }
   };
 
   /**
    * Handles adding a new comment (either top-level or a reply).
    * This function is passed down to ForumComment for nested replies.
-   * @param topicId The ID of the topic the comment belongs to.
+   * @param postId The ID of the post the comment belongs to.
    * @param commentText The text of the comment.
    * @param parentCommentId Optional: The ID of the parent comment if it's a reply.
    */
-  const handleAddComment = (
-    topicId: number,
+  const handleAddComment = async (
+    postId: string,
     commentText: string,
-    parentCommentId: number | null = null
-  ) => {
-    const newComment: Comment = {
-      id: Date.now(),
-      user: 'me',
-      text: commentText,
-      timestamp: Date.now(), // Set timestamp on creation
-      replies: []
-    };
+    parentCommentId: string | null = null
+  ) => {    if (!currentUser) {
+      toast.error('You must be logged in to comment');
+      router.push('/auth/signin');
+      return;
+    }
 
-    setTopics(prevTopics => prevTopics.map(topic => {
-      if (topic.id === topicId) {
+    try {
+      const newComment = await ForumService.createComment({
+        post_id: postId,
+        content: commentText,
+        parent_comment_id: parentCommentId
+      });
+
+      // Add user profile info for display
+      const commentWithProfile = {
+        ...newComment,        user_profile: {
+          username: currentUser.name || currentUser.email || 'Anonymous',
+          avatar_url: undefined // Use undefined to match the type definition
+        },
+        replies: []
+      };
+
+      // Update local state
+      setPostComments(prevComments => {
+        const currentPostComments = prevComments[postId] || [];
+        
         if (parentCommentId) {
+          // It's a reply to another comment
           return {
-            ...topic,
-            comments: addReplyToComment(topic.comments, parentCommentId, newComment)
+            ...prevComments,
+            [postId]: addReplyToComment(currentPostComments, parentCommentId, commentWithProfile)
           };
         } else {
+          // It's a top-level comment
           return {
-            ...topic,
-            comments: [...topic.comments, newComment]
+            ...prevComments,
+            [postId]: [...currentPostComments, commentWithProfile]
           };
         }
-      }
-      return topic;
-    }));
+      });
 
-    if (!parentCommentId) {
-      setTopLevelCommentText('');
-      setSelectedTopicIdForComment(null);
+      // Reset the comment form if it's a top-level comment
+      if (!parentCommentId) {
+        setTopLevelCommentText('');
+      }
+      
+      toast.success('Comment added successfully');
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      toast.error('Failed to add comment. Please try again.');
     }
   };
 
   /**
    * Handles deleting a comment (top-level or nested reply).
-   * @param topicId The ID of the topic the comment belongs to.
+   * @param postId The ID of the post the comment belongs to.
    * @param commentIdToDelete The ID of the comment to delete.
    */
-  const handleDeleteComment = (topicId: number, commentIdToDelete: number) => {
-    setTopics(prevTopics => prevTopics.map(topic => {
-      if (topic.id === topicId) {
+  const handleDeleteComment = async (postId: string, commentIdToDelete: string) => {
+    try {
+      await ForumService.deleteComment(commentIdToDelete);
+      
+      // Update local state
+      setPostComments(prevComments => {
+        if (!prevComments[postId]) return prevComments;
+        
         return {
-          ...topic,
-          comments: removeCommentRecursive(topic.comments, commentIdToDelete)
+          ...prevComments,
+          [postId]: removeCommentRecursive(prevComments[postId], commentIdToDelete)
         };
-      }
-      return topic;
-    }));
+      });
+      
+      toast.success('Comment deleted successfully');
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      toast.error('Failed to delete comment. Please try again.');
+    }
   };
 
   /**
    * Handles editing a comment (top-level or nested reply).
-   * @param topicId The ID of the topic the comment belongs to.
+   * @param postId The ID of the post the comment belongs to.
    * @param commentIdToEdit The ID of the comment to edit.
    * @param newText The new text for the comment.
    */
-  const handleEditComment = (topicId: number, commentIdToEdit: number, newText: string) => {
-    setTopics(prevTopics => prevTopics.map(topic => {
-      if (topic.id === topicId) {
+  const handleEditComment = async (postId: string, commentIdToEdit: string, newText: string) => {
+    try {
+      await ForumService.updateComment(commentIdToEdit, newText);
+      
+      // Update local state
+      setPostComments(prevComments => {
+        if (!prevComments[postId]) return prevComments;
+        
         return {
-          ...topic,
-          comments: updateCommentRecursive(topic.comments, commentIdToEdit, newText)
+          ...prevComments,
+          [postId]: updateCommentRecursive(prevComments[postId], commentIdToEdit, newText)
         };
-      }
-      return topic;
-    }));
+      });
+      
+      toast.success('Comment updated successfully');
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      toast.error('Failed to update comment. Please try again.');
+    }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-[50vh]">
+        <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+        <span className="ml-4 text-xl">Loading forum posts...</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-gray-50 rounded-xl shadow-lg font-sans relative">
-      <div className="flex justify-between items-center mb-8">
+    <div className="max-w-4xl mx-auto p-6 bg-gray-50 rounded-xl shadow-lg font-sans relative">      <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-extrabold text-gray-800 flex-grow text-center pr-[116px]">
           Community Forum
         </h1>
         <button
           onClick={() => {
-            setEditingTopic(null);
+            if (!currentUser) {
+              toast.error('You must be logged in to create posts');
+              router.push('/auth/signin');
+              return;
+            }
+            setEditingPost(null);
             setShowCreateFormModal(true);
           }}
           className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 whitespace-nowrap"
@@ -409,121 +545,107 @@ export default function ForumPage() {
         </button>
       </div>
 
-      {/* Display Forum Topics */}
+      {/* Display Forum Posts */}
       <div className="space-y-6 mb-10">
-        {topics.length > 0 ? (
-          topics.map(topic => (
-            <div key={topic.id} className="bg-white border border-gray-200 rounded-xl p-6 shadow-md hover:shadow-lg transition duration-300 ease-in-out">
-              {/* Topic header with title and delete/edit button */}
+        {posts.length > 0 ? (
+          posts.map(post => (
+            <div key={post.id} className="bg-white border border-gray-200 rounded-xl p-6 shadow-md hover:shadow-lg transition duration-300 ease-in-out">
+              {/* Post header with title and delete/edit button */}
               <div className="flex justify-between items-center mb-3">
-                <h2 className="text-3xl font-bold text-gray-900">{topic.title}</h2>
-                {/* Edit and Delete buttons for topics, only visible to the author */}
-                {topic.author === 'me' && (
+                <h2 className="text-3xl font-bold text-gray-900">{post.title}</h2>
+                {/* Edit and Delete buttons for posts, only visible to the author */}
+                {currentUser && post.user_id === currentUser.id && (
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleEditTopicClick(topic)}
-                      className="text-yellow-600 hover:text-yellow-800 text-sm font-medium focus:outline-none py-1 px-3 border border-yellow-300 rounded-lg"
+                      onClick={() => handleEditPostClick(post)}
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-md text-sm transition duration-200"
                     >
-                      Edit Post
+                      Edit
                     </button>
                     <button
-                      onClick={() => handleDeleteTopic(topic.id)}
-                      className="text-red-500 hover:text-red-700 text-sm font-medium focus:outline-none py-1 px-3 border border-red-300 rounded-lg"
+                      onClick={() => handleDeletePost(post.id)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md text-sm transition duration-200"
                     >
-                      Delete Post
+                      Delete
                     </button>
                   </div>
                 )}
               </div>
 
-              <p className="text-gray-700 text-lg leading-relaxed mb-2">{topic.content}</p>
-              <p className="text-xs text-gray-500 mb-4">
-                Posted on: {new Date(topic.timestamp).toLocaleString()} {/* Display topic timestamp */}
-              </p>
-
-              {/* Attachment Display */}
-              {topic.fileUrl && (
-                <div className="my-4 pt-4 text-center">
-                  {topic.fileType && topic.fileType.startsWith('image/') ? (
-                    <div className="mb-2">
-                        <img
-                            src={topic.fileUrl}
-                            alt="Attached file"
-                            className="max-w-full h-auto rounded-lg shadow-md mx-auto"
-                            style={{ maxHeight: '300px' }}
-                        />
-                    </div>
-                  ) : (
-                    <div className="mb-2 text-gray-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M.07 2A1 1 0 011 1h7a1 1 0 011 1v1h3a1 1 0 011 1v7a1 1 0 01-1 1h-1v3a1 1 0 01-1 1H7a1 1 0 01-1-1v-3H2a1 1 0 01-1-1V2zm7 0H2v7h7V2h-2z" clipRule="evenodd" />
-                        </svg>
-                        Attached File: {topic.fileName || 'Document'}
-                    </div>
-                  )}
-                  <a
-                    href={topic.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium underline transition duration-200"
-                  >
-                    Click to Open Attachment
-                  </a>
-                </div>
-              )}
+              <p className="text-gray-700 text-lg leading-relaxed mb-2">{post.content}</p>
+              <div className="flex justify-between items-center text-xs text-gray-500 mb-4">
+                <span>
+                  Posted by: {post.user_profile?.username || 'Anonymous'}
+                </span>
+                <span>
+                  {new Date(post.created_at).toLocaleString()}
+                  {post.updated_at && post.updated_at !== post.created_at && ' (edited)'}
+                </span>
+              </div>              {/* No attachment display since the database doesn't support it */}
 
               {/* Top-level Comment Section Toggle Button */}
               <div className="flex justify-start mt-4">
                 <button
                   className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-5 rounded-lg border border-gray-300 transition duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
                   onClick={() => {
-                    setSelectedTopicIdForComment(selectedTopicIdForComment === topic.id ? null : topic.id);
+                    setSelectedPostIdForComment(selectedPostIdForComment === post.id ? null : post.id);
                     setTopLevelCommentText('');
                   }}
                 >
-                  {selectedTopicIdForComment === topic.id ? 'Hide Comment' : 'Add Your Comment'}
+                  {selectedPostIdForComment === post.id ? 'Hide Comments' : 'View/Add Comments'}
                 </button>
               </div>
 
-              {/* Top-Level Comment Input Form (conditionally rendered) */}
-              {selectedTopicIdForComment === topic.id && (
-                <form onSubmit={(e) => {
-                  e.preventDefault();
-                  handleAddComment(topic.id, topLevelCommentText);
-                }} className="mt-5 flex gap-3">
-                  <input
-                    className="flex-1 border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                    placeholder="Type your comment..."
-                    value={topLevelCommentText}
-                    onChange={e => setTopLevelCommentText(e.target.value)}
-                    required
-                  />
-                  <button
-                    type="submit"
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg shadow-md transition duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={!topLevelCommentText.trim()}
-                  >
-                    Submit
-                  </button>
-                </form>
-              )}
+              {/* Comments Section (conditionally rendered) */}
+              {selectedPostIdForComment === post.id && (
+                <div className="mt-4">
+                  {/* Top-Level Comment Input Form */}
+                  {currentUser ? (
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      handleAddComment(post.id, topLevelCommentText);
+                    }} className="mt-5 flex gap-3">
+                      <textarea
+                        className="flex-1 border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                        placeholder="Type your comment..."
+                        value={topLevelCommentText}
+                        onChange={e => setTopLevelCommentText(e.target.value)}
+                        rows={2}
+                        required
+                      />
+                      <button
+                        type="submit"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg shadow-md transition duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={!topLevelCommentText.trim()}
+                      >
+                        Submit
+                      </button>
+                    </form>
+                  ) : (
+                    <div className="mt-5 p-3 bg-yellow-50 border border-yellow-300 rounded-lg text-yellow-700">
+                      <p>Please <a href="/auth/signin" className="text-blue-600 hover:text-blue-800 underline">sign in</a> to comment.</p>
+                    </div>
+                  )}
 
-              {/* Display Comments (using recursive ForumComment component) */}
-              <div className="mt-6 space-y-3 pb-4 border-b border-gray-200">
-                {topic.comments.length > 0 ? (
-                  topic.comments.map(c => (
-                    <ForumComment
-                      key={c.id}
-                      comment={c}
-                      onReply={(parentId, text) => handleAddComment(topic.id, text, parentId)}
-                      onDelete={(commentId) => handleDeleteComment(topic.id, commentId)}
-                      onEdit={(commentId, newText) => handleEditComment(topic.id, commentId, newText)}
-                    />
-                  ))
-                ) : (
-                  <p className="text-gray-500 text-center py-4">No comments yet. Be the first to reply!</p>
-                )}
-              </div>
+                  {/* Display Comments */}
+                  <div className="mt-6 space-y-3 pb-4 border-b border-gray-200">
+                    {postComments[post.id]?.length > 0 ? (
+                      postComments[post.id].map(c => (
+                        <ForumComment
+                          key={c.id}
+                          comment={c}
+                          onReply={(parentId, text) => handleAddComment(post.id, text, parentId)}
+                          onDelete={(commentId) => handleDeleteComment(post.id, commentId)}
+                          onEdit={(commentId, newText) => handleEditComment(post.id, commentId, newText)}
+                          currentUserId={currentUser?.id}
+                        />
+                      ))
+                    ) : (
+                      <p className="text-gray-500 text-center py-4">No comments yet. Be the first to reply!</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ))
         ) : (
@@ -533,7 +655,7 @@ export default function ForumPage() {
         )}
       </div>
 
-      {/* Create/Edit Topic Modal (conditionally rendered) */}
+      {/* Create/Edit Post Modal (conditionally rendered) */}
       {showCreateFormModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl p-8 shadow-2xl w-full max-w-lg relative">
@@ -541,51 +663,38 @@ export default function ForumPage() {
             <button
               onClick={() => {
                 setShowCreateFormModal(false);
-                setEditingTopic(null);
-              }}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold"
+                setEditingPost(null);
+              }}              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold"
+              disabled={isSubmitting}
             >
               &times;
             </button>
 
             <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
-              {editingTopic ? 'Edit Discussion Topic' : 'Create a New Discussion Topic'}
+              {editingPost ? 'Edit Discussion Topic' : 'Create a New Discussion Topic'}
             </h2>
-            <form onSubmit={editingTopic ? handleUpdateTopic : handleCreateTopic} className="space-y-5">
+            <form onSubmit={editingPost ? handleUpdatePost : handleCreatePost} className="space-y-5">
               <input
-                className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                placeholder="Topic Title"
+                className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"                placeholder="Topic Title"
                 value={newTitle}
                 onChange={e => setNewTitle(e.target.value)}
                 required
+                disabled={isSubmitting}
               />
               <textarea
-                className="w-full border border-gray-300 rounded-lg p-3 h-32 resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                placeholder="What's on your mind? Share details here..."
+                className="w-full border border-gray-300 rounded-lg p-3 h-32 resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"                placeholder="What's on your mind? Share details here..."
                 value={newContent}
                 onChange={e => setNewContent(e.target.value)}
                 required
+                disabled={isSubmitting}
+                rows={5}
               />
-              <label className="block text-gray-700 font-medium mb-2">
-                Attach Document (Optional):
-                <input
-                  type="file"
-                  onChange={e => setNewFile(e.target.files?.[0] || null)}
-                  className="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-                />
-                {newFile && <span className="text-sm text-gray-600 mt-1 block">Selected: {newFile.name}</span>}
-                {editingTopic && !newFile && editingTopic.fileUrl && (
-                    <span className="text-sm text-gray-500 mt-1 block">
-                        Current attachment: <a href={editingTopic.fileUrl} target="_blank" rel="noopener noreferrer" className="underline">{editingTopic.fileName || 'File'}</a>
-                    </span>
-                )}
-              </label>
               <button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!newTitle.trim() || !newContent.trim()}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"                disabled={!newTitle.trim() || !newContent.trim() || isSubmitting}
               >
-                {editingTopic ? 'Save Changes' : 'Submit New Post'}
+                {isSubmitting && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+                {isSubmitting ? 'Submitting...' : (editingPost ? 'Save Changes' : 'Submit New Post')}
               </button>
             </form>
           </div>
