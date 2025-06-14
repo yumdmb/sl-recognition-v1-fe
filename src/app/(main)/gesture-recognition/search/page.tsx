@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search as SearchIcon, Image, Book } from 'lucide-react';
+import { Search as SearchIcon, PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { toast } from "sonner";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -15,86 +15,250 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { createClient } from '@/utils/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { GestureForm } from '@/components/gesture-recognition/GestureForm';
 
-// Define category types
-interface Category {
-  id: string;
+// Define database-driven types
+interface GestureCategory {
+  id: number;
   name: string;
-  icon: string;
-  count: number;
+  icon: string | null;
+  count?: number;
+}
+
+interface Gesture {
+  id: number;
+  name: string;
+  description: string | null;
+  media_url: string;
+  media_type: 'image' | 'video';
+  language: 'ASL' | 'MSL';
+  category_id: number | null;
 }
 
 const GestureRecognitionSearch: React.FC = () => {
+  const supabase = createClient();
+  const auth = useAuth();
+  const user = auth?.currentUser;
+  const isAdmin = user?.role === 'admin';
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [gestureImage, setGestureImage] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<Gesture[]>([]);
   const [language, setLanguage] = useState<"ASL" | "MSL">("ASL");
   const [activeTab, setActiveTab] = useState("text");
+  const [categories, setCategories] = useState<GestureCategory[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<GestureCategory | null>(null);
+  const [categoryGestures, setCategoryGestures] = useState<Gesture[]>([]);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingGesture, setEditingGesture] = useState<Gesture | null>(null);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  const [deletingGesture, setDeletingGesture] = useState<Gesture | null>(null);
 
-  // Mock categories data
-  const categories: Category[] = [
-    { id: "common", name: "Common Phrases", icon: "👋", count: 42 },
-    { id: "greetings", name: "Greetings", icon: "👋", count: 15 },
-    { id: "questions", name: "Questions", icon: "👋", count: 28 },
-    { id: "emotions", name: "Emotions", icon: "👋", count: 36 },
-    { id: "numbers", name: "Numbers", icon: "👋", count: 20 },
-    { id: "alphabet", name: "Alphabet", icon: "📚", count: 26 },
-  ];
+  const fetchCategories = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('gesture_categories')
+      .select('id, name, icon, gestures(count)');
+
+    if (error) {
+      toast.error("Failed to load categories", { description: error.message });
+    } else {
+      const categoriesWithCounts = data.map(c => ({
+        ...c,
+        count: (c.gestures as any)[0]?.count || 0
+      }));
+      setCategories(categoriesWithCounts);
+    }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
-      toast.error("Search term required", {
-        description: "Please enter a word to search for"
-      });
+      toast.error("Search term required", { description: "Please enter a word to search for" });
       return;
     }
-
     setIsLoading(true);
-
+    setSearchResults([]);
     try {
-      const response = await fetch(`/api/gesture-recognition/search?word=${encodeURIComponent(searchTerm)}&language=${language}`);
-      
-      if (!response.ok) {
-        throw new Error('Search failed');
-      }
+      const { data, error } = await supabase
+        .from('gestures')
+        .select('*')
+        .ilike('name', `%${searchTerm}%`)
+        .eq('language', language);
 
-      const data = await response.json();
-      setGestureImage(data.imageUrl);
-      toast.success("Search complete", {
-        description: `Found gesture image for "${searchTerm}" in ${language}.`
-      });
-    } catch (error) {
-      toast.error("Search failed", {
-        description: "Unable to find the gesture. Please try again."
-      });
+      if (error) throw error;
+
+      setSearchResults(data || []);
+      toast.success(`Found ${data?.length || 0} gestures for "${searchTerm}"`);
+    } catch (error: any) {
+      toast.error("Search failed", { description: error.message });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleCategorySelect = async (category: GestureCategory) => {
+    setSelectedCategory(category);
+    setIsLoading(true);
+    setCategoryGestures([]);
+    try {
+      const { data, error } = await supabase
+        .from('gestures')
+        .select('*')
+        .eq('category_id', category.id)
+        .eq('language', language);
+
+      if (error) throw error;
+
+      setCategoryGestures(data || []);
+      setActiveTab('category'); // Switch tab to show results
+    } catch (error: any) {
+      toast.error(`Failed to load gestures for ${category.name}`, { description: error.message });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFormSuccess = () => {
+    setIsFormOpen(false);
+    setEditingGesture(null);
+    // Refresh data
+    fetchCategories();
+    if (activeTab === 'text' && searchTerm) {
+      handleSearch();
+    } else if (activeTab === 'category' && selectedCategory) {
+      handleCategorySelect(selectedCategory);
+    }
+  };
+
+  const openEditForm = (gesture: Gesture) => {
+    setEditingGesture(gesture);
+    setIsFormOpen(true);
+  };
+
+  const openDeleteAlert = (gesture: Gesture) => {
+    setDeletingGesture(gesture);
+    setIsDeleteAlertOpen(true);
+  };
+
+  const handleDeleteGesture = async () => {
+    if (!deletingGesture) return;
+
+    try {
+      // Delete from gestures table
+      const { error: dbError } = await supabase
+        .from('gestures')
+        .delete()
+        .eq('id', deletingGesture.id);
+
+      if (dbError) throw dbError;
+
+      // Delete from storage
+      const filePath = deletingGesture.media_url.split('/').pop();
+      if (filePath) {
+        await supabase.storage.from('gestures').remove([`public/${filePath}`]);
+      }
+
+      toast.success("Gesture deleted successfully!");
+      handleFormSuccess(); // Re-use success logic to refresh data
+    } catch (error: any) {
+      toast.error("Failed to delete gesture", { description: error.message });
+    } finally {
+      setIsDeleteAlertOpen(false);
+      setDeletingGesture(null);
+    }
+  };
+
+  const renderGestureCard = (gesture: Gesture) => (
+    <Card key={gesture.id} className="overflow-hidden">
+      <CardContent className="p-0">
+        {gesture.media_type === 'image' ? (
+          <img src={gesture.media_url} alt={gesture.name} className="w-full h-48 object-cover" />
+        ) : (
+          <video src={gesture.media_url} controls className="w-full h-48 object-cover" />
+        )}
+      </CardContent>
+      <CardHeader>
+        <CardTitle className="flex justify-between items-center">
+          {gesture.name}
+          {isAdmin && (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={() => openEditForm(gesture)}><Edit className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" onClick={() => openDeleteAlert(gesture)}><Trash2 className="h-4 w-4" /></Button>
+            </div>
+          )}
+        </CardTitle>
+        <CardDescription>{gesture.description || 'No description available.'}</CardDescription>
+      </CardHeader>
+    </Card>
+  );
+
   return (
     <div className="max-w-5xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Sign Language Gestures</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Sign Language Gestures</h1>
+        {isAdmin && (
+          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setEditingGesture(null)}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add New Gesture
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{editingGesture ? 'Edit' : 'Add'} Gesture</DialogTitle>
+                <DialogDescription>
+                  {editingGesture ? 'Update the details of the gesture.' : 'Fill out the form to add a new gesture to the database.'}
+                </DialogDescription>
+              </DialogHeader>
+              <GestureForm
+                gesture={editingGesture}
+                onSuccess={handleFormSuccess}
+                onCancel={() => setIsFormOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-6">
         <TabsList className="grid w-full grid-cols-2 mb-8">
           <TabsTrigger value="text" className="py-3">Search by Text</TabsTrigger>
-          <TabsTrigger value="category" className="py-3">Browse Categories</TabsTrigger>
+          <TabsTrigger value="category" className="py-3" onClick={() => setSelectedCategory(null)}>Browse Categories</TabsTrigger>
         </TabsList>
         
         <TabsContent value="text">
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">Search by Text</CardTitle>
-              <CardDescription>
-                Enter a word or phrase to find corresponding sign language gestures
-              </CardDescription>
+              <CardDescription>Enter a word or phrase to find corresponding sign language gestures</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="searchTerm">Search Term</Label>
-                  <Input 
+                  <Input
                     id="searchTerm"
                     placeholder="e.g., Hello, Thank you, Please"
                     value={searchTerm}
@@ -105,13 +269,8 @@ const GestureRecognitionSearch: React.FC = () => {
                 
                 <div className="space-y-2">
                   <Label htmlFor="language">Sign Language</Label>
-                  <Select 
-                    value={language} 
-                    onValueChange={(val: "ASL" | "MSL") => setLanguage(val)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select language" />
-                    </SelectTrigger>
+                  <Select value={language} onValueChange={(val: "ASL" | "MSL") => setLanguage(val)}>
+                    <SelectTrigger><SelectValue placeholder="Select language" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ASL">American (ASL)</SelectItem>
                       <SelectItem value="MSL">Malaysian (MSL)</SelectItem>
@@ -119,99 +278,83 @@ const GestureRecognitionSearch: React.FC = () => {
                   </Select>
                 </div>
                 
-                <Button 
-                  onClick={handleSearch}
-                  disabled={isLoading}
-                  className="w-full"
-                >
-                  {isLoading ? (
-                    <div className="flex items-center">
-                      <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Searching...
-                    </div>
-                  ) : (
-                    <div className="flex items-center">
-                      <SearchIcon className="h-5 w-5 mr-2" />
-                      Search
-                    </div>
-                  )}
+                <Button onClick={handleSearch} disabled={isLoading} className="w-full">
+                  {isLoading ? 'Searching...' : <><SearchIcon className="h-5 w-5 mr-2" />Search</>}
                 </Button>
               </div>
             </CardContent>
           </Card>
           
-          {gestureImage && (
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>Gesture Result</CardTitle>
-                <CardDescription>
-                  The gesture corresponding to "{searchTerm}" in {language}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center">
-                <img 
-                  src={gestureImage} 
-                  alt={`${searchTerm} in ${language} sign language`} 
-                  className="max-h-60 max-w-full mb-4" 
-                />
-                <p className="text-xl font-bold text-primary mt-2">
-                  {searchTerm}
-                </p>
-              </CardContent>
-            </Card>
+          {searchResults.length > 0 && (
+            <div className="mt-6">
+              <h2 className="text-2xl font-bold mb-4">Search Results</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {searchResults.map(renderGestureCard)}
+              </div>
+            </div>
           )}
         </TabsContent>
         
         <TabsContent value="category">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">Browse by Category</CardTitle>
-              <CardDescription>
-                Explore sign language gestures organized by categories
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="language-cat">Sign Language</Label>
-                  <Select 
-                    value={language} 
-                    onValueChange={(val: "ASL" | "MSL") => setLanguage(val)}
-                  >
-                    <SelectTrigger id="language-cat">
-                      <SelectValue placeholder="Select language" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ASL">American (ASL)</SelectItem>
-                      <SelectItem value="MSL">Malaysian (MSL)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
+          {!selectedCategory ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl">Browse by Category</CardTitle>
+                <CardDescription>Explore sign language gestures organized by categories</CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                   {categories.map(category => (
-                    <Card key={category.id} className="hover:shadow-md hover:border-primary/50 transition-all cursor-pointer">
+                    <Card key={category.id} className="hover:shadow-md hover:border-primary/50 transition-all cursor-pointer" onClick={() => handleCategorySelect(category)}>
                       <CardContent className="p-6 flex flex-col items-center justify-center text-center">
-                        <div className="text-4xl mb-2">{category.icon === "📚" ? "📚" : "👋"}</div>
+                        <div className="text-4xl mb-2">{category.icon || "👋"}</div>
                         <h3 className="text-lg font-semibold mb-1">{category.name}</h3>
                         <p className="text-sm text-gray-400">{category.count} gestures</p>
-                        <Button variant="outline" className="mt-4 hover:bg-primary/10">
-                          Explore
-                        </Button>
                       </CardContent>
                     </Card>
                   ))}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ) : (
+            <div>
+              <Button variant="link" onClick={() => setSelectedCategory(null)} className="mb-4">
+                &larr; Back to Categories
+              </Button>
+              <h2 className="text-2xl font-bold mb-4">{selectedCategory.name} Gestures</h2>
+              {isLoading ? (
+                <p>Loading gestures...</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {categoryGestures.length > 0 ? (
+                    categoryGestures.map(renderGestureCard)
+                  ) : (
+                    <p>No gestures found in this category for the selected language.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the gesture
+              "{deletingGesture?.name}" and its media file.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteGesture}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
 
-export default GestureRecognitionSearch; 
+export default GestureRecognitionSearch;
