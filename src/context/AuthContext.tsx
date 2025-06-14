@@ -20,6 +20,7 @@ export interface User {
 // Define AuthContext interface
 interface AuthContextProps {
   currentUser: User | null;
+  user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
@@ -31,7 +32,7 @@ interface AuthContextProps {
 }
 
 // Create context with initial values
-const AuthContext = createContext<AuthContextProps | null>(null);
+export const AuthContext = createContext<AuthContextProps | null>(null);
 
 // Provider component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -333,7 +334,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <AuthContext.Provider 
       value={{ 
-        currentUser, 
+        currentUser,
+        user: currentUser,
         isAuthenticated, 
         isLoading,
         login, 
