@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +14,7 @@ interface MaterialDialogProps {
   onOpenChange: (open: boolean) => void;
   material: Material | null;
   onMaterialChange: (material: Material | null) => void;
-  onSave: (material: Material) => void;
+  onSave: (material: Material, file?: File) => void;
 }
 
 const MaterialDialog: React.FC<MaterialDialogProps> = ({
@@ -24,13 +24,32 @@ const MaterialDialog: React.FC<MaterialDialogProps> = ({
   onMaterialChange,
   onSave
 }) => {
+  const [file, setFile] = useState<File | undefined>();
+
+  useEffect(() => {
+    // Reset file when dialog opens
+    if (open) {
+      setFile(undefined);
+    }
+  }, [open]);
+
   if (!material) return null;
 
-  const handleFieldChange = (field: keyof Material, value: string) => {
+  const handleFieldChange = (field: keyof Material, value: any) => {
     onMaterialChange({
       ...material,
-      [field]: value
+      [field]: value,
     });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+  const handleSave = () => {
+    onSave(material, file);
   };
 
   return (
@@ -59,38 +78,27 @@ const MaterialDialog: React.FC<MaterialDialogProps> = ({
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="type" className="text-right">Type</Label>
-            <Select 
-              value={material.type}
-              onValueChange={(value) => handleFieldChange('type', value)}
-            >
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pdf">PDF</SelectItem>
-                <SelectItem value="video">Video</SelectItem>
-                <SelectItem value="document">Document</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="fileSize" className="text-right">File Size</Label>
+            <Label htmlFor="file" className="text-right">File</Label>
             <Input
-              id="fileSize"
-              value={material.file_size || ''}
-              onChange={(e) => handleFieldChange('file_size', e.target.value)}
+              id="file"
+              type="file"
+              onChange={handleFileChange}
               className="col-span-3"
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="downloadUrl" className="text-right">Download URL</Label>
-            <Input
-              id="downloadUrl"
-              value={material.download_url}
-              onChange={(e) => handleFieldChange('download_url', e.target.value)}
-              className="col-span-3"
-            />
-          </div>
+          {file && (
+            <div className="grid grid-cols-4 items-center gap-4">
+              <p className="col-span-4 text-sm text-center">Selected: {file.name}</p>
+            </div>
+          )}
+          {!file && material.download_url && (
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Current File</Label>
+                <a href={material.download_url} target="_blank" rel="noopener noreferrer" className="col-span-3 text-blue-500 hover:underline truncate">
+                    {material.file_path || 'View File'}
+                </a>
+            </div>
+          )}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="level" className="text-right">Level</Label>
             <Select 
@@ -125,7 +133,7 @@ const MaterialDialog: React.FC<MaterialDialogProps> = ({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={() => onSave(material)}>Save</Button>
+          <Button onClick={handleSave}>Save</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

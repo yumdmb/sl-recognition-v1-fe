@@ -66,9 +66,11 @@ const MaterialCard: React.FC<MaterialCardProps> = ({ material, isAdmin, onEdit, 
           <span className="text-sm text-gray-500">
             {material.file_size ? `File size: ${material.file_size}` : ''}
           </span>
-          <Button>
-            <FileDown className="mr-2 h-4 w-4" /> Download
-          </Button>
+          <a href={material.download_url} download target="_blank" rel="noopener noreferrer">
+            <Button>
+              <FileDown className="mr-2 h-4 w-4" /> Download
+            </Button>
+          </a>
         </div>
       </CardContent>
       {isAdmin && (

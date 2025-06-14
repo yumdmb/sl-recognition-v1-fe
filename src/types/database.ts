@@ -70,9 +70,10 @@ export interface Database {
           id: string;
           title: string;
           description: string;
-          type: 'pdf' | 'video' | 'document';
-          file_size: string | null;
+          type: string;
+          file_size: number | null;
           download_url: string;
+          file_path: string | null;
           level: 'beginner' | 'intermediate' | 'advanced';
           language: 'ASL' | 'MSL';
           created_by: string | null;
@@ -83,9 +84,10 @@ export interface Database {
           id?: string;
           title: string;
           description: string;
-          type: 'pdf' | 'video' | 'document';
-          file_size?: string | null;
+          type: string;
+          file_size?: number | null;
           download_url: string;
+          file_path?: string | null;
           level: 'beginner' | 'intermediate' | 'advanced';
           language: 'ASL' | 'MSL';
           created_by?: string | null;
@@ -96,9 +98,10 @@ export interface Database {
           id?: string;
           title?: string;
           description?: string;
-          type?: 'pdf' | 'video' | 'document';
-          file_size?: string | null;
+          type?: string;
+          file_size?: number | null;
           download_url?: string;
+          file_path?: string | null;
           level?: 'beginner' | 'intermediate' | 'advanced';
           language?: 'ASL' | 'MSL';
           created_by?: string | null;

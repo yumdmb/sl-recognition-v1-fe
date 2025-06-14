@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useCallback, ReactNode } fr
 import { toast } from "sonner";
 import { useAuth } from './AuthContext';
 import { TutorialService } from '@/lib/services/tutorialService';
-import { MaterialService } from '@/lib/services/materialService';
+import * as MaterialService from '@/lib/services/materialService';
 import { QuizService } from '@/lib/services/quizService';
 import type { 
   TutorialWithProgress, 
@@ -36,8 +36,8 @@ interface LearningContextProps {
   // Materials
   materials: Material[];
   getMaterials: (language?: 'ASL' | 'MSL') => Promise<void>;
-  createMaterial: (material: Database['public']['Tables']['materials']['Insert']) => Promise<void>;
-  updateMaterial: (id: string, updates: Database['public']['Tables']['materials']['Update']) => Promise<void>;
+  createMaterial: (material: Material, file?: File) => Promise<void>;
+  updateMaterial: (id: string, updates: Partial<Omit<Material, 'id'>>, file?: File) => Promise<void>;
   deleteMaterial: (id: string) => Promise<void>;
   
   // Quizzes
@@ -186,7 +186,7 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (!currentUser) return { totalStarted: 0, totalCompleted: 0, completionPercentage: 0 };
     return await TutorialService.getOverallProgress(currentUser.id);
   };  // Materials
-  const getMaterials = useCallback(async (language?: 'ASL' | 'MSL') => {
+  const getMaterials = useCallback(async (language: 'ASL' | 'MSL' = 'MSL') => {
     try {
       setMaterialsLoading(true);
       const data = await MaterialService.getMaterials(language);
@@ -198,13 +198,33 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   }, []);
 
-  const createMaterial = async (material: Database['public']['Tables']['materials']['Insert']) => {
+  const createMaterial = async (material: Material, file?: File) => {
     try {
       setMaterialsLoading(true);
-      const newMaterial = await MaterialService.createMaterial({
-        ...material,
-        created_by: currentUser?.id
-      });
+      let filePath: string | null = material.file_path || null;
+      let downloadUrl: string = material.download_url || '';
+      let fileSize: number | null = material.file_size || null;
+
+      if (file) {
+        const fileName = `${currentUser?.id || 'unknown_user'}/${Date.now()}_${file.name}`;
+        filePath = await MaterialService.uploadMaterialFile(file, fileName);
+        downloadUrl = MaterialService.getMaterialPublicUrl(filePath);
+        fileSize = file.size;
+      }
+
+      // Exclude properties that should not be sent on create
+      const { id, created_at, updated_at, ...insertData } = material;
+
+      const newMaterialData = {
+        ...insertData,
+        created_by: currentUser?.id || null,
+        file_path: filePath,
+        download_url: downloadUrl,
+        file_size: fileSize,
+        type: file?.type || 'link',
+      };
+
+      const newMaterial = await MaterialService.createMaterial(newMaterialData);
       setMaterials(prev => [newMaterial, ...prev]);
       toast.success('Material created successfully');
     } catch (error) {
@@ -214,11 +234,27 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
-  const updateMaterial = async (id: string, updates: Database['public']['Tables']['materials']['Update']) => {
+  const updateMaterial = async (id: string, updates: Partial<Omit<Material, 'id'>>, file?: File) => {
     try {
       setMaterialsLoading(true);
-      const updatedMaterial = await MaterialService.updateMaterial(id, updates);
-      setMaterials(prev => prev.map(m => m.id === id ? updatedMaterial : m));
+      const finalUpdates = { ...updates };
+
+      if (file) {
+        const currentMaterial = materials.find(m => m.id === id);
+        if (currentMaterial?.file_path) {
+          await MaterialService.deleteMaterialFile(currentMaterial.file_path);
+        }
+
+        const fileName = `${currentUser?.id || 'unknown_user'}/${Date.now()}_${file.name}`;
+        const newFilePath = await MaterialService.uploadMaterialFile(file, fileName);
+        finalUpdates.file_path = newFilePath;
+        finalUpdates.download_url = MaterialService.getMaterialPublicUrl(newFilePath);
+        finalUpdates.file_size = file.size;
+        finalUpdates.type = file.type;
+      }
+
+      const updatedMaterial = await MaterialService.updateMaterial(id, finalUpdates);
+      setMaterials(prev => prev.map(m => (m.id === id ? updatedMaterial : m)));
       toast.success('Material updated successfully');
     } catch (error) {
       handleError(error, 'update material');

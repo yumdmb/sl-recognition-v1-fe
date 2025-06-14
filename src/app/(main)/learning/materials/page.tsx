@@ -32,7 +32,7 @@ export default function MaterialsPage() {
   useEffect(() => {
     // Load materials when component mounts or language changes
     getMaterials(language);
-  }, [language]);
+  }, [language, getMaterials]);
 
   // Function to handle adding a new material
   const handleAddMaterial = () => {
@@ -40,40 +40,47 @@ export default function MaterialsPage() {
       id: '',
       title: '',
       description: '',
-      type: 'pdf',
+      type: '',
       file_size: null,
-      download_url: '#',
+      download_url: '',
+      file_path: null,
       level: 'beginner',
       language: language,
       created_by: currentUser?.id || null,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     });
     setEditDialogOpen(true);
   };
 
   // Function to handle editing a material
   const handleEditMaterial = (material: Material) => {
-    setCurrentMaterial({...material});
+    setCurrentMaterial({ ...material });
     setEditDialogOpen(true);
   };
 
   // Function to handle deleting a material
   const handleDeleteMaterial = async (id: string) => {
-    if (confirm('Are you sure you want to delete this material?')) {
+    if (window.confirm('Are you sure you want to delete this material?')) {
       try {
         await deleteFromDB(id);
+        toast.success('Material deleted successfully.');
       } catch (error) {
+        toast.error('Failed to delete material.');
         console.error('Error deleting material:', error);
       }
     }
   };
 
   // Function to save material (add or update)
-  const handleSaveMaterial = async (material: Material) => {
+  const handleSaveMaterial = async (material: Material, file?: File) => {
     // Form validation
-    if (!material.title || !material.description || !material.download_url) {
-      toast.error('Please fill in all required fields');
+    if (!material.title || !material.description) {
+      toast.error('Please fill in the title and description.');
+      return;
+    }
+    if (!material.id && !file) {
+      toast.error('Please select a file to upload.');
       return;
     }
 
@@ -83,25 +90,15 @@ export default function MaterialsPage() {
         await updateMaterial(material.id, {
           title: material.title,
           description: material.description,
-          type: material.type,
-          file_size: material.file_size,
-          download_url: material.download_url,
           level: material.level,
-          language: material.language
-        });
+          language: material.language,
+        }, file);
       } else {
         // Create new material
-        await createMaterial({
-          title: material.title,
-          description: material.description,
-          type: material.type,
-          file_size: material.file_size,
-          download_url: material.download_url,
-          level: material.level,
-          language: material.language
-        });
+        await createMaterial(material, file);
       }
       setEditDialogOpen(false);
+      setCurrentMaterial(null);
     } catch (error) {
       console.error('Error saving material:', error);
     }
