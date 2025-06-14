@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FileDown, FileText, Book, Video, Edit, Trash } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Material } from '@/types/database';
+import { formatBytes } from '@/lib/utils';
 
 interface MaterialCardProps {
   material: Material;
@@ -64,7 +65,7 @@ const MaterialCard: React.FC<MaterialCardProps> = ({ material, isAdmin, onEdit, 
       </CardHeader>
       <CardContent>        <div className="flex justify-between items-center">
           <span className="text-sm text-gray-500">
-            {material.file_size ? `File size: ${material.file_size}` : ''}
+            {material.file_size ? `File size: ${formatBytes(material.file_size)}` : ''}
           </span>
           <a href={material.download_url} download target="_blank" rel="noopener noreferrer">
             <Button>
