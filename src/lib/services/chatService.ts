@@ -1,12 +1,13 @@
 import { createClient } from '@/utils/supabase/client';
-import type { RealtimeChannel } from '@supabase/supabase-js';
+import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 const supabase = createClient();
 
 export interface Chat {
   id: string;
   is_group: boolean;
-  last_message_at: string;  participants: {
+  last_message_at: string;
+  participants: {
     user_id: string;
     user: {
       name: string;
@@ -21,18 +22,34 @@ export interface Message {
   file_url?: string;
   created_at: string;
   is_edited: boolean;
-  reply_to_id?: string;  sender: {
+  reply_to_id?: string;
+  sender: {
     name: string;
   };
 }
 
-export class ChatService {  static async getChats(): Promise<Chat[]> {
+interface UserProfile {
+  id: string;
+  name: string;
+}
+
+export class ChatService {
+  static async getUserProfile(userId: string): Promise<{ data: UserProfile | null, error: any }> {
+    return supabase
+      .from('user_profiles')
+      .select('id, name')
+      .eq('id', userId)
+      .single();
+  }
+
+  static async getChats(): Promise<Chat[]> {
     const { data: chats, error } = await supabase
       .from('chats')
       .select(`
         *,
         participants:chat_participants(
-          user_id,          user:user_profiles(
+          user_id,
+          user:user_profiles(
             name
           )
         )
@@ -42,11 +59,13 @@ export class ChatService {  static async getChats(): Promise<Chat[]> {
     if (error) throw error;
     return chats || [];
   }
+
   static async getMessages(chatId: string): Promise<Message[]> {
     const { data: messages, error } = await supabase
       .from('messages')
       .select(`
-        *,        sender:user_profiles(
+        *,
+        sender:user_profiles(
           name
         )
       `)
@@ -62,12 +81,20 @@ export class ChatService {  static async getChats(): Promise<Chat[]> {
     sender_id: string;
     content: string;
     file_url?: string;
-  }): Promise<void> {
-    const { error } = await supabase
+  }): Promise<Message> {
+    const { data, error } = await supabase
       .from('messages')
-      .insert(params);
+      .insert(params)
+      .select(`
+        *,
+        sender:user_profiles(
+          name
+        )
+      `)
+      .single();
 
     if (error) throw error;
+    return data;
   }
 
   static async markMessagesAsRead(params: {
@@ -112,7 +139,7 @@ export class ChatService {  static async getChats(): Promise<Chat[]> {
 
   static subscribeToMessages(
     chatId: string,
-    callback: (message: Message) => void
+    callback: (payload: RealtimePostgresChangesPayload<{ [key: string]: any }>) => void
   ): RealtimeChannel {
     return supabase
       .channel(`chat:${chatId}`)
@@ -125,7 +152,7 @@ export class ChatService {  static async getChats(): Promise<Chat[]> {
           filter: `chat_id=eq.${chatId}`,
         },
         (payload) => {
-          callback(payload.new as Message);
+          callback(payload);
         }
       )
       .subscribe();

@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { Chat, Message, ChatService } from "@/lib/services/chatService";
+import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { AuthContext } from "@/context/AuthContext";
 import { toast } from "sonner";
 import ChatList from "./ChatList";
@@ -78,24 +79,41 @@ export default function ChatLayout() {
 
   const subscribeToMessages = () => {
     if (!selectedChat) return () => {};
-    
+
     const channel = ChatService.subscribeToMessages(
       selectedChat.id,
-      (newMessage) => {
+      async (payload: RealtimePostgresChangesPayload<{ [key: string]: any }>) => {
+        const newRecord = payload.new as Message;
+
+        // The payload from a subscription doesn't include relational data.
+        // We need to fetch the sender's profile separately.
+        const { data: sender, error } = await ChatService.getUserProfile(newRecord.sender_id);
+
+        if (error) {
+          console.error("Failed to fetch sender profile for new message:", error);
+          return;
+        }
+
+        const newMessage: Message = {
+          ...newRecord,
+          sender: {
+            name: sender?.name || "Unknown User",
+          },
+        };
+
         setMessages((prevMessages) => {
-          // Check if the message already exists to avoid duplicates
           if (prevMessages.some((msg) => msg.id === newMessage.id)) {
             return prevMessages;
           }
           return [...prevMessages, newMessage];
         });
-        
+
         if (newMessage.sender_id !== user?.id) {
           markMessagesAsRead();
         }
       }
     );
-    
+
     return () => {
       channel.unsubscribe();
     };
@@ -118,12 +136,13 @@ export default function ChatLayout() {
     if (!user || !selectedChat) return;
     
     try {
-      await ChatService.sendMessage({
+      const newMessage = await ChatService.sendMessage({
         chat_id: selectedChat.id,
         sender_id: user.id,
         content,
       });
       
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
       await ChatService.updateLastMessageTime(selectedChat.id);
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -137,13 +156,14 @@ export default function ChatLayout() {
     try {
       const fileUrl = await ChatService.uploadFile(file, user.id);
       
-      await ChatService.sendMessage({
+      const newMessage = await ChatService.sendMessage({
         chat_id: selectedChat.id,
         sender_id: user.id,
         content: file.name,
         file_url: fileUrl,
       });
       
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
       await ChatService.updateLastMessageTime(selectedChat.id);
     } catch (error) {
       console.error("Failed to upload file:", error);
