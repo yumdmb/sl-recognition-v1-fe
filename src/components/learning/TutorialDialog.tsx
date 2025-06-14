@@ -59,17 +59,13 @@ const TutorialDialog: React.FC<TutorialDialogProps> = ({
   const handleFetchMetadata = async (url: string) => {
     try {
       const metadata = await fetchMetadata(url);
-      
-      if (metadata) {      // Auto-populate fields if they're empty
+        if (metadata) {      // Auto-populate fields if they're empty
         onTutorialChange({
           ...tutorial,
           title: tutorial.title || metadata.title,
           thumbnail_url: metadata.thumbnail,
-          duration: metadata.duration || tutorial.duration || '0:00',
-        });
-
-        toast.success('Video metadata loaded', {
-          description: 'Title, thumbnail, and duration have been automatically detected.'
+        });        toast.success('Video metadata loaded', {
+          description: 'Title and thumbnail have been automatically detected.'
         });
       }
     } catch (error) {
@@ -176,23 +172,7 @@ const TutorialDialog: React.FC<TutorialDialogProps> = ({
                 <p className="text-xs text-gray-500 mt-1">Auto-detected from YouTube</p>
               </div>
             </div>
-          )}
-
-          {/* Auto-filled duration field */}
-          {tutorial.duration && tutorial.duration !== '0:00' && (
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">Duration</Label>
-              <div className="col-span-3">
-                <Input
-                  value={tutorial.duration}
-                  readOnly
-                  className="bg-gray-50 text-gray-600"
-                  placeholder="Auto-detected from YouTube"
-                />
-                <p className="text-xs text-gray-500 mt-1">Auto-detected from YouTube</p>
-              </div>
-            </div>
-          )}
+          )}          {/* Duration field removed */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="level" className="text-right">Level</Label>
             <Select value={tutorial.level} onValueChange={handleLevelChange}>

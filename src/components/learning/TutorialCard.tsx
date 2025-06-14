@@ -45,12 +45,10 @@ const TutorialCard: React.FC<TutorialCardProps> = ({
 
   return (
     <Card className="overflow-hidden">
-      <div className="relative h-48">
-        <YouTubeVideoPreview
+      <div className="relative h-48">        <YouTubeVideoPreview
           videoUrl={tutorial.video_url}
           title={tutorial.title}
           thumbnailUrl={tutorial.thumbnail_url}
-          duration={tutorial.duration}
           className="h-full"
         />
         
@@ -75,12 +73,7 @@ const TutorialCard: React.FC<TutorialCardProps> = ({
         </CardTitle>
         <CardDescription>{tutorial.description}</CardDescription>
       </CardHeader>
-      
-      <CardContent>
-        <div className="text-sm text-gray-500">
-          Duration: {tutorial.duration}
-        </div>
-      </CardContent>
+        {/* Card content removed - no duration display */}
       
       <CardFooter className="flex justify-between pt-0">
         {isAdmin ? (

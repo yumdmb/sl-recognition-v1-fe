@@ -4,7 +4,7 @@ import { isValidYouTubeUrl } from '@/lib/utils/youtube';
 export interface YouTubeMetadata {
   title: string;
   description: string;
-  duration: string;
+  duration?: string; // Now optional since we don't use it anymore
   thumbnail: string;
   videoId: string;
   originalUrl: string;

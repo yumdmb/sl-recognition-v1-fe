@@ -8,7 +8,6 @@ interface YouTubeVideoPreviewProps {
   videoUrl: string;
   title: string;
   thumbnailUrl?: string | null;
-  duration?: string;
   className?: string;
   autoPlay?: boolean;
 }
@@ -17,7 +16,6 @@ const YouTubeVideoPreview: React.FC<YouTubeVideoPreviewProps> = ({
   videoUrl,
   title,
   thumbnailUrl,
-  duration,
   className = '',
   autoPlay = false
 }) => {
@@ -107,14 +105,7 @@ const YouTubeVideoPreview: React.FC<YouTubeVideoPreviewProps> = ({
             <ExternalLink className="h-6 w-6" />
           </button>
         </div>
-      </div>
-
-      {/* Duration badge */}
-      {duration && duration !== '0:00' && (
-        <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
-          {duration}
-        </div>
-      )}
+      </div>      {/* Duration badge removed */}
 
       {/* YouTube logo */}
       <div className="absolute bottom-2 left-2 bg-red-600 text-white text-xs px-2 py-1 rounded flex items-center">

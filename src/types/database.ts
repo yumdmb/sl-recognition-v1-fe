@@ -27,15 +27,13 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
-      };
-      tutorials: {
+      };      tutorials: {
         Row: {
           id: string;
           title: string;
           description: string;
           thumbnail_url: string | null;
           video_url: string;
-          duration: string;
           level: 'beginner' | 'intermediate' | 'advanced';
           language: 'ASL' | 'MSL';
           created_by: string | null;
@@ -48,7 +46,6 @@ export interface Database {
           description: string;
           thumbnail_url?: string | null;
           video_url: string;
-          duration: string;
           level: 'beginner' | 'intermediate' | 'advanced';
           language: 'ASL' | 'MSL';
           created_by?: string | null;
@@ -61,7 +58,6 @@ export interface Database {
           description?: string;
           thumbnail_url?: string | null;
           video_url?: string;
-          duration?: string;
           level?: 'beginner' | 'intermediate' | 'advanced';
           language?: 'ASL' | 'MSL';
           created_by?: string | null;

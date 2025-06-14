@@ -3,7 +3,7 @@
 export interface YouTubeVideoInfo {
   title: string;
   description: string;
-  duration: string;
+  duration?: string; // Now optional since we don't use it anymore
   thumbnail: string;
   videoId: string;
 }

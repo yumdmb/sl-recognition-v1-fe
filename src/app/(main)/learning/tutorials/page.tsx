@@ -50,7 +50,6 @@ export default function TutorialsPage() {
       description: '',
       thumbnail_url: null,
       video_url: '',
-      duration: '0:00',
       level: 'beginner',
       language: language,
       created_by: currentUser?.id || null,
@@ -100,25 +99,21 @@ export default function TutorialsPage() {
 
     setIsSaving(true);
     try {
-      if (tutorial.id) {
-        // Update existing tutorial
+      if (tutorial.id) {        // Update existing tutorial
         await updateTutorial(tutorial.id, {
           title: tutorial.title,
           description: tutorial.description,
           thumbnail_url: tutorial.thumbnail_url,
           video_url: tutorial.video_url,
-          duration: tutorial.duration,
           level: tutorial.level,
           language: tutorial.language
         });
-      } else {
-        // Create new tutorial
+      } else {        // Create new tutorial
         await createTutorial({
           title: tutorial.title,
           description: tutorial.description,
           thumbnail_url: tutorial.thumbnail_url,
           video_url: tutorial.video_url,
-          duration: tutorial.duration,
           level: tutorial.level,
           language: tutorial.language
         });
