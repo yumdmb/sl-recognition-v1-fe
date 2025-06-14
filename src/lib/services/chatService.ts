@@ -88,7 +88,7 @@ export class ChatService {  static async getChats(): Promise<Chat[]> {
 
     const { error } = await supabase
       .from('message_status')
-      .upsert(messagesToMark);
+      .upsert(messagesToMark, { onConflict: 'message_id, user_id' });
 
     if (error) throw error;
   }
