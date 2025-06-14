@@ -6,12 +6,10 @@ const supabase = createClient();
 export interface Chat {
   id: string;
   is_group: boolean;
-  last_message_at: string;
-  participants: {
+  last_message_at: string;  participants: {
     user_id: string;
     user: {
-      full_name: string;
-      avatar_url?: string;
+      name: string;
     };
   }[];
 }
@@ -23,24 +21,19 @@ export interface Message {
   file_url?: string;
   created_at: string;
   is_edited: boolean;
-  reply_to_id?: string;
-  sender: {
-    full_name: string;
-    avatar_url?: string;
+  reply_to_id?: string;  sender: {
+    name: string;
   };
 }
 
-export class ChatService {
-  static async getChats(): Promise<Chat[]> {
+export class ChatService {  static async getChats(): Promise<Chat[]> {
     const { data: chats, error } = await supabase
       .from('chats')
       .select(`
         *,
         participants:chat_participants(
-          user_id,
-          user:users(
-            full_name,
-            avatar_url
+          user_id,          user:user_profiles(
+            name
           )
         )
       `)
@@ -49,15 +42,12 @@ export class ChatService {
     if (error) throw error;
     return chats || [];
   }
-
   static async getMessages(chatId: string): Promise<Message[]> {
     const { data: messages, error } = await supabase
       .from('messages')
       .select(`
-        *,
-        sender:users(
-          full_name,
-          avatar_url
+        *,        sender:user_profiles(
+          name
         )
       `)
       .eq('chat_id', chatId)
@@ -140,34 +130,21 @@ export class ChatService {
       )
       .subscribe();
   }
-
   static async createChat(params: {
     user_ids: string[];
     is_group: boolean;
   }): Promise<Chat> {
-    const { data: chat, error: chatError } = await supabase
-      .from('chats')
-      .insert({
-        is_group: params.is_group,
-        last_message_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
+    const { data, error } = await supabase.rpc('create_chat_with_participants', {
+      user_ids: params.user_ids,
+      is_group: params.is_group,
+    });
 
-    if (chatError) throw chatError;
+    if (error) {
+      console.error('Error creating chat:', error);
+      throw error;
+    }
 
-    const participants = params.user_ids.map((userId) => ({
-      chat_id: chat.id,
-      user_id: userId,
-    }));
-
-    const { error: participantsError } = await supabase
-      .from('chat_participants')
-      .insert(participants);
-
-    if (participantsError) throw participantsError;
-
-    return chat;
+    return data as Chat;
   }
 
   static async updateLastMessageTime(chatId: string): Promise<void> {
