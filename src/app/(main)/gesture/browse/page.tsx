@@ -19,14 +19,6 @@ export default function GestureBrowse() {
     userRole
   } = useGestureContributions(filters);
 
-  // Ensure that the status filter is always set to 'approved' for this page
-  useEffect(() => {
-    setFilters(prevFilters => ({
-      ...prevFilters,
-      status: 'approved'
-    }));
-  }, []);
-
   return (
     <div className="container py-6">
       <Toaster />

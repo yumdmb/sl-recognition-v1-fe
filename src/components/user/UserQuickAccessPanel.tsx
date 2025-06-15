@@ -2,28 +2,46 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import Link from 'next/link';
+import { Video, BookOpen, PlusSquare } from 'lucide-react';
 
 interface UserQuickAccessPanelProps {
   userRole: 'non-deaf' | 'deaf';
 }
 
 export const UserQuickAccessPanel: React.FC<UserQuickAccessPanelProps> = ({ userRole }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-    <Card>
-      <CardContent className="p-6">
-        <h3 className="text-lg font-medium mb-2">Recognize Sign Language</h3>
-        <p className="text-gray-500 mb-4">Upload images to identify signs</p>
-        <Button className="w-full">Start Recognition</Button>
-      </CardContent>
-    </Card>
-    
-    <Card>
-      <CardContent className="p-6">
-        <h3 className="text-lg font-medium mb-2">Continue Learning</h3>
-        <p className="text-gray-500 mb-4">Resume your sign language lessons</p>
-        <Button className="w-full">Go to Lessons</Button>
-      </CardContent>
-    </Card>
-  </div>
+  <Card>
+    <CardContent className="p-6">
+      <h3 className="text-lg font-medium mb-4">Quick Access</h3>
+      <div className="space-y-4">
+        <Link href="/gesture-recognition/upload">
+          <div className="flex items-center p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 ease-in-out transform hover:scale-105">
+            <Video className="h-6 w-6 mr-4 text-signlang-primary" />
+            <div>
+              <p className="font-semibold">Recognize Gesture</p>
+              <p className="text-sm text-muted-foreground">Translate sign language from a video or your camera.</p>
+            </div>
+          </div>
+        </Link>
+        <Link href="/learning/tutorials">
+          <div className="flex items-center p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 ease-in-out transform hover:scale-105">
+            <BookOpen className="h-6 w-6 mr-4 text-signlang-primary" />
+            <div>
+              <p className="font-semibold">Tutorials</p>
+              <p className="text-sm text-muted-foreground">Learn new signs and improve your skills.</p>
+            </div>
+          </div>
+        </Link>
+        <Link href="/gesture/submit">
+          <div className="flex items-center p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 ease-in-out transform hover:scale-105">
+            <PlusSquare className="h-6 w-6 mr-4 text-signlang-primary" />
+            <div>
+              <p className="font-semibold">Contribute New Gesture</p>
+              <p className="text-sm text-muted-foreground">Help expand our gesture library by contributing.</p>
+            </div>
+          </div>
+        </Link>
+      </div>
+    </CardContent>
+  </Card>
 );
