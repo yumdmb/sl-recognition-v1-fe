@@ -4,14 +4,14 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash } from 'lucide-react';
-import { QuizSet } from '@/data/contentData';
+import { QuizSetWithProgress } from '@/types/database';
 
 interface QuizCardProps {
-  quizSet: QuizSet;
+  quizSet: QuizSetWithProgress;
   isAdmin: boolean;
   onStartQuiz: (setId: string) => void;
   onEditQuestions: (setId: string) => void;
-  onEditQuizSet: (quizSet: QuizSet) => void;
+  onEditQuizSet: (quizSet: QuizSetWithProgress) => void;
   onDeleteQuizSet: (id: string) => void;
 }
 
@@ -30,29 +30,34 @@ const QuizCard: React.FC<QuizCardProps> = ({
         <CardDescription>{quizSet.description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 text-sm text-gray-500">
-          {quizSet.questionCount} questions
+        <div className="text-sm text-gray-500">
+          <p>{quizSet.questionCount} questions · {quizSet.language}</p>
+          {quizSet.progress && (
+            <p className="mt-1">
+              Last score: {quizSet.progress.score}/{quizSet.progress.total_questions} ({Math.round((quizSet.progress.score / quizSet.progress.total_questions) * 100)}%)
+            </p>
+          )}
         </div>
-        <Button 
-          onClick={() => onStartQuiz(quizSet.id)} 
-          className="bg-primary hover:bg-primary/90"
-        >
-          Start Quiz
-        </Button>
       </CardContent>
-      {isAdmin && (
-        <CardFooter className="flex justify-end space-x-2 pt-0">
-          <Button variant="outline" size="sm" onClick={() => onEditQuestions(quizSet.id)}>
-            <Edit className="h-4 w-4 mr-2" /> Edit Questions
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => onEditQuizSet(quizSet)}>
-            <Edit className="h-4 w-4 mr-2" /> Edit Details
-          </Button>
-          <Button variant="destructive" size="sm" onClick={() => onDeleteQuizSet(quizSet.id)}>
-            <Trash className="h-4 w-4 mr-2" /> Delete
-          </Button>
-        </CardFooter>
-      )}
+      <CardFooter className="flex justify-end gap-2">
+        {isAdmin && (
+          <>
+            <Button size="sm" variant="outline" onClick={() => onEditQuizSet(quizSet)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit Set
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => onEditQuestions(quizSet.id)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit Questions
+            </Button>
+            <Button size="sm" variant="destructive" onClick={() => onDeleteQuizSet(quizSet.id)}>
+              <Trash className="mr-2 h-4 w-4" />
+              Delete
+            </Button>
+          </>
+        )}
+        <Button size="sm" onClick={() => onStartQuiz(quizSet.id)}>Start Quiz</Button>
+      </CardFooter>
     </Card>
   );
 };

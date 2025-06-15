@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react';
-import { Material } from '@/data/contentData';
+import { Material } from '@/types/database';
 import MaterialCard from './MaterialCard';
 
 interface MaterialGridProps {

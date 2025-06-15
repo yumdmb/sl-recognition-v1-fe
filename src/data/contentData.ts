@@ -5,7 +5,6 @@ export interface Tutorial {
   description: string;
   thumbnailUrl: string;
   videoUrl: string;
-  duration: string;
   level: 'beginner' | 'intermediate' | 'advanced';
   progress?: number;
   language: 'ASL' | 'MSL';

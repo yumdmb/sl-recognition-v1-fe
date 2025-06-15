@@ -17,7 +17,7 @@ const features = [
   },
   {
     icon: <Users className="h-10 w-10 text-signlang-primary mb-4" />,
-    title: 'Word Contributions',
+    title: 'Gesture Contributions',
     description: 'Submit and explore sign language words from different regions and cultures.',
   },
 ];
