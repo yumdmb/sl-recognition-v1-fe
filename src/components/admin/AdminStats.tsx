@@ -2,52 +2,53 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, FileCheck } from "lucide-react";
+import { Users, Ear, EarOff } from "lucide-react";
 
 interface AdminStatsProps {
   totalUsers: number;
-  pendingVerifications: number;
+  deafUsers: number;
+  nonDeafUsers: number;
 }
 
-export const AdminStats: React.FC<AdminStatsProps> = ({ 
-  totalUsers, 
-  pendingVerifications 
+export const AdminStats: React.FC<AdminStatsProps> = ({
+  totalUsers,
+  deafUsers,
+  nonDeafUsers,
 }) => {
-  const stats = [
-    {
-      title: "Total Users",
-      value: totalUsers.toString(),
-      icon: <Users className="h-5 w-5" />,
-      change: "+12% from last month",
-      color: "bg-blue-100 text-blue-700"
-    },
-    {
-      title: "Pending Verifications",
-      value: pendingVerifications.toString(),
-      icon: <FileCheck className="h-5 w-5" />,
-      change: pendingVerifications > 0 ? "Requires attention" : "All verified",
-      color: pendingVerifications > 0 ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"
-    },
-  ];
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-      {stats.map((stat, index) => (
-        <Card key={index}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                <p className="text-2xl font-bold">{stat.value}</p>
-                <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
-              </div>
-              <div className={`p-2 rounded-full ${stat.color}`}>
-                {stat.icon}
-              </div>
+    <Card>
+      <CardContent className="p-6">
+        <h3 className="text-lg font-medium mb-4">User Statistics</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 rounded-full bg-blue-100 text-blue-700">
+              <Users className="h-6 w-6" />
             </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+            <div>
+              <p className="text-2xl font-bold">{totalUsers}</p>
+              <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="p-3 rounded-full bg-purple-100 text-purple-700">
+              <Ear className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{deafUsers}</p>
+              <p className="text-sm font-medium text-muted-foreground">Deaf Users</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="p-3 rounded-full bg-pink-100 text-pink-700">
+              <EarOff className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{nonDeafUsers}</p>
+              <p className="text-sm font-medium text-muted-foreground">Non-Deaf Users</p>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

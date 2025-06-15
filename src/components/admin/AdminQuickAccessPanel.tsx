@@ -7,12 +7,10 @@ import { Upload, Database, Search, BookOpen } from 'lucide-react';
 
 interface QuickAccessPanelProps {
   userRole: string;
-  pendingVerifications: number;
 }
 
 export const AdminQuickAccessPanel: React.FC<QuickAccessPanelProps> = ({
   userRole,
-  pendingVerifications
 }) => (
   <Card>
     <CardContent className="p-6">
