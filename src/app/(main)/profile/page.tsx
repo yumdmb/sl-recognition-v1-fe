@@ -59,7 +59,7 @@ export default function ProfilePage() {
                  ) : (
                    <div className="flex items-center gap-2">
                      <p className="text-lg text-gray-600">Not yet assessed</p>
-                     <Button size="sm" onClick={() => router.push('/proficiency-test')}>
+                     <Button size="sm" onClick={() => router.push('/proficiency-test/select')}>
                        Take Test
                      </Button>
                    </div>

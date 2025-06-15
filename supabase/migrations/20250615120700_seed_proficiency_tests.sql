@@ -1,3 +1,6 @@
+-- Clear existing proficiency test data to avoid duplicates
+DELETE FROM public.proficiency_tests;
+
 -- Seed data for Proficiency Tests
 
 -- American Sign Language Test
@@ -40,15 +43,45 @@ asl_q3 AS (
   INSERT INTO public.proficiency_test_questions (test_id, question_text, order_index)
   SELECT id, 'Facial expressions in ASL are primarily used for:', 3 FROM asl_test
   RETURNING id
+),
+asl_q3_choices AS (
+  INSERT INTO public.proficiency_test_question_choices (question_id, choice_text, is_correct)
+  SELECT id, 'Grammar and tone', true FROM asl_q3
+  UNION ALL
+  SELECT id, 'Showing emotion only', false FROM asl_q3
+  UNION ALL
+  SELECT id, 'Indicating a question only', false FROM asl_q3
+  UNION ALL
+  SELECT id, 'They are not important', false FROM asl_q3
+),
+asl_q4 AS (
+  INSERT INTO public.proficiency_test_questions (test_id, question_text, order_index)
+  SELECT id, 'Which of these is a common way to ask a "WH-" question (Who, What, Where, etc.) in ASL?', 4 FROM asl_test
+  RETURNING id
+),
+asl_q4_choices AS (
+  INSERT INTO public.proficiency_test_question_choices (question_id, choice_text, is_correct)
+  SELECT id, 'Furrowed eyebrows and a slight head tilt.', true FROM asl_q4
+  UNION ALL
+  SELECT id, 'Raised eyebrows.', false FROM asl_q4
+  UNION ALL
+  SELECT id, 'A flat facial expression.', false FROM asl_q4
+  UNION ALL
+  SELECT id, 'Smiling widely.', false FROM asl_q4
+),
+asl_q5 AS (
+  INSERT INTO public.proficiency_test_questions (test_id, question_text, order_index)
+  SELECT id, 'The general sign for "time" in ASL involves tapping:', 5 FROM asl_test
+  RETURNING id
 )
 INSERT INTO public.proficiency_test_question_choices (question_id, choice_text, is_correct)
-SELECT id, 'Grammar and tone', true FROM asl_q3
+SELECT id, 'The wrist', true FROM asl_q5
 UNION ALL
-SELECT id, 'Showing emotion only', false FROM asl_q3
+SELECT id, 'The forehead', false FROM asl_q5
 UNION ALL
-SELECT id, 'Indicating a question only', false FROM asl_q3
+SELECT id, 'The chin', false FROM asl_q5
 UNION ALL
-SELECT id, 'They are not important', false FROM asl_q3;
+SELECT id, 'The shoulder', false FROM asl_q5;
 
 
 -- Malaysian Sign Language Test
@@ -91,12 +124,42 @@ bim_q3 AS (
   INSERT INTO public.proficiency_test_questions (test_id, question_text, order_index)
   SELECT id, 'BIM is a complete and natural language with its own:', 3 FROM bim_test
   RETURNING id
+),
+bim_q3_choices AS (
+  INSERT INTO public.proficiency_test_question_choices (question_id, choice_text, is_correct)
+  SELECT id, 'Grammar, syntax, and vocabulary', true FROM bim_q3
+  UNION ALL
+  SELECT id, 'Alphabet only', false FROM bim_q3
+  UNION ALL
+  SELECT id, 'Gestures borrowed from other languages', false FROM bim_q3
+  UNION ALL
+  SELECT id, 'Set of pictures', false FROM bim_q3
+),
+bim_q4 AS (
+  INSERT INTO public.proficiency_test_questions (test_id, question_text, order_index)
+  SELECT id, 'The sign for "Maaf" (Sorry) in BIM involves:', 4 FROM bim_test
+  RETURNING id
+),
+bim_q4_choices AS (
+  INSERT INTO public.proficiency_test_question_choices (question_id, choice_text, is_correct)
+  SELECT id, 'A closed fist rubbing the chest in a circular motion.', true FROM bim_q4
+  UNION ALL
+  SELECT id, 'Tapping the chin.', false FROM bim_q4
+  UNION ALL
+  SELECT id, 'Waving both hands.', false FROM bim_q4
+  UNION ALL
+  SELECT id, 'Clapping hands once.', false FROM bim_q4
+),
+bim_q5 AS (
+  INSERT INTO public.proficiency_test_questions (test_id, question_text, order_index)
+  SELECT id, 'How do you sign "Di mana?" (Where?) in BIM?', 5 FROM bim_test
+  RETURNING id
 )
 INSERT INTO public.proficiency_test_question_choices (question_id, choice_text, is_correct)
-SELECT id, 'Grammar, syntax, and vocabulary', true FROM bim_q3
+SELECT id, 'Shaking an index finger side-to-side with a questioning look.', true FROM bim_q5
 UNION ALL
-SELECT id, 'Alphabet only', false FROM bim_q3
+SELECT id, 'Pointing to the ground.', false FROM bim_q5
 UNION ALL
-SELECT id, 'Gestures borrowed from other languages', false FROM bim_q3
+SELECT id, 'Making a circle with both hands.', false FROM bim_q5
 UNION ALL
-SELECT id, 'Set of pictures', false FROM bim_q3;
+SELECT id, 'Tapping the nose.', false FROM bim_q5;

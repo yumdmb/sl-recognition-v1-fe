@@ -22,7 +22,7 @@ const ProficiencyTestPrompt: React.FC<ProficiencyTestPromptProps> = ({ isOpen, o
   const router = useRouter();
 
   const handleTakeTest = () => {
-    router.push('/proficiency-test');
+    router.push('/proficiency-test/select');
   };
 
   return (
