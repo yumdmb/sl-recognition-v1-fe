@@ -6,11 +6,16 @@ import { useAuth } from '@/context/AuthContext';
 import { GestureContribution, GestureContributionFilters } from '@/types/gestureContributions';
 import { GestureContributionService } from '@/lib/supabase/gestureContributions';
 
-export function useGestureContributions(filters?: GestureContributionFilters) {
+export function useGestureContributions(initialFilters?: GestureContributionFilters) {
   const [contributions, setContributions] = useState<GestureContribution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { currentUser } = useAuth();
+  const [filters, setFilters] = useState<GestureContributionFilters | undefined>(initialFilters);
+
+  const updateFilters = useCallback((newFilters: Partial<GestureContributionFilters>) => {
+    setFilters(prevFilters => ({ ...prevFilters, ...newFilters }));
+  }, []);
 
   const loadContributions = useCallback(async () => {
     if (!currentUser && !filters?.status) {
@@ -130,7 +135,7 @@ export function useGestureContributions(filters?: GestureContributionFilters) {
     }
   };
 
-  const refreshContributions = useCallback(() => { // Also wrap refreshContributions if it's a dependency elsewhere
+  const refreshContributions = useCallback(() => {
     loadContributions();
   }, [loadContributions]);
 
@@ -143,5 +148,7 @@ export function useGestureContributions(filters?: GestureContributionFilters) {
     handleReject,
     handleDelete,
     refreshContributions,
+    filters,
+    updateFilters,
   };
 }
