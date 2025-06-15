@@ -13,6 +13,7 @@ export interface User {
   name: string;
   email: string;
   role: 'non-deaf' | 'admin' | 'deaf';
+  proficiency_level: 'Beginner' | 'Intermediate' | 'Advanced' | null;
   isVerified?: boolean;
   email_confirmed_at?: string;
 }
@@ -52,6 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name: profile.name,
           email: profile.email,
           role: profile.role,
+          proficiency_level: profile.proficiency_level,
           isVerified: !!supabaseUser.email_confirmed_at,
           email_confirmed_at: supabaseUser.email_confirmed_at
         };
@@ -70,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       name: metadata.name || metadata.full_name || supabaseUser.email?.split('@')[0] || 'User',
       email: supabaseUser.email || '',
       role: (metadata.role as 'non-deaf' | 'admin' | 'deaf') || 'non-deaf',
+      proficiency_level: null, // Fallback doesn't have proficiency level
       isVerified: !!supabaseUser.email_confirmed_at,
       email_confirmed_at: supabaseUser.email_confirmed_at
     };
