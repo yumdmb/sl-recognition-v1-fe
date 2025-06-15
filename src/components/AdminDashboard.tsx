@@ -4,9 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { User } from '@/context/AuthContext';
 import { AdminStats } from '@/components/admin/AdminStats';
 import { AdminQuickAccessPanel } from '@/components/admin/AdminQuickAccessPanel';
-import { AdminNotificationCenter } from '@/components/admin/AdminNotificationCenter';
-import { AdminActivitySummary } from '@/components/admin/AdminActivitySummary';
-import { AdminProgressChart } from '@/components/admin/AdminProgressChart';
+import { motion } from 'framer-motion';
 
 const AdminDashboard: React.FC = () => {
   const [totalUsers, setTotalUsers] = useState(0);
@@ -24,21 +22,51 @@ const AdminDashboard: React.FC = () => {
       setPendingVerifications(unverifiedUsers.length);
     }
   }, []);
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        duration: 0.5,
+      },
+    },
+  };
+
   return (
-    <div className="space-y-6">
-      <h2 className="text-3xl font-bold">Admin Dashboard</h2>
+    <motion.div
+      className="space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <motion.h2
+        className="text-3xl font-bold"
+        variants={itemVariants}
+      >
+        Admin Dashboard
+      </motion.h2>
       
-      <AdminStats totalUsers={totalUsers} pendingVerifications={pendingVerifications} />
+      <motion.div variants={itemVariants}>
+        <AdminStats totalUsers={totalUsers} pendingVerifications={pendingVerifications} />
+      </motion.div>
       
-      <AdminQuickAccessPanel userRole="admin" pendingVerifications={pendingVerifications} />
+      <motion.div variants={itemVariants}>
+        <AdminQuickAccessPanel userRole="admin" pendingVerifications={pendingVerifications} />
+      </motion.div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AdminNotificationCenter userRole="admin" pendingVerifications={pendingVerifications} />
-        <AdminActivitySummary userRole="admin" />
-      </div>
-      
-      <AdminProgressChart userRole="admin" />
-    </div>
+    </motion.div>
   );
 };
 

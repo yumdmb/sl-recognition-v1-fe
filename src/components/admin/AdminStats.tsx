@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, FileCheck, AlertTriangle, BarChart } from "lucide-react";
+import { Users, FileCheck } from "lucide-react";
 
 interface AdminStatsProps {
   totalUsers: number;
@@ -28,20 +28,6 @@ export const AdminStats: React.FC<AdminStatsProps> = ({
       change: pendingVerifications > 0 ? "Requires attention" : "All verified",
       color: pendingVerifications > 0 ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"
     },
-    {
-      title: "System Alerts",
-      value: "2",
-      icon: <AlertTriangle className="h-5 w-5" />,
-      change: "Requires attention",
-      color: "bg-red-100 text-red-700"
-    },
-    {
-      title: "Recognition Accuracy",
-      value: "94.7%",
-      icon: <BarChart className="h-5 w-5" />,
-      change: "+1.2% this week",
-      color: "bg-green-100 text-green-700"
-    }
   ];
 
   return (

@@ -3,41 +3,58 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import Link from 'next/link';
+import { Upload, Database, Search, BookOpen } from 'lucide-react';
 
 interface QuickAccessPanelProps {
   userRole: string;
   pendingVerifications: number;
 }
 
-export const AdminQuickAccessPanel: React.FC<QuickAccessPanelProps> = ({ 
-  userRole, 
-  pendingVerifications 
+export const AdminQuickAccessPanel: React.FC<QuickAccessPanelProps> = ({
+  userRole,
+  pendingVerifications
 }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-    <Card>
-      <CardContent className="p-6">
-        <h3 className="text-lg font-medium mb-2">Verify User Accounts</h3>
-        <p className="text-gray-500 mb-4">
-          {pendingVerifications > 0 
-            ? `${pendingVerifications} user${pendingVerifications === 1 ? '' : 's'} awaiting verification`
-            : 'No pending verifications'}
-        </p>
-        <Link href="/admin">
-          <button className="bg-signlang-primary text-gray-900 px-4 py-2 rounded w-full">
-            Manage Accounts
-          </button>
+  <Card>
+    <CardContent className="p-6">
+      <h3 className="text-lg font-medium mb-4">Quick Access</h3>
+      <div className="space-y-4">
+        <Link href="/gesture/view">
+          <div className="flex items-center p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 ease-in-out transform hover:scale-105">
+            <Upload className="h-6 w-6 mr-4 text-signlang-primary" />
+            <div>
+              <p className="font-semibold">Manage Submissions</p>
+              <p className="text-sm text-muted-foreground">Review and approve gesture contributions.</p>
+            </div>
+          </div>
         </Link>
-      </CardContent>
-    </Card>
-    
-    <Card>
-      <CardContent className="p-6">
-        <h3 className="text-lg font-medium mb-2">Word Contributions</h3>
-        <p className="text-gray-500 mb-4">Review submitted sign language words</p>
-        <button className="bg-signlang-primary text-gray-900 px-4 py-2 rounded w-full">
-          Review Words
-        </button>
-      </CardContent>
-    </Card>
-  </div>
+        <Link href="/avatar/admin-database">
+          <div className="flex items-center p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 ease-in-out transform hover:scale-105">
+            <Database className="h-6 w-6 mr-4 text-signlang-primary" />
+            <div>
+              <p className="font-semibold">Avatar Database</p>
+              <p className="text-sm text-muted-foreground">Manage the avatar assets and animations.</p>
+            </div>
+          </div>
+        </Link>
+        <Link href="/gesture-recognition/search">
+          <div className="flex items-center p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 ease-in-out transform hover:scale-105">
+            <Search className="h-6 w-6 mr-4 text-signlang-primary" />
+            <div>
+              <p className="font-semibold">Add New Gesture</p>
+              <p className="text-sm text-muted-foreground">Search for a word to add a new gesture.</p>
+            </div>
+          </div>
+        </Link>
+        <Link href="/learning/tutorials">
+          <div className="flex items-center p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 ease-in-out transform hover:scale-105">
+            <BookOpen className="h-6 w-6 mr-4 text-signlang-primary" />
+            <div>
+              <p className="font-semibold">Manage Learning</p>
+              <p className="text-sm text-muted-foreground">Create and edit learning materials and tutorials.</p>
+            </div>
+          </div>
+        </Link>
+      </div>
+    </CardContent>
+  </Card>
 );
