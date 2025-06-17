@@ -53,6 +53,7 @@ export function useGestureContributions(initialFilters?: GestureContributionFilt
     loadContributions();
   }, [loadContributions]);
 
+
   const handleApprove = async (contributionId: string) => {
     try {
       const { error: approveError } = await GestureContributionService.approveContribution(contributionId);
