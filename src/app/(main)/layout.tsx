@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { SidebarProvider } from "@/context/SidebarContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { AdminProvider } from "@/context/AdminContext";
+import { LearningProvider } from '@/context/LearningContext';
 import AppSidebar from "@/components/AppSidebar";
 import { Loader2 } from 'lucide-react';
 
@@ -39,10 +40,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     <SidebarProvider>
       <LanguageProvider>
         <AdminProvider>
-          <div className="flex min-h-screen w-full">
-            <AppSidebar userRole={currentUser?.role || 'non-deaf'} />
+          <LearningProvider>
+            <div className="flex min-h-screen w-full">
+              <AppSidebar userRole={currentUser?.role || 'non-deaf'} />
 
-            {/* Main Content */}
+              {/* Main Content */}
             <div className="flex-1 transition-all duration-300">
               {/* Top Bar */}
               <div className="bg-white border-b border-gray-200 p-4 sticky top-0 z-30 h-[65px] flex items-center">
@@ -70,6 +72,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               </div>
             </div>
           </div>
+          </LearningProvider>
         </AdminProvider>
       </LanguageProvider>
     </SidebarProvider>

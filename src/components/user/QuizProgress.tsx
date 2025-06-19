@@ -1,34 +1,30 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Award } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { getQuizSets, getUserProgress, getOverallQuizProgress } from '@/data/contentData';
+import { useAuth } from '@/context/AuthContext';
+import { useLearning } from '@/context/LearningContext';
 
 const QuizProgress = () => {
-  const [quizProgress, setQuizProgress] = useState<{ completion: number; score: number }>({ completion: 0, score: 0 });
-  const [quizSets, setQuizSets] = useState<any[]>([]);
-  const [userProgress, setUserProgress] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { currentUser } = useAuth();
+  const { quizSets, getQuizSets, quizSetsLoading } = useLearning();
 
   useEffect(() => {
-    // Get current user ID from localStorage or your auth system
-    const userId = localStorage.getItem('userId') || 'default-user';
-    
-    // Fetch quiz sets and user progress
-    const quizSetsData = getQuizSets();
-    const userProgressData = getUserProgress(userId);
-    const overallProgress = getOverallQuizProgress(userId);
-    
-    setQuizSets(quizSetsData);
-    setUserProgress(userProgressData);
-    setQuizProgress(overallProgress);
-    setIsLoading(false);
-  }, []);
+    if (currentUser) {
+      getQuizSets();
+    }
+  }, [currentUser, getQuizSets]);
 
-  if (isLoading) {
+  const attemptedQuizzes = quizSets.filter(q => q.progress);
+  const totalQuizzes = quizSets.length;
+  
+  const overallCompletion = totalQuizzes > 0
+    ? Math.round((attemptedQuizzes.length / totalQuizzes) * 100)
+    : 0;
+
+  if (quizSetsLoading) {
     return (
       <Card>
         <CardContent className="py-6">
@@ -50,15 +46,15 @@ const QuizProgress = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="text-center mb-4">
-            <div className="text-3xl font-bold text-signlang-primary">{quizProgress.score}%</div>
-            <p className="text-sm text-gray-500 mt-1">Average Score</p>
-            <Progress value={quizProgress.score} className="h-3 mt-2" />
+          <div className="text-center">
+            <div className="text-3xl font-bold text-signlang-primary">{overallCompletion}%</div>
+            <p className="text-sm text-gray-500 mt-1">Overall Completion</p>
+            <Progress value={overallCompletion} className="h-3 mt-2" />
           </div>
 
           {quizSets.map(quizSet => {
-            const progress = userProgress?.quizzes.find((q: any) => q.quizId === quizSet.id);
-            const progressPercentage = progress ? (progress.score / progress.totalQuestions) * 100 : 0;
+            const progress = quizSet.progress;
+            const progressPercentage = progress ? (progress.score / progress.total_questions) * 100 : 0;
             
             return (
               <div key={quizSet.id}>
@@ -69,21 +65,12 @@ const QuizProgress = () => {
                 <Progress value={progressPercentage} className="h-2" />
                 {progress && (
                   <p className="text-xs text-gray-500 mt-1">
-                    Score: {progress.score}/{progress.totalQuestions} questions
+                    Score: {progress.score}/{progress.total_questions}
                   </p>
                 )}
               </div>
             );
           })}
-          
-          <div className="bg-signlang-muted p-4 rounded-md mt-6">
-            <h4 className="font-medium mb-2">Quiz Achievements</h4>
-            <div className="flex flex-wrap gap-2">
-              {quizProgress.score >= 90 && <Badge>Perfect Score</Badge>}
-              {quizProgress.completion >= 75 && <Badge>Fast Learner</Badge>}
-              {userProgress?.quizzes.length >= 5 && <Badge>Consistent Practice</Badge>}
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>

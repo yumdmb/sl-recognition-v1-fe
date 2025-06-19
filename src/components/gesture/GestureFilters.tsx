@@ -10,7 +10,7 @@ import { Search } from 'lucide-react';
 
 interface GestureFiltersProps {
   filters: GestureContributionFilters;
-  onFiltersChange: (filters: GestureContributionFilters) => void;
+  onFiltersChange: (filters: Partial<GestureContributionFilters>) => void;
   userRole?: string;
   hiddenFilters?: Array<keyof GestureContributionFilters>;
   showStatusFilter?: boolean; // New prop to control visibility of status filter
@@ -24,11 +24,11 @@ export default function GestureFilters({
   showStatusFilter = false // Default to false
 }: GestureFiltersProps) {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onFiltersChange({ ...filters, search: e.target.value });
+    onFiltersChange({ search: e.target.value });
   };
 
   const handleSelectChange = (name: keyof GestureContributionFilters, value: string) => {
-    onFiltersChange({ ...filters, [name]: value === 'all' ? undefined : value });
+    onFiltersChange({ [name]: value === 'all' ? undefined : value });
   };
 
   const isAdmin = userRole === 'admin';

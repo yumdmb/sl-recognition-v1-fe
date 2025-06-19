@@ -13,11 +13,12 @@ export function useGestureContributions(initialFilters?: GestureContributionFilt
   const { currentUser } = useAuth();
   const [filters, setFilters] = useState<GestureContributionFilters | undefined>(initialFilters);
 
+  const updateFilters = useCallback((newFilters: Partial<GestureContributionFilters>) => {
+    setFilters(prevFilters => ({ ...prevFilters, ...newFilters }));
+  }, []);
+
   const loadContributions = useCallback(async () => {
-    if (!currentUser && !filters?.status) { // Allow loading approved gestures if not logged in for browse page
-      // If no specific status filter and not logged in, don't load anything yet or load public approved ones.
-      // For browse page, filters.status will be 'approved'.
-      // For view page (my submissions), currentUser is required.
+    if (!currentUser && !filters?.status) {
       if (filters?.status !== 'approved') {
         setContributions([]);
         setIsLoading(false);
@@ -28,14 +29,8 @@ export function useGestureContributions(initialFilters?: GestureContributionFilt
     setIsLoading(true);
     setError(null);
     
-    let effectiveFilters = { ...filters }; 
-
-    // If the intention is to view "My Submissions", ensure submitted_by is set.
-    // This will be controlled by the page calling the hook.
-    // For example, view/page.tsx will set filters.submitted_by = currentUser.id
-
     try {
-      const { data, error: fetchError } = await GestureContributionService.getContributions(effectiveFilters);
+      const { data, error: fetchError } = await GestureContributionService.getContributions(filters);
       
       if (fetchError) {
         setError('Failed to load gesture contributions');
@@ -52,11 +47,12 @@ export function useGestureContributions(initialFilters?: GestureContributionFilt
     } finally {
       setIsLoading(false);
     }
-  }, [currentUser, filters]); // Dependency on stringified filters might be too much, direct filters is better if stable.
+  }, [currentUser, filters]);
 
   useEffect(() => {
     loadContributions();
   }, [loadContributions]);
+
 
   const handleApprove = async (contributionId: string) => {
     try {
@@ -140,14 +136,9 @@ export function useGestureContributions(initialFilters?: GestureContributionFilt
     }
   };
 
-  const refreshContributions = useCallback(() => { // Also wrap refreshContributions if it's a dependency elsewhere
+  const refreshContributions = useCallback(() => {
     loadContributions();
   }, [loadContributions]);
-
-  // Function to update filters from the component
-  const updateFilters = useCallback((newFilters: GestureContributionFilters) => {
-    setFilters(prevFilters => ({ ...prevFilters, ...newFilters }));
-  }, []); // Empty dependency array as setFilters from useState is stable
 
   return {
     contributions,
@@ -158,7 +149,7 @@ export function useGestureContributions(initialFilters?: GestureContributionFilt
     handleReject,
     handleDelete,
     refreshContributions,
-    updateFilters, // Expose a way to update filters
-    filters // Expose current filters
+    filters,
+    updateFilters,
   };
 }

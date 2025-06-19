@@ -1,12 +1,14 @@
 'use client'
 
 import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Mail, Calendar, Edit } from "lucide-react";
+import { User, Mail, Calendar, Edit, Award } from "lucide-react";
 
 export default function ProfilePage() {
   const { currentUser } = useAuth();
+  const router = useRouter();
 
   if (!currentUser) {
     return null;
@@ -48,8 +50,24 @@ export default function ProfilePage() {
                   <p className="text-lg capitalize">{currentUser.role}</p>
                 </div>
               </div>
-            </div>
-            
+             <div className="flex items-center">
+               <Award className="h-5 w-5 mr-3 text-gray-500" />
+               <div>
+                 <p className="text-sm font-medium text-gray-500">Proficiency Level</p>
+                 {currentUser.proficiency_level ? (
+                   <p className="text-lg capitalize">{currentUser.proficiency_level}</p>
+                 ) : (
+                   <div className="flex items-center gap-2">
+                     <p className="text-lg text-gray-600">Not yet assessed</p>
+                     <Button size="sm" onClick={() => router.push('/proficiency-test/select')}>
+                       Take Test
+                     </Button>
+                   </div>
+                 )}
+               </div>
+             </div>
+           </div>
+           
             <div className="bg-gray-50 p-6 rounded-lg">
               <h3 className="text-lg font-medium mb-4">Account Actions</h3>
               <div className="space-y-3">

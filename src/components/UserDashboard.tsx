@@ -2,35 +2,62 @@
 
 import React from 'react';
 import { UserQuickAccessPanel } from '@/components/user/UserQuickAccessPanel';
-import { UserNotificationCenter } from '@/components/user/UserNotificationCenter';
-import UserActivitySummary from '@/components/user/UserActivitySummary';
-import UserProgressChart from '@/components/user/UserProgressChart';
 import LearningProgress from '@/components/user/LearningProgress';
 import QuizProgress from '@/components/user/QuizProgress';
+import { motion } from 'framer-motion';
 
 interface UserDashboardProps {
   userRole: 'non-deaf' | 'deaf';
 }
 
 const UserDashboard: React.FC<UserDashboardProps> = ({ userRole }) => {
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        duration: 0.5,
+      },
+    },
+  };
+
   return (
-    <div className="space-y-6">
-      <h2 className="text-3xl font-bold">{userRole === 'deaf' ? 'Deaf Person Dashboard' : 'Non-Deaf Person Dashboard'}</h2>
+    <motion.div
+      className="space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <motion.h2
+        className="text-3xl font-bold"
+        variants={itemVariants}
+      >
+        {userRole === 'deaf' ? 'Deaf Person Dashboard' : 'Non-Deaf Person Dashboard'}
+      </motion.h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        variants={itemVariants}
+      >
         <LearningProgress />
         <QuizProgress />
-      </div>
+      </motion.div>
       
-      <UserQuickAccessPanel userRole={userRole} />
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <UserNotificationCenter userRole={userRole} />
-        <UserActivitySummary userRole={userRole} />
-      </div>
-      
-      <UserProgressChart userRole={userRole} />
-    </div>
+      <motion.div variants={itemVariants}>
+        <UserQuickAccessPanel userRole={userRole} />
+      </motion.div>
+    </motion.div>
   );
 };
 

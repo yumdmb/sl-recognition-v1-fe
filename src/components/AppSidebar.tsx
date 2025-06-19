@@ -196,9 +196,6 @@ const AppSidebar: React.FC<Props> = ({ userRole }) => {
                   <p className="text-sm font-medium text-gray-900 truncate">
                     {currentUser.name}
                   </p>
-                  <p className="text-sm text-gray-500 truncate">
-                    {currentUser.email}
-                  </p>
                 </div>
                 <button
                   onClick={handleLogout}
