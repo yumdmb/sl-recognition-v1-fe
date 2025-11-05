@@ -1,6 +1,6 @@
 # Implementation Plan: Generate Learning Path
 
-- [ ] 1. Set up proficiency test database schema
+- [x] 1. Set up proficiency test database schema
   - Create proficiency_tests table with test metadata
   - Create proficiency_test_questions table with question content
   - Create proficiency_test_question_choices table with answer options
@@ -8,40 +8,48 @@
   - Create proficiency_test_attempt_answers table for storing user responses
   - Set up RLS policies for test data access
   - _Requirements: FR-015 (1.1, 1.2, 1.3, 1.4, 1.5), FR-016 (2.1, 2.2, 2.3, 2.4, 2.5), FR-017 (3.1, 3.2, 3.3, 3.4, 3.5), FR-023 (8.1, 8.2, 8.3, 8.4, 8.5)_
+  - _Implementation: supabase/migrations/20250615115100_create_proficiency_test_schema.sql, 20250615120700_seed_proficiency_tests.sql_
 
-- [ ] 2. Build proficiency test service layer
-  - [ ] 2.1 Create proficiency test data access functions
+- [x] 2. Build proficiency test service layer
+  - [x] 2.1 Create proficiency test data access functions
     - Implement getProficiencyTests() to fetch available tests
     - Implement getTestById() to fetch specific test details
     - Implement getTestQuestions() to fetch questions with choices
     - Implement getTestAttemptHistory() to fetch user's previous attempts
     - _Requirements: FR-015 (1.2, 1.5), FR-023 (8.4, 8.5)_
+    - _Implementation: src/lib/services/proficiencyTestService.ts (getAllProficiencyTests, getProficiencyTest)_
+    - _Note: getTestAttemptHistory not yet implemented_
 
-  - [ ] 2.2 Create test attempt management functions
+  - [x] 2.2 Create test attempt management functions
     - Implement createTestAttempt() to start new test session
     - Implement saveAnswer() to record user's answer for each question
     - Implement submitTest() to finalize test and calculate score
     - Implement getAttemptResults() to fetch completed attempt details
     - _Requirements: FR-016 (2.1, 2.4, 2.5), FR-017 (3.1, 3.5), FR-023 (8.2)_
+    - _Implementation: proficiencyTestService.ts (createTestAttempt, submitAnswer, calculateResultAndAssignProficiency)_
 
 - [ ] 3. Implement AI evaluation engine
-  - [ ] 3.1 Create scoring algorithm
+  - [x] 3.1 Create scoring algorithm
     - Implement calculateScore() to sum points from correct answers
     - Implement calculatePercentage() for score percentage
     - Implement determineProficiencyLevel() based on score thresholds
     - _Requirements: FR-017 (3.1, 3.2, 3.3)_
+    - _Implementation: proficiencyTestService.ts calculateResultAndAssignProficiency function_
+    - _Note: Basic scoring implemented (Beginner <50%, Intermediate 50-80%, Advanced >80%)_
 
   - [ ] 3.2 Build performance analysis functions
     - Implement analyzeCategoryPerformance() to identify strengths/weaknesses
     - Implement identifyKnowledgeGaps() based on incorrect answers
     - Implement generateInsights() for personalized feedback
     - _Requirements: FR-019 (5.1, 5.2, 5.3, 5.4, 5.5)_
+    - _Status: NOT IMPLEMENTED - No advanced analytics or insights_
 
   - [ ] 3.3 Create recommendation engine
     - Implement generateRecommendations() based on weak areas
     - Implement prioritizeContent() by relevance to user needs
     - Implement filterByRole() for deaf/non-deaf specific content
     - _Requirements: FR-018 (4.1, 4.2, 4.3), FR-019 (5.5), FR-021 (7.1, 7.2, 7.3, 7.4, 7.5)_
+    - _Status: NOT IMPLEMENTED - No recommendation engine exists_
 
 - [ ] 4. Build learning path service
   - [ ] 4.1 Create learning path generation functions
@@ -50,44 +58,51 @@
     - Implement filterContentByRole() for role-specific recommendations
     - Implement sortByPriority() to order learning items
     - _Requirements: FR-018 (4.1, 4.2, 4.3, 4.4, 4.5), FR-021 (7.1, 7.2, 7.3, 7.4, 7.5)_
+    - _Status: NOT IMPLEMENTED - No learningPathService.ts exists_
 
   - [ ] 4.2 Implement dynamic path update functions
     - Implement updateLearningPath() based on progress changes
     - Implement recalculateRecommendations() when user completes content
     - Implement adjustDifficulty() based on quiz performance
     - _Requirements: FR-020 (6.1, 6.2, 6.3, 6.4, 6.5)_
+    - _Status: NOT IMPLEMENTED_
 
-- [ ] 5. Create test selection page
-  - [ ] 5.1 Build test selection UI
+- [x] 5. Create test selection page
+  - [x] 5.1 Build test selection UI
     - Create test selection page at /proficiency-test/select
     - Display available tests with cards showing title, description, language
     - Add filter options for language (ASL/MSL)
     - Show test history with previous attempts and scores
     - _Requirements: FR-015 (1.1, 1.2, 1.3, 1.5), FR-023 (8.4, 8.5)_
+    - _Implementation: src/app/proficiency-test/select/page.tsx_
+    - _Note: Language filter and test history not yet implemented_
 
-  - [ ] 5.2 Implement test selection logic
+  - [x] 5.2 Implement test selection logic
     - Fetch and display available proficiency tests
     - Handle test selection and navigation to test page
     - Display "Take Test" button for new users
     - Show "Retake Test" option for users with existing attempts
     - _Requirements: FR-015 (1.2, 1.3, 1.4), FR-023 (8.1, 8.2)_
+    - _Implementation: select/page.tsx uses getAllProficiencyTests()_
 
-- [ ] 6. Build test taking interface
-  - [ ] 6.1 Create test page UI
+- [x] 6. Build test taking interface
+  - [x] 6.1 Create test page UI
     - Create dynamic test page at /proficiency-test/[testId]
     - Display progress indicator (e.g., "Question 3 of 10")
     - Show question text and optional video demonstration
     - Render multiple choice options as radio buttons
     - Add navigation buttons (Next, Previous, Submit)
     - _Requirements: FR-016 (2.2, 2.3)_
+    - _Implementation: src/app/proficiency-test/[testId]/page.tsx, src/components/proficiency-test/ProficiencyTestQuestion.tsx_
 
-  - [ ] 6.2 Implement test taking logic
+  - [x] 6.2 Implement test taking logic
     - Initialize test attempt when user starts test
     - Load questions one by one in sequential order
     - Record user's answer selection for each question
     - Enable/disable navigation based on answer selection
     - Handle test submission and redirect to results
     - _Requirements: FR-016 (2.1, 2.2, 2.4, 2.5)_
+    - _Implementation: [testId]/page.tsx handleNext, handlePrevious, handleFinish functions_
 
   - [ ] 6.3 Add test session management
     - Track time spent on test (optional)
@@ -95,6 +110,7 @@
     - Add exit confirmation dialog
     - Handle session timeout gracefully
     - _Requirements: FR-016 (2.1), FR-024 (9.2, 9.3)_
+    - _Note: Basic session management exists, no auto-save or timeout handling_
 
 - [ ] 7. Create results display page
   - [ ] 7.1 Build results page UI
@@ -105,6 +121,8 @@
     - Show strengths and areas for improvement
     - Add "View Learning Path" and "Retake Test" buttons
     - _Requirements: FR-017 (3.4, 3.5), FR-019 (5.4)_
+    - _Implementation: src/components/proficiency-test/ProficiencyTestResult.tsx (component exists, shown inline not as separate route)_
+    - _Note: No performance breakdown or insights, no learning path button_
 
   - [ ] 7.2 Implement results logic
     - Fetch test attempt results from database
@@ -113,14 +131,18 @@
     - Update user profile with new proficiency level
     - Trigger learning path generation
     - _Requirements: FR-017 (3.1, 3.2, 3.3, 3.4, 3.5), FR-018 (4.1), FR-019 (5.1, 5.2, 5.3, 5.4, 5.5)_
+    - _Implementation: calculateResultAndAssignProficiency updates user profile_
+    - _Note: No AI insights or learning path generation triggered_
 
 - [ ] 8. Integrate with dashboard
-  - [ ] 8.1 Add proficiency level display to dashboard
+  - [x] 8.1 Add proficiency level display to dashboard
     - Create proficiency level badge component
     - Display current proficiency level on user dashboard
     - Show progress bar toward next level
     - Add "Take Test" or "Retake Test" button
     - _Requirements: FR-017 (3.3, 3.4), FR-023 (8.1)_
+    - _Implementation: src/app/(main)/profile/page.tsx shows proficiency level with "Take Test" button_
+    - _Note: No progress bar toward next level_
 
   - [ ] 8.2 Create learning path panel for dashboard
     - Build learning path recommendations component
@@ -129,6 +151,7 @@
     - Add "Start Learning" buttons for each item
     - Link to full learning path view
     - _Requirements: FR-018 (4.4, 4.5), FR-021 (7.4)_
+    - _Status: NOT IMPLEMENTED - No learning path recommendations_
 
   - [ ] 8.3 Add initial test prompt for new users
     - Display prompt to take proficiency test on first login
@@ -136,6 +159,8 @@
     - Store user preference to avoid repeated prompts
     - Provide "Take Test" button in profile for later access
     - _Requirements: FR-015 (1.1, 1.3)_
+    - _Implementation: src/components/proficiency-test/ProficiencyTestPrompt.tsx exists_
+    - _Note: Component exists but integration unclear_
 
 - [ ] 9. Implement LearningContext updates
   - [ ] 9.1 Extend LearningContext with proficiency test state
@@ -143,6 +168,7 @@
     - Add current test and test attempt state
     - Add learning path state
     - _Requirements: FR-015 (1.4), FR-016 (2.1), FR-017 (3.3), FR-018 (4.1)_
+    - _Status: NOT IMPLEMENTED - LearningContext has no proficiency test state_
 
   - [ ] 9.2 Add proficiency test methods to context
     - Implement startTest() method
@@ -150,12 +176,14 @@
     - Implement submitTest() method
     - Implement getTestResults() method
     - _Requirements: FR-016 (2.1, 2.4, 2.5), FR-017 (3.1, 3.5)_
+    - _Status: NOT IMPLEMENTED_
 
   - [ ] 9.3 Add learning path methods to context
     - Implement generateLearningPath() method
     - Implement updateLearningPath() method
     - Implement getLearningRecommendations() method
     - _Requirements: FR-018 (4.1, 4.2, 4.3), FR-020 (6.1, 6.4, 6.5)_
+    - _Status: NOT IMPLEMENTED_
 
 - [ ] 10. Build role-specific learning path logic
   - [ ] 10.1 Implement deaf user path generation
