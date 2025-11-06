@@ -12,10 +12,10 @@ SignBridge is a sign language recognition and learning platform supporting Ameri
 
 ### Running the Application
 ```bash
-pnpm dev           # Start development server with Turbopack
-pnpm build         # Build for production
-pnpm start         # Start production server
-pnpm lint          # Run ESLint
+npm run dev        # Start development server with Turbopack
+npm run build      # Build for production
+npm start          # Start production server
+npm run lint       # Run ESLint
 ```
 
 ### Database Management
