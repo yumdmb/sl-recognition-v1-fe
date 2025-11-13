@@ -1,5 +1,7 @@
 import { createBrowserClient } from '@supabase/ssr';
 import { Database } from '@/types/database';
+import { analyzeCategoryPerformance, identifyKnowledgeGaps } from './evaluationService';
+import { generateRecommendations } from './recommendationEngine';
 
 // Initialize Supabase client
 const supabase = createBrowserClient<Database>(
@@ -192,4 +194,59 @@ export const calculateResultAndAssignProficiency = async (attemptId: string, use
   }
 
   return { score, proficiency_level };
+};
+/**
+ 
+* Gets comprehensive test results including performance analysis and recommendations.
+ * @param attemptId - The ID of the test attempt.
+ * @param userId - The ID of the user.
+ * @returns Complete test results with analysis and recommendations.
+ */
+export const getTestResultsWithAnalysis = async (attemptId: string, userId: string) => {
+  // Get basic attempt data
+  const { data: attempt, error: attemptError } = await supabase
+    .from('proficiency_test_attempts')
+    .select('*')
+    .eq('id', attemptId)
+    .single();
+
+  if (attemptError || !attempt) {
+    console.error('Error fetching attempt:', attemptError);
+    throw attemptError || new Error('Attempt not found');
+  }
+
+  // Get user's proficiency level
+  const { data: userProfile, error: profileError } = await supabase
+    .from('user_profiles')
+    .select('proficiency_level')
+    .eq('id', userId)
+    .single();
+
+  if (profileError || !userProfile) {
+    console.error('Error fetching user profile:', profileError);
+    throw profileError || new Error('User profile not found');
+  }
+
+  const proficiencyLevel = userProfile.proficiency_level || 'Beginner';
+
+  // Perform performance analysis
+  const performanceAnalysis = await analyzeCategoryPerformance(attemptId);
+
+  // Identify knowledge gaps
+  const knowledgeGaps = await identifyKnowledgeGaps(attemptId);
+
+  // Generate learning recommendations
+  const recommendations = await generateRecommendations(
+    userId,
+    proficiencyLevel,
+    performanceAnalysis
+  );
+
+  return {
+    attempt,
+    proficiencyLevel,
+    performanceAnalysis,
+    knowledgeGaps,
+    recommendations,
+  };
 };
