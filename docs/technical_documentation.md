@@ -36,7 +36,7 @@ This directory uses the Next.js App Router. Each folder represents a route segme
     -   ` (main) `: A route group for pages that share the main application layout (e.g., after a user logs in). It includes the dashboard, learning modules, etc.
 -   **Specific Routes:**
     -   [`src/app/auth/`](src/app/auth/): Contains authentication-related pages like [`login`](src/app/auth/login/page.tsx:1) and [`reset-password`](src/app/auth/reset-password/page.tsx:1).
-    -   [`src/app/proficiency-test/`](src/app/proficiency-test/): Contains pages for the proficiency testing module.
+    -   [`src/app/proficiency-test/`](src/app/proficiency-test/): Contains pages for the proficiency testing module, including test selection, test taking interface, and results display with AI-powered analysis.
 
 ### 2.2. `src/components` - UI Components
 
@@ -65,7 +65,7 @@ This folder contains React Context providers to manage global state across the a
 
 This directory contains the core business logic and interactions with external services, particularly Supabase.
 
--   [`src/lib/services/`](src/lib/services/): A collection of services that encapsulate the logic for different features. Each service file (e.g., [`chatService.ts`](src/lib/services/chatService.ts:1), [`tutorialService.ts`](src/lib/services/tutorialService.ts:1)) is responsible for fetching and manipulating data for its respective domain.
+-   [`src/lib/services/`](src/lib/services/): A collection of services that encapsulate the logic for different features. Each service file (e.g., [`chatService.ts`](src/lib/services/chatService.ts:1), [`tutorialService.ts`](src/lib/services/tutorialService.ts:1), [`proficiencyTestService.ts`](src/lib/services/proficiencyTestService.ts:1), [`evaluationService.ts`](src/lib/services/evaluationService.ts:1), [`recommendationEngine.ts`](src/lib/services/recommendationEngine.ts:1)) is responsible for fetching and manipulating data for its respective domain.
 -   [`src/lib/supabase/`](src/lib/supabase/): Contains functions that directly interact with Supabase tables, abstracting the database queries away from the UI components.
 -   [`src/lib/utils.ts`](src/lib/utils.ts:1): A utility file for common helper functions used throughout the application (e.g., formatting dates, class name merging).
 
@@ -112,6 +112,19 @@ The gesture recognition module (in [`src/components/gesture-recognition/`](src/c
 2.  Sending the video frames or processed data to a machine learning model for inference. The model could be running in the browser (e.g., with TensorFlow.js) or on a server.
 3.  Displaying the recognition results to the user.
 
+### 3.5. Proficiency Testing & Learning Path Generation
+
+The proficiency testing system (in [`src/app/proficiency-test/`](src/app/proficiency-test/)) evaluates user sign language skills and generates personalized learning paths:
+
+1.  **Test Taking**: Users answer multiple-choice questions about sign language concepts.
+2.  **Scoring & Analysis**: The system calculates scores and assigns proficiency levels (Beginner/Intermediate/Advanced).
+3.  **AI Evaluation**: The [`evaluationService.ts`](src/lib/services/evaluationService.ts:1) analyzes performance by category, identifies strengths (>70% correct) and weaknesses (<50% correct), and generates personalized insights.
+4.  **Recommendation Engine**: The [`recommendationEngine.ts`](src/lib/services/recommendationEngine.ts:1) generates learning paths by:
+    - Fetching tutorials, quizzes, and materials matching the user's proficiency level
+    - Prioritizing content addressing weak areas (Priority 1)
+    - Including practice quizzes (Priority 2) and reference materials (Priority 3)
+5.  **Results Display**: The results page shows comprehensive feedback including score, proficiency level, category performance breakdown, strengths/weaknesses, insights, and recommended learning resources.
+
 ## 4. Conclusion
 
-This project is a well-structured, modern web application that leverages the strengths of the Next.js and Supabase ecosystems. The clear separation of concerns in the folder structure makes it scalable and maintainable. The core functionalities are organized into distinct modules, from user authentication and learning materials to the complex gesture recognition system.
+This project is a well-structured, modern web application that leverages the strengths of the Next.js and Supabase ecosystems. The clear separation of concerns in the folder structure makes it scalable and maintainable. The core functionalities are organized into distinct modules, from user authentication and learning materials to the complex gesture recognition system and AI-powered proficiency assessment with personalized learning path generation.

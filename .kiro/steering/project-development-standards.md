@@ -15,6 +15,8 @@ inclusion: always
 
 **Rule**: Never make manual schema changes in remote Supabase Studio. Always use migration workflow.
 
+**Before Development**: Always verify the actual database schema using Supabase MCP before developing features that involve database operations. Don't assume how the schema looks - check it first.
+
 ### Required Migration Workflow
 
 **Complete workflow**: See [docs/database-migration-guide.md](../../docs/database-migration-guide.md)
@@ -57,3 +59,42 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<from_npx_supabase_status>
 Get keys: `npx supabase status` → Copy "API URL" and "Publishable key"
 
 **Key Point**: CLI commands (`db push`, `db pull`) use `npx supabase link` credentials, NOT `.env.local`!
+
+## Development Workflow
+
+**Active Development**: When actively developing features, use `npm run dev` only. Do NOT run `npm run build` unless:
+- You're preparing for production deployment
+- You need to test the production build specifically
+- You're debugging build-specific issues
+
+**Why**: Running `npm run build` during active development is unnecessary and slows down the workflow. The dev server provides hot reloading and faster feedback.
+
+## Task Completion Verification
+
+**After completing any task**, you MUST provide the user with:
+
+1. **Summary of Changes**: Brief list of what was implemented
+2. **Verification Steps**: Clear, actionable steps to verify the task works correctly
+3. **What to Look For**: Expected behavior and visual indicators of success
+4. **How to Test**: Specific user actions to perform (e.g., "Click X button", "Navigate to Y page")
+
+**Example Format:**
+```
+✅ Task Complete: [Task Name]
+
+Changes Made:
+- Created X component
+- Updated Y service
+- Integrated Z feature
+
+To Verify:
+1. Start dev server: npm run dev
+2. Navigate to [URL]
+3. Perform [action]
+4. Expected result: [what should happen]
+
+Look for:
+- [Visual indicator 1]
+- [Behavior 2]
+- [Data display 3]
+```

@@ -12,15 +12,21 @@ export default function Dashboard() {
 
   useEffect(() => {
     // Check if the user has taken the test. We assume proficiency_level is null if not taken.
-    // We also add a check to see if we've already shown the prompt to avoid showing it again on re-renders.
-    if (currentUser && currentUser.proficiency_level === null && !sessionStorage.getItem('proficiencyPromptShown')) {
+    // We also add a check to see if we've already shown the prompt to avoid showing it again.
+    // Using localStorage for persistence across sessions
+    const promptKey = `proficiencyPromptShown_${currentUser?.id}`;
+    
+    if (currentUser && currentUser.proficiency_level === null && !localStorage.getItem(promptKey)) {
       setIsPromptOpen(true);
-      sessionStorage.setItem('proficiencyPromptShown', 'true');
     }
   }, [currentUser]);
 
   const handleClosePrompt = () => {
     setIsPromptOpen(false);
+    // Store user preference to not show prompt again
+    if (currentUser?.id) {
+      localStorage.setItem(`proficiencyPromptShown_${currentUser.id}`, 'true');
+    }
   };
 
   return (

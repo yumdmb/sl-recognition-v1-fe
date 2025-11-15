@@ -10,7 +10,7 @@ import {
   ProficiencyTest as FullProficiencyTest,
 } from '@/lib/services/proficiencyTestService';
 import ProficiencyTestQuestion from '@/components/proficiency-test/ProficiencyTestQuestion';
-import ProficiencyTestResult from '@/components/proficiency-test/ProficiencyTestResult';
+
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,7 +32,7 @@ const ProficiencyTestPage = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
   const [testAttemptId, setTestAttemptId] = useState<string | null>(null);
-  const [result, setResult] = useState<{ score: number; proficiency_level: string } | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -109,7 +109,8 @@ const ProficiencyTestPage = () => {
 
       const finalResult = await calculateResultAndAssignProficiency(testAttemptId, user.id);
       if (finalResult) {
-        setResult(finalResult);
+        // Redirect to results page with attemptId
+        window.location.href = `/proficiency-test/results?attemptId=${testAttemptId}`;
       } else {
         setError('Failed to calculate your result.');
       }
@@ -153,10 +154,6 @@ const ProficiencyTestPage = () => {
         </Alert>
       </div>
     );
-  }
-
-  if (result) {
-    return <ProficiencyTestResult score={result.score} proficiencyLevel={result.proficiency_level} />;
   }
 
   if (!testData || testData.questions.length === 0) {

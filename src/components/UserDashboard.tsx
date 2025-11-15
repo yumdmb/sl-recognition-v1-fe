@@ -4,6 +4,7 @@ import React from 'react';
 import { UserQuickAccessPanel } from '@/components/user/UserQuickAccessPanel';
 import LearningProgress from '@/components/user/LearningProgress';
 import QuizProgress from '@/components/user/QuizProgress';
+import LearningPathPanel from '@/components/user/LearningPathPanel';
 import { motion } from 'framer-motion';
 
 interface UserDashboardProps {
@@ -52,6 +53,10 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ userRole }) => {
       >
         <LearningProgress />
         <QuizProgress />
+      </motion.div>
+      
+      <motion.div variants={itemVariants}>
+        <LearningPathPanel />
       </motion.div>
       
       <motion.div variants={itemVariants}>

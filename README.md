@@ -22,10 +22,12 @@ This application is developed as a Final Year Project in collaboration with Dr. 
 - **Interactive Quizzes**: Test your knowledge with multi-choice quizzes and progress tracking
 - **Progress Tracking**: Monitor your learning journey across all modules
 
-### 🎯 Proficiency Assessment
+### 🎯 Proficiency Assessment & Learning Paths
 
 - **Proficiency Tests**: Comprehensive assessment system to evaluate sign language skills
 - **Skill Level Assignment**: Automatic proficiency level assignment based on test results
+- **AI-Powered Analysis**: Performance breakdown by category with strengths and weaknesses identification
+- **Personalized Learning Paths**: AI-generated recommendations for tutorials, quizzes, and materials based on test results
 - **Progress Monitoring**: Track improvement over time with detailed analytics
 
 ### 👥 Community & Interaction
