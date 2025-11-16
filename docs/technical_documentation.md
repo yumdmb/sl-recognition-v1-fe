@@ -170,7 +170,14 @@ The proficiency testing system (in [`src/app/proficiency-test/`](src/app/profici
     - The [`LearningPathPanel.tsx`](src/components/user/LearningPathPanel.tsx:1) component displays top 5 personalized recommendations on the user dashboard
     - The profile page ([`src/app/(main)/profile/page.tsx`](src/app/(main)/profile/page.tsx:1)) shows proficiency level with a visual progress bar indicating advancement toward the next level (Beginner→Intermediate requires 50%, Intermediate→Advanced requires 80%)
 
-8.  **Dynamic Learning Path Updates**: The system automatically updates learning paths based on user progress:
+8.  **Test History** ([`history/page.tsx`](src/app/proficiency-test/history/page.tsx:1)):
+    - Displays all test attempts with dates, scores, and proficiency levels
+    - Shows proficiency level progression over time with visual timeline
+    - Uses `getUserTestHistory()` from `proficiencyTestService.ts` to fetch attempt history
+    - Includes test details (title, language) for each attempt
+    - Sorted by most recent attempts first
+
+9.  **Dynamic Learning Path Updates**: The system automatically updates learning paths based on user progress:
     - **Tutorial Completion**: When a user completes a tutorial via `markTutorialDone()`, the system triggers `updateLearningPath()` to refresh recommendations
     - **Quiz Completion**: When a user completes a quiz via `submitQuizAnswers()`, the system passes the quiz score to `updateLearningPath()` for adaptive difficulty adjustment
     - **Adaptive Feedback**: Users receive contextual toast notifications explaining why their learning path was updated (e.g., "Great job! Your learning path now includes more advanced content" for scores >80%)
@@ -184,6 +191,15 @@ The proficiency testing system (in [`src/app/proficiency-test/`](src/app/profici
 - `hasNewRecommendations`: Flag indicating new recommendations are available
 - `lastUpdateTrigger`: Message explaining what triggered the last path update
 - Methods: `startTest()`, `submitAnswer()`, `submitTest()`, `getTestResults()`, `generateLearningPath()`, `updateLearningPath()`, `getLearningRecommendations()`
+
+**Error Handling & Resilience**: The proficiency testing system implements comprehensive error handling:
+- **Retry Logic**: Automatic retry with exponential backoff for network-related failures (up to 3 attempts)
+- **Error Classification**: Distinguishes between critical errors (invalid test ID, unauthorized access) and recoverable errors (network issues)
+- **Data Persistence**: Auto-saves user answers to localStorage to prevent data loss during submission failures
+- **Fallback Mechanisms**: Provides default recommendations when personalized path generation fails
+- **Background Recovery**: Automatically retries failed operations in the background without blocking user interaction
+- **Administrative Logging**: Logs detailed error information (timestamp, error message, stack trace, retry count) for debugging
+- **User-Friendly Feedback**: Displays clear error messages with actionable recovery options (retry buttons, redirect to test selection)
 
 ## 4. Conclusion
 

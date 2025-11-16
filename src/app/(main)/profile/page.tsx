@@ -58,13 +58,22 @@ export default function ProfilePage() {
                    <div className="space-y-3">
                      <div className="flex items-center justify-between">
                        <p className="text-lg font-semibold capitalize">{currentUser.proficiency_level}</p>
-                       <Button 
-                         size="sm" 
-                         variant="outline"
-                         onClick={() => router.push('/proficiency-test/select')}
-                       >
-                         Retake Test
-                       </Button>
+                       <div className="flex gap-2">
+                         <Button 
+                           size="sm" 
+                           variant="outline"
+                           onClick={() => router.push('/proficiency-test/history')}
+                         >
+                           View History
+                         </Button>
+                         <Button 
+                           size="sm" 
+                           variant="outline"
+                           onClick={() => router.push('/proficiency-test/select')}
+                         >
+                           Retake Test
+                         </Button>
+                       </div>
                      </div>
                      {currentUser.proficiency_level !== 'Advanced' && (
                        <div className="space-y-1">

@@ -76,6 +76,9 @@ interface LearningContextProps {
   updateLearningPath: (recentQuizScore?: number) => Promise<void>;
   getLearningRecommendations: () => Promise<LearningRecommendation[]>;
   clearNewRecommendationsFlag: () => void;
+  
+  // Test History
+  getTestHistory: () => Promise<any[]>;
 }
 
 const LearningContext = createContext<LearningContextProps | null>(null);
@@ -899,6 +902,21 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     setHasNewRecommendations(false);
   };
 
+  const getTestHistory = async () => {
+    try {
+      if (!currentUser) throw new Error('User not authenticated');
+      
+      setProficiencyTestLoading(true);
+      const history = await ProficiencyTestService.getUserTestHistory(currentUser.id);
+      return history;
+    } catch (error) {
+      handleError(error, 'fetch test history');
+      return [];
+    } finally {
+      setProficiencyTestLoading(false);
+    }
+  };
+
   return (
     <LearningContext.Provider
       value={{
@@ -946,7 +964,9 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
         generateLearningPath,
         updateLearningPath,
         getLearningRecommendations,
-        clearNewRecommendationsFlag
+        clearNewRecommendationsFlag,
+        // Test History
+        getTestHistory
       }}
     >
       {children}

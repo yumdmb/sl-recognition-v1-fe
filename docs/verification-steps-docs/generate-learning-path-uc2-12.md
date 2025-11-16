@@ -1,147 +1,221 @@
-✅ Task Complete: Add Error Handling and Validation
+✅ Task Complete: Error Handling and Validation (Task 12)
 
-## Changes Made
+## Summary of Changes
+
+Implemented comprehensive error handling and recovery mechanisms across the proficiency testing system:
 
 ### 12.1 Test Loading Error Handling
-- Added retry logic with retry counter (max 3 attempts)
-- Implemented critical error detection for invalid test IDs or permission issues
-- Added comprehensive error logging for administrative review
-- Created user-friendly error UI with retry button and redirect option
-- Displays retry attempt count and helpful error messages
+- **File**: `src/app/proficiency-test/[testId]/page.tsx`
+- Added retry logic with up to 3 attempts for test loading failures
+- Implemented error classification (critical vs recoverable)
+- Added detailed error logging for administrative review
+- Created user-friendly error UI with retry and redirect options
 
 ### 12.2 Test Submission Error Handling
-- Implemented localStorage auto-save for user answers
-- Added exponential backoff retry logic (1s, 2s, 4s delays)
-- Created manual retry option after 3 failed auto-retry attempts
-- Preserves user progress during network issues
-- Clears saved answers on successful submission
-- Added retry logic to submitAnswer() and submitTest() methods in LearningContext
+- **Files**: `src/app/proficiency-test/[testId]/page.tsx`, `src/context/LearningContext.tsx`
+- Implemented auto-save to localStorage for user answers
+- Added exponential backoff retry for both `submitAnswer()` and `submitTest()`
+- Created manual retry option after auto-retry exhaustion
+- Added detailed submission error logging
 
 ### 12.3 Learning Path Generation Error Handling
-- Implemented fallback to default recommendations when generation fails
+- **File**: `src/context/LearningContext.tsx`
+- Implemented fallback to default recommendations
 - Added null/undefined filtering for content items
-- Created background retry mechanism (retries after 5 seconds)
-- Added getDefaultRecommendations() helper function
-- Displays appropriate error messages with recovery options
-- Prevents loading state during background retries
+- Created background retry mechanism (5-second delay)
+- Implemented graceful degradation with user-friendly messages
 
 ## Verification Steps
 
 ### Test 12.1: Test Loading Error Handling
 
-1. **Test Retry Logic:**
-   ```bash
-   npm run dev
-   ```
-   - Navigate to `/proficiency-test/invalid-test-id`
-   - Expected: Error card appears with "Error Loading Test" message
-   - Expected: Shows retry button and "Back to Test Selection" button
-   - Expected: Displays retry attempt count
+#### Scenario A: Recoverable Error (Network Issue)
+1. Start dev server: `npm run dev`
+2. Navigate to: `http://localhost:3000/proficiency-test/select`
+3. **Simulate network error**:
+   - Open browser DevTools → Network tab
+   - Set throttling to "Offline"
+4. Click "Start Test" on any test
+5. **Expected Results**:
+   - Error message: "Failed to load test questions. Please try again."
+   - Retry button visible
+   - "Back to Test Selection" button visible
+   - Console shows error log with timestamp, testId, error message, and retryCount
+6. **Test Retry**:
+   - Set network back to "Online"
    - Click "Retry" button
-   - Expected: Retry counter increments
-   - After 3 failed attempts, retry button should disappear
+   - Test should load successfully
+   - Retry count resets to 0
 
-2. **Test Critical Error Handling:**
-   - Navigate to `/proficiency-test/select`
-   - Try to access a test that doesn't exist
-   - Expected: After 3 retries, shows critical error message
-   - Expected: Only "Back to Test Selection" button is visible
-   - Expected: Error is logged to console for admin review
+#### Scenario B: Critical Error (Invalid Test ID)
+1. Navigate to: `http://localhost:3000/proficiency-test/invalid-test-id`
+2. **Expected Results**:
+   - Error message: "Unable to load the test. This may be due to an invalid test ID or permission issues."
+   - No retry button (critical error)
+   - "Back to Test Selection" button visible
+   - Console shows error log marking it as critical
+
+#### Scenario C: Multiple Retry Attempts
+1. Set network to "Offline"
+2. Navigate to test page
+3. Click "Retry" button twice (total 3 attempts)
+4. **Expected Results**:
+   - After 3rd attempt, error becomes critical
+   - Retry button disappears
+   - Message changes to critical error message
 
 ### Test 12.2: Test Submission Error Handling
 
-1. **Test Auto-Save:**
-   - Start a proficiency test
-   - Answer a few questions
-   - Open browser DevTools → Application → Local Storage
-   - Expected: See `test_answers_{testId}` key with saved answers
-   - Refresh the page
-   - Expected: Answers are restored from localStorage
+#### Scenario A: Auto-Save Functionality
+1. Start a proficiency test
+2. Answer 2-3 questions
+3. **Check localStorage**:
+   - Open DevTools → Application → Local Storage
+   - Look for key: `test_answers_{testId}`
+   - Should contain JSON with your answers
+4. Refresh the page
+5. **Expected Results**:
+   - Answers are restored from localStorage
+   - Previously selected answers are pre-selected
 
-2. **Test Submission Retry (Simulated):**
-   - Complete a test and click "Finish Test"
-   - To simulate network error, open DevTools → Network → Set to "Offline"
-   - Click "Finish Test"
-   - Expected: Shows retry message with countdown
-   - Expected: Auto-retries up to 3 times with exponential backoff
-   - Expected: After 3 failures, shows manual retry button
-   - Set Network back to "Online"
-   - Click "Retry Submission"
-   - Expected: Successfully submits and navigates to results
+#### Scenario B: Submission Retry with Exponential Backoff
+1. Answer all test questions
+2. Set network to "Offline" in DevTools
+3. Click "Finish Test"
+4. **Expected Results**:
+   - Alert shows: "Submission failed. Retrying in 1 seconds... (Attempt 1 of 3)"
+   - After 1 second: "Retrying in 2 seconds... (Attempt 2 of 3)"
+   - After 2 seconds: "Retrying in 4 seconds... (Attempt 3 of 3)"
+   - After 3 failed attempts: Manual retry button appears
+   - Error message: "Failed to submit test after multiple attempts. Your answers have been saved."
+   - Console shows detailed error logs for each attempt
 
-3. **Test Answer Persistence:**
-   - Start a test, answer questions
-   - Close browser tab
-   - Reopen and navigate back to the test
-   - Expected: Previous answers are still selected
+#### Scenario C: Manual Retry
+1. After auto-retry exhaustion (from Scenario B)
+2. Set network back to "Online"
+3. Click "Retry Submission" button
+4. **Expected Results**:
+   - Test submits successfully
+   - Redirects to results page
+   - localStorage entry for test answers is cleared
+
+#### Scenario D: Answer Submission Retry
+1. During test, set network to "Slow 3G"
+2. Answer a question and click "Next"
+3. **Expected Results**:
+   - If submission fails, automatic retry with backoff (500ms, 1s, 2s)
+   - User may see brief delay but answer is eventually saved
+   - Console shows retry attempts if any
 
 ### Test 12.3: Learning Path Generation Error Handling
 
-1. **Test Fallback Recommendations:**
-   - Complete a proficiency test
-   - On results page, check browser console for any errors
-   - If learning path generation fails, expected:
-     - Toast notification: "Using default recommendations"
-     - Learning path shows general content for user's level
-     - Background retry happens after 5 seconds
+#### Scenario A: Fallback to Default Recommendations
+1. Complete a proficiency test successfully
+2. **Simulate API failure** (requires code modification for testing):
+   - Temporarily modify `generateLearningPath()` to throw an error
+3. **Expected Results**:
+   - Toast notification: "Using default recommendations"
+   - Description: "Unable to generate personalized path. Showing general content for your level."
+   - Learning path panel shows general content for user's proficiency level
+   - Background retry scheduled for 5 seconds later
 
-2. **Test Null Filtering:**
-   - Navigate to dashboard
-   - Check Learning Path Panel
-   - Expected: No null or undefined items in recommendations
-   - Expected: All items have valid id, title, and description
+#### Scenario B: Null/Undefined Filtering
+1. Navigate to dashboard after completing test
+2. Check Learning Path Panel
+3. **Expected Results**:
+   - All displayed recommendations have valid id, title, and description
+   - No "undefined" or "null" values visible
+   - No broken cards or missing data
 
-3. **Test Background Retry:**
-   - If initial path generation fails, wait 5 seconds
-   - Check browser console for background retry attempt
-   - Expected: Retry happens silently without showing loading state
-   - Expected: If retry succeeds, learning path updates automatically
+#### Scenario C: Background Retry
+1. After fallback scenario (Scenario A)
+2. Wait 5 seconds
+3. **Expected Results**:
+   - System attempts to regenerate personalized path in background
+   - No toast notification for background retry (silent)
+   - If successful, learning path updates automatically
+   - Console shows retry attempt
+
+#### Scenario D: Learning Path Update After Quiz
+1. Complete a quiz with score >80%
+2. **Expected Results**:
+   - Toast: "Great job! Your learning path now includes more advanced content"
+   - Learning path panel shows "New" badge
+   - Recommendations include higher-level content
+   - If path generation fails, falls back to default recommendations
 
 ## What to Look For
 
-### Visual Indicators:
-- ✅ Error cards with clear messages and action buttons
-- ✅ Retry attempt counter (1 of 3, 2 of 3, etc.)
-- ✅ Manual retry button appears after auto-retry exhaustion
-- ✅ Toast notifications for fallback recommendations
-- ✅ Loading states don't appear during background retries
+### Visual Indicators
+- ✅ Error alerts with clear, actionable messages
+- ✅ Retry buttons appear for recoverable errors
+- ✅ Loading states during retry attempts
+- ✅ Toast notifications for success/failure
+- ✅ "New" badge on learning path panel after updates
 
-### Behavior:
-- ✅ Answers persist in localStorage during test
-- ✅ Exponential backoff delays between retries
-- ✅ Critical errors redirect to test selection
-- ✅ Fallback recommendations load when generation fails
-- ✅ Background retries happen automatically
-- ✅ Null/undefined items filtered from recommendations
+### Behavior Indicators
+- ✅ Automatic retry attempts with increasing delays
+- ✅ Manual retry option after auto-retry exhaustion
+- ✅ Answers persist across page refreshes
+- ✅ Graceful degradation to default recommendations
+- ✅ Background retries don't interrupt user experience
 
-### Console Logs:
+### Console Indicators
 - ✅ Detailed error logs with timestamps
-- ✅ Test ID, attempt ID, and error details logged
-- ✅ Retry count and error type logged
-- ✅ Fallback mechanism logs when activated
+- ✅ Retry count tracking
+- ✅ Error classification (critical vs recoverable)
+- ✅ Stack traces for debugging
 
-## Error Recovery Options
+## Error Log Format
 
-### Test Loading Errors:
-- Retry button (up to 3 attempts)
-- Back to Test Selection button
-- Automatic redirect on critical errors
+Check browser console for error logs in this format:
 
-### Submission Errors:
-- Auto-retry with exponential backoff (3 attempts)
-- Manual retry button
-- localStorage preservation of answers
+```javascript
+// Test Loading Error
+{
+  timestamp: "2025-11-16T...",
+  testId: "uuid",
+  error: "Error message",
+  stack: "Stack trace...",
+  retryCount: 0
+}
 
-### Learning Path Errors:
-- Fallback to default recommendations
-- Background retry after 5 seconds
-- User-friendly error messages
-- Graceful degradation to general content
+// Test Submission Error
+{
+  timestamp: "2025-11-16T...",
+  testId: "uuid",
+  attemptId: "uuid",
+  error: "Error message",
+  submissionRetryCount: 0,
+  answersCount: 10
+}
+```
+
+## Testing Checklist
+
+- [ ] Test loading retry works (Scenario 12.1.A)
+- [ ] Critical errors handled correctly (Scenario 12.1.B)
+- [ ] Multiple retry attempts work (Scenario 12.1.C)
+- [ ] Auto-save to localStorage works (Scenario 12.2.A)
+- [ ] Submission retry with backoff works (Scenario 12.2.B)
+- [ ] Manual retry after exhaustion works (Scenario 12.2.C)
+- [ ] Answer submission retry works (Scenario 12.2.D)
+- [ ] Fallback recommendations work (Scenario 12.3.A)
+- [ ] Null filtering prevents broken UI (Scenario 12.3.B)
+- [ ] Background retry executes (Scenario 12.3.C)
+- [ ] Learning path updates handle errors (Scenario 12.3.D)
 
 ## Notes
 
-- All error handling includes comprehensive logging for administrative review
-- User experience remains smooth even during failures
-- Progress is never lost due to network issues
-- Fallback mechanisms ensure users always see relevant content
-- Background retries happen transparently without disrupting user flow
+- **Network Simulation**: Use Chrome DevTools Network tab to simulate offline/slow connections
+- **localStorage**: Check Application tab in DevTools to verify saved data
+- **Console Logs**: Keep console open to monitor error logs and retry attempts
+- **Exponential Backoff**: Delays increase exponentially (1s, 2s, 4s for submissions; 500ms, 1s, 2s for answers)
+- **Background Operations**: Silent retries don't show toast notifications to avoid interrupting user
+
+## Related Files
+
+- `src/app/proficiency-test/[testId]/page.tsx` - Test loading and submission error handling
+- `src/context/LearningContext.tsx` - Service-level error handling and retry logic
+- `docs/technical_documentation.md` - Updated with error handling documentation
+- `.kiro/specs/generate-learning-path-uc2/tasks.md` - Task completion status

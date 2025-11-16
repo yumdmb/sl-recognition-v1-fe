@@ -243,7 +243,12 @@ const ProficiencyTestResultsPage = () => {
       )}
 
       {/* Action Buttons */}
-      <div className="flex gap-4 justify-center">
+      <div className="flex gap-4 justify-center flex-wrap">
+        <Button asChild variant="outline">
+          <Link href="/proficiency-test/history">
+            View Test History
+          </Link>
+        </Button>
         <Button asChild variant="outline">
           <Link href={`/proficiency-test/${attempt.test_id}`}>
             <RotateCcw className="h-4 w-4 mr-2" />

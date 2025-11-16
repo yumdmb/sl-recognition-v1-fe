@@ -255,3 +255,55 @@ export const getTestResultsWithAnalysis = async (
     recommendations,
   };
 };
+
+/**
+ * Fetches all test attempts for a user with test details.
+ * @param userId - The ID of the user.
+ * @returns A list of test attempts with test information.
+ */
+export const getUserTestHistory = async (userId: string) => {
+  // First, get all attempts
+  const { data: attempts, error: attemptsError } = await supabase
+    .from('proficiency_test_attempts')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (attemptsError) {
+    console.error('Error fetching test attempts:', attemptsError);
+    throw attemptsError;
+  }
+
+  if (!attempts || attempts.length === 0) {
+    return [];
+  }
+
+  // Get unique test IDs
+  const testIds = [...new Set(attempts.map(a => a.test_id))];
+
+  // Fetch test details
+  const { data: tests, error: testsError } = await supabase
+    .from('proficiency_tests')
+    .select('id, title, description')
+    .in('id', testIds);
+
+  if (testsError) {
+    console.error('Error fetching test details:', testsError);
+    throw testsError;
+  }
+
+  // Create a map of test details
+  const testMap = new Map(tests?.map(t => [t.id, t]) || []);
+
+  // Combine attempts with test details
+  const history = attempts.map(attempt => ({
+    ...attempt,
+    test: testMap.get(attempt.test_id) || {
+      id: attempt.test_id,
+      title: 'Unknown Test',
+      description: null
+    }
+  }));
+
+  return history;
+};
