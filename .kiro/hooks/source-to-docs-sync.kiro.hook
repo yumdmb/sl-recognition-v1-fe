@@ -1,5 +1,5 @@
 {
-  "enabled": true,
+  "enabled": false,
   "name": "Source to Docs Sync",
   "description": "Monitors TypeScript source files, configuration files, and SQL migrations. When changes are detected, triggers documentation updates in README.md and the /docs folder to keep documentation in sync with code changes.",
   "version": "1",

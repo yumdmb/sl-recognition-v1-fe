@@ -142,6 +142,10 @@ The proficiency testing system (in [`src/app/proficiency-test/`](src/app/profici
     - Fetching tutorials, quizzes, and materials matching the user's proficiency level
     - Prioritizing content addressing weak areas (Priority 1)
     - Including practice quizzes (Priority 2) and reference materials (Priority 3)
+    - Filtering content by user role (deaf/non-deaf) using the `recommended_for_role` field:
+      - **Deaf users**: Prioritizes visual learning materials and sign language-first content
+      - **Non-deaf users**: Includes comparative content with spoken language context
+      - **Universal content**: Available to all users regardless of role
 
 6.  **Results Display** ([`results/page.tsx`](src/app/proficiency-test/results/page.tsx:1)): 
     - Uses `LearningContext.getTestResults()` to fetch comprehensive analysis

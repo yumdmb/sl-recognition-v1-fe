@@ -87,6 +87,18 @@ const ProficiencyTestResultsPage = () => {
     }
   };
 
+  const getRoleLabel = (role?: 'deaf' | 'non-deaf' | 'all') => {
+    switch (role) {
+      case 'deaf':
+        return { label: 'Deaf', color: 'bg-purple-100 text-purple-800 border-purple-200' };
+      case 'non-deaf':
+        return { label: 'Non-Deaf', color: 'bg-green-100 text-green-800 border-green-200' };
+      case 'all':
+      default:
+        return { label: 'Universal', color: 'bg-blue-100 text-blue-800 border-blue-200' };
+    }
+  };
+
   return (
     <div className="container mx-auto py-8 max-w-4xl space-y-6">
       {/* Score and Level Card */}
@@ -205,10 +217,18 @@ const ProficiencyTestResultsPage = () => {
                 <div key={index} className="p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Badge variant="outline" className="text-xs">
                           {rec.type}
                         </Badge>
+                        {rec.recommended_for_role && rec.recommended_for_role !== 'all' && (
+                          <Badge 
+                            variant="outline" 
+                            className={`text-xs ${getRoleLabel(rec.recommended_for_role).color}`}
+                          >
+                            {getRoleLabel(rec.recommended_for_role).label}
+                          </Badge>
+                        )}
                         <h4 className="font-medium">{rec.title}</h4>
                       </div>
                       <p className="text-sm text-muted-foreground mt-1">{rec.description}</p>

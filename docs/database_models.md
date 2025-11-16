@@ -53,6 +53,7 @@ Stores tutorial content for learning sign language.
 | video_url | text | false | | URL to tutorial video |
 | level | text | false | | Difficulty level (beginner, intermediate, advanced) |
 | language | text | false | | Sign language type (ASL, MSL) |
+| recommended_for_role | text | true | 'all' | Target audience: deaf (visual learning), non-deaf (comparative learning), or all (universal content) |
 | created_by | uuid | true | | Reference to creator user |
 | created_at | timestamptz | true | now() | Creation timestamp |
 | updated_at | timestamptz | true | now() | Last update timestamp |
@@ -85,6 +86,7 @@ Stores downloadable learning materials.
 | download_url | text | false | | URL to download the material |
 | level | text | false | | Difficulty level (beginner, intermediate, advanced) |
 | language | text | false | | Sign language type (ASL, MSL) |
+| recommended_for_role | text | true | 'all' | Target audience: deaf (visual learning), non-deaf (comparative learning), or all (universal content) |
 | created_by | uuid | true | | Reference to creator user |
 | created_at | timestamptz | true | now() | Creation timestamp |
 | updated_at | timestamptz | true | now() | Last update timestamp |
@@ -100,6 +102,7 @@ Groups of quiz questions for testing knowledge.
 | title | text | false | | Quiz set title |
 | description | text | false | | Quiz set description |
 | language | text | false | | Sign language type (ASL, MSL) |
+| recommended_for_role | text | true | 'all' | Target audience: deaf (visual learning), non-deaf (comparative learning), or all (universal content) |
 | created_by | uuid | true | | Reference to creator user |
 | created_at | timestamptz | true | now() | Creation timestamp |
 | updated_at | timestamptz | true | now() | Last update timestamp |

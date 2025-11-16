@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "12.2.12 (cd3cf9e)"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -322,6 +317,7 @@ export type Database = {
           id: string
           language: string
           level: string
+          recommended_for_role: string | null
           title: string
           type: string
           updated_at: string | null
@@ -336,6 +332,7 @@ export type Database = {
           id?: string
           language: string
           level: string
+          recommended_for_role?: string | null
           title: string
           type: string
           updated_at?: string | null
@@ -350,6 +347,7 @@ export type Database = {
           id?: string
           language?: string
           level?: string
+          recommended_for_role?: string | null
           title?: string
           type?: string
           updated_at?: string | null
@@ -730,6 +728,7 @@ export type Database = {
           description: string
           id: string
           language: string
+          recommended_for_role: string | null
           title: string
           updated_at: string | null
         }
@@ -739,6 +738,7 @@ export type Database = {
           description: string
           id?: string
           language: string
+          recommended_for_role?: string | null
           title: string
           updated_at?: string | null
         }
@@ -748,6 +748,7 @@ export type Database = {
           description?: string
           id?: string
           language?: string
+          recommended_for_role?: string | null
           title?: string
           updated_at?: string | null
         }
@@ -799,6 +800,7 @@ export type Database = {
           id: string
           language: string
           level: string
+          recommended_for_role: string | null
           thumbnail_url: string | null
           title: string
           updated_at: string | null
@@ -811,6 +813,7 @@ export type Database = {
           id?: string
           language: string
           level: string
+          recommended_for_role?: string | null
           thumbnail_url?: string | null
           title: string
           updated_at?: string | null
@@ -823,6 +826,7 @@ export type Database = {
           id?: string
           language?: string
           level?: string
+          recommended_for_role?: string | null
           thumbnail_url?: string | null
           title?: string
           updated_at?: string | null
@@ -1027,3 +1031,4 @@ export const Constants = {
     },
   },
 } as const
+

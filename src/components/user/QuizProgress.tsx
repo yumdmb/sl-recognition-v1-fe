@@ -52,25 +52,27 @@ const QuizProgress = () => {
             <Progress value={overallCompletion} className="h-3 mt-2" />
           </div>
 
-          {quizSets.map(quizSet => {
-            const progress = quizSet.progress;
-            const progressPercentage = progress ? (progress.score / progress.total_questions) * 100 : 0;
-            
-            return (
-              <div key={quizSet.id}>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm">{quizSet.title}</span>
-                  <span className="text-sm font-medium">{Math.round(progressPercentage)}%</span>
+          <div className="max-h-64 overflow-y-auto pr-2 space-y-4">
+            {quizSets.map(quizSet => {
+              const progress = quizSet.progress;
+              const progressPercentage = progress ? (progress.score / progress.total_questions) * 100 : 0;
+              
+              return (
+                <div key={quizSet.id}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm">{quizSet.title}</span>
+                    <span className="text-sm font-medium">{Math.round(progressPercentage)}%</span>
+                  </div>
+                  <Progress value={progressPercentage} className="h-2" />
+                  {progress && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Score: {progress.score}/{progress.total_questions}
+                    </p>
+                  )}
                 </div>
-                <Progress value={progressPercentage} className="h-2" />
-                {progress && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Score: {progress.score}/{progress.total_questions}
-                  </p>
-                )}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </CardContent>
     </Card>

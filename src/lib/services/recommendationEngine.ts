@@ -16,10 +16,12 @@ export interface LearningRecommendation {
   language: string;
   priority: number;
   reason: string;
+  recommended_for_role?: 'deaf' | 'non-deaf' | 'all';
 }
 
 /**
  * Generates personalized learning recommendations based on performance analysis and user profile.
+ * Uses role-specific path generation for deaf and non-deaf users.
  * @param userId - The ID of the user.
  * @param proficiencyLevel - The user's assigned proficiency level.
  * @param performanceAnalysis - Analysis of the user's test performance.
@@ -44,24 +46,25 @@ export const generateRecommendations = async (
 
   const userRole = userProfile.role;
 
-  // Fetch all available learning content
+  // Use role-specific path generation
+  if (userRole === 'deaf') {
+    return generateDeafUserPath(proficiencyLevel, performanceAnalysis);
+  } else if (userRole === 'non-deaf') {
+    return generateNonDeafUserPath(proficiencyLevel, performanceAnalysis);
+  }
+
+  // Fallback to generic recommendations for admin or unknown roles
   const [tutorials, quizzes, materials] = await Promise.all([
     fetchTutorials(proficiencyLevel),
     fetchQuizzes(proficiencyLevel),
     fetchMaterials(proficiencyLevel),
   ]);
 
-  // Filter content by user role
-  const filteredTutorials = filterByRole(tutorials, userRole);
-  const filteredQuizzes = filterByRole(quizzes, userRole);
-  const filteredMaterials = filterByRole(materials, userRole);
-
-  // Prioritize content based on weaknesses
   const recommendations: LearningRecommendation[] = [];
 
-  // Add tutorials addressing weak areas (highest priority)
+  // Add tutorials addressing weak areas
   if (performanceAnalysis.weaknesses.length > 0) {
-    filteredTutorials.forEach((tutorial) => {
+    tutorials.forEach((tutorial) => {
       recommendations.push({
         id: tutorial.id,
         type: 'tutorial',
@@ -71,12 +74,13 @@ export const generateRecommendations = async (
         language: tutorial.language,
         priority: 1,
         reason: `Recommended to strengthen ${performanceAnalysis.weaknesses[0]}`,
+        recommended_for_role: tutorial.recommended_for_role as 'deaf' | 'non-deaf' | 'all' || 'all',
       });
     });
   }
 
-  // Add quizzes for practice (medium priority)
-  filteredQuizzes.forEach((quiz) => {
+  // Add quizzes for practice
+  quizzes.forEach((quiz) => {
     recommendations.push({
       id: quiz.id,
       type: 'quiz',
@@ -86,11 +90,12 @@ export const generateRecommendations = async (
       language: quiz.language,
       priority: 2,
       reason: 'Practice to reinforce your learning',
+      recommended_for_role: quiz.recommended_for_role as 'deaf' | 'non-deaf' | 'all' || 'all',
     });
   });
 
-  // Add materials for reference (lower priority)
-  filteredMaterials.forEach((material) => {
+  // Add materials for reference
+  materials.forEach((material) => {
     recommendations.push({
       id: material.id,
       type: 'material',
@@ -100,10 +105,10 @@ export const generateRecommendations = async (
       language: material.language,
       priority: 3,
       reason: 'Additional resource for self-study',
+      recommended_for_role: material.recommended_for_role as 'deaf' | 'non-deaf' | 'all' || 'all',
     });
   });
 
-  // Sort by priority and limit to top 20
   return prioritizeContent(recommendations).slice(0, 20);
 };
 
@@ -170,21 +175,31 @@ const fetchMaterials = async (level: string) => {
  * Prioritizes role-specific content while allowing access to all content.
  * @param content - Array of content items.
  * @param userRole - The user's role (deaf/non-deaf).
- * @returns Filtered content array.
+ * @returns Filtered and sorted content array with role-specific content prioritized.
  */
-export const filterByRole = <T extends { language?: string }>(
+export const filterByRole = <T extends { recommended_for_role?: string }>(
   content: T[],
   userRole: string
 ): T[] => {
-  // For now, we don't have explicit role markers in content
-  // Return all content, but in a real implementation, you would:
-  // 1. Check for a 'recommended_for_role' field
-  // 2. Prioritize content matching the user's role
-  // 3. Include universal content for all users
-
-  // Simple implementation: return all content
-  // In future, add role-specific filtering logic
-  return content;
+  // Normalize user role to match database values
+  const normalizedRole = userRole === 'deaf' ? 'deaf' : 'non-deaf';
+  
+  // Sort content to prioritize role-specific content
+  return content.sort((a, b) => {
+    const aRole = a.recommended_for_role || 'all';
+    const bRole = b.recommended_for_role || 'all';
+    
+    // Prioritize content matching user's role
+    if (aRole === normalizedRole && bRole !== normalizedRole) return -1;
+    if (bRole === normalizedRole && aRole !== normalizedRole) return 1;
+    
+    // Then prioritize universal content ('all')
+    if (aRole === 'all' && bRole !== 'all') return -1;
+    if (bRole === 'all' && aRole !== 'all') return 1;
+    
+    // Keep original order for same priority
+    return 0;
+  });
 };
 
 /**
@@ -204,4 +219,166 @@ export const prioritizeContent = (
     // Then sort alphabetically by title
     return a.title.localeCompare(b.title);
   });
+};
+
+/**
+ * Generates learning path specifically for deaf users.
+ * Prioritizes visual learning materials and sign language-first content.
+ * @param proficiencyLevel - The user's proficiency level.
+ * @param performanceAnalysis - Analysis of the user's test performance.
+ * @returns Array of learning recommendations tailored for deaf users.
+ */
+export const generateDeafUserPath = async (
+  proficiencyLevel: 'Beginner' | 'Intermediate' | 'Advanced',
+  performanceAnalysis: PerformanceAnalysis
+): Promise<LearningRecommendation[]> => {
+  // Fetch all available learning content
+  const [tutorials, quizzes, materials] = await Promise.all([
+    fetchTutorials(proficiencyLevel),
+    fetchQuizzes(proficiencyLevel),
+    fetchMaterials(proficiencyLevel),
+  ]);
+
+  // Filter for deaf-specific and universal content
+  const deafTutorials = tutorials.filter(
+    t => t.recommended_for_role === 'deaf' || t.recommended_for_role === 'all'
+  );
+  const deafQuizzes = quizzes.filter(
+    q => q.recommended_for_role === 'deaf' || q.recommended_for_role === 'all'
+  );
+  const deafMaterials = materials.filter(
+    m => m.recommended_for_role === 'deaf' || m.recommended_for_role === 'all'
+  );
+
+  const recommendations: LearningRecommendation[] = [];
+
+  // Prioritize visual learning tutorials addressing weak areas
+  if (performanceAnalysis.weaknesses.length > 0) {
+    deafTutorials.forEach((tutorial) => {
+      recommendations.push({
+        id: tutorial.id,
+        type: 'tutorial',
+        title: tutorial.title,
+        description: tutorial.description,
+        level: tutorial.level,
+        language: tutorial.language,
+        priority: tutorial.recommended_for_role === 'deaf' ? 1 : 2,
+        reason: `Visual learning to strengthen ${performanceAnalysis.weaknesses[0]}`,
+        recommended_for_role: tutorial.recommended_for_role as 'deaf' | 'non-deaf' | 'all' || 'all',
+      });
+    });
+  }
+
+  // Add sign language-first practice quizzes
+  deafQuizzes.forEach((quiz) => {
+    recommendations.push({
+      id: quiz.id,
+      type: 'quiz',
+      title: quiz.title,
+      description: quiz.description,
+      level: proficiencyLevel,
+      language: quiz.language,
+      priority: quiz.recommended_for_role === 'deaf' ? 2 : 3,
+      reason: 'Practice with visual sign language content',
+      recommended_for_role: quiz.recommended_for_role as 'deaf' | 'non-deaf' | 'all' || 'all',
+    });
+  });
+
+  // Add deaf community-specific resources
+  deafMaterials.forEach((material) => {
+    recommendations.push({
+      id: material.id,
+      type: 'material',
+      title: material.title,
+      description: material.description,
+      level: material.level,
+      language: material.language,
+      priority: material.recommended_for_role === 'deaf' ? 3 : 4,
+      reason: 'Deaf community resources and visual references',
+      recommended_for_role: material.recommended_for_role as 'deaf' | 'non-deaf' | 'all' || 'all',
+    });
+  });
+
+  return prioritizeContent(recommendations).slice(0, 20);
+};
+
+/**
+ * Generates learning path specifically for non-deaf users.
+ * Includes comparative content with sign language and spoken language.
+ * @param proficiencyLevel - The user's proficiency level.
+ * @param performanceAnalysis - Analysis of the user's test performance.
+ * @returns Array of learning recommendations tailored for non-deaf users.
+ */
+export const generateNonDeafUserPath = async (
+  proficiencyLevel: 'Beginner' | 'Intermediate' | 'Advanced',
+  performanceAnalysis: PerformanceAnalysis
+): Promise<LearningRecommendation[]> => {
+  // Fetch all available learning content
+  const [tutorials, quizzes, materials] = await Promise.all([
+    fetchTutorials(proficiencyLevel),
+    fetchQuizzes(proficiencyLevel),
+    fetchMaterials(proficiencyLevel),
+  ]);
+
+  // Filter for non-deaf-specific and universal content
+  const nonDeafTutorials = tutorials.filter(
+    t => t.recommended_for_role === 'non-deaf' || t.recommended_for_role === 'all'
+  );
+  const nonDeafQuizzes = quizzes.filter(
+    q => q.recommended_for_role === 'non-deaf' || q.recommended_for_role === 'all'
+  );
+  const nonDeafMaterials = materials.filter(
+    m => m.recommended_for_role === 'non-deaf' || m.recommended_for_role === 'all'
+  );
+
+  const recommendations: LearningRecommendation[] = [];
+
+  // Prioritize comparative content (sign + spoken language)
+  if (performanceAnalysis.weaknesses.length > 0) {
+    nonDeafTutorials.forEach((tutorial) => {
+      recommendations.push({
+        id: tutorial.id,
+        type: 'tutorial',
+        title: tutorial.title,
+        description: tutorial.description,
+        level: tutorial.level,
+        language: tutorial.language,
+        priority: tutorial.recommended_for_role === 'non-deaf' ? 1 : 2,
+        reason: `Comparative learning to strengthen ${performanceAnalysis.weaknesses[0]}`,
+        recommended_for_role: tutorial.recommended_for_role as 'deaf' | 'non-deaf' | 'all' || 'all',
+      });
+    });
+  }
+
+  // Add pronunciation and context practice
+  nonDeafQuizzes.forEach((quiz) => {
+    recommendations.push({
+      id: quiz.id,
+      type: 'quiz',
+      title: quiz.title,
+      description: quiz.description,
+      level: proficiencyLevel,
+      language: quiz.language,
+      priority: quiz.recommended_for_role === 'non-deaf' ? 2 : 3,
+      reason: 'Practice with pronunciation and context explanations',
+      recommended_for_role: quiz.recommended_for_role as 'deaf' | 'non-deaf' | 'all' || 'all',
+    });
+  });
+
+  // Add hearing perspective resources
+  nonDeafMaterials.forEach((material) => {
+    recommendations.push({
+      id: material.id,
+      type: 'material',
+      title: material.title,
+      description: material.description,
+      level: material.level,
+      language: material.language,
+      priority: material.recommended_for_role === 'non-deaf' ? 3 : 4,
+      reason: 'Resources with hearing perspective and context',
+      recommended_for_role: material.recommended_for_role as 'deaf' | 'non-deaf' | 'all' || 'all',
+    });
+  });
+
+  return prioritizeContent(recommendations).slice(0, 20);
 };

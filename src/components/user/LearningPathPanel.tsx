@@ -90,6 +90,18 @@ const LearningPathPanel: React.FC = () => {
     }
   };
 
+  const getRoleLabel = (role?: 'deaf' | 'non-deaf' | 'all') => {
+    switch (role) {
+      case 'deaf':
+        return { label: 'Deaf', color: 'bg-purple-100 text-purple-800 border-purple-200' };
+      case 'non-deaf':
+        return { label: 'Non-Deaf', color: 'bg-green-100 text-green-800 border-green-200' };
+      case 'all':
+      default:
+        return { label: 'Universal', color: 'bg-blue-100 text-blue-800 border-blue-200' };
+    }
+  };
+
   const handleStartLearning = (item: LearningRecommendation) => {
     // Navigate based on content type
     switch (item.type) {
@@ -198,12 +210,22 @@ const LearningPathPanel: React.FC = () => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <h4 className="font-medium text-sm line-clamp-1">{item.title}</h4>
-                  <Badge 
-                    variant="outline" 
-                    className={`text-xs shrink-0 ${getPriorityColor(item.priority)}`}
-                  >
-                    Priority {item.priority}
-                  </Badge>
+                  <div className="flex gap-1 shrink-0">
+                    <Badge 
+                      variant="outline" 
+                      className={`text-xs ${getPriorityColor(item.priority)}`}
+                    >
+                      Priority {item.priority}
+                    </Badge>
+                    {item.recommended_for_role && item.recommended_for_role !== 'all' && (
+                      <Badge 
+                        variant="outline" 
+                        className={`text-xs ${getRoleLabel(item.recommended_for_role).color}`}
+                      >
+                        {getRoleLabel(item.recommended_for_role).label}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <p className="text-xs text-gray-600 line-clamp-2 mb-2">
                   {item.description}
