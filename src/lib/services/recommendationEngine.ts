@@ -25,12 +25,14 @@ export interface LearningRecommendation {
  * @param userId - The ID of the user.
  * @param proficiencyLevel - The user's assigned proficiency level.
  * @param performanceAnalysis - Analysis of the user's test performance.
+ * @param recentQuizScore - Optional recent quiz score percentage for adaptive recommendations.
  * @returns Array of learning recommendations prioritized by relevance.
  */
 export const generateRecommendations = async (
   userId: string,
   proficiencyLevel: 'Beginner' | 'Intermediate' | 'Advanced',
-  performanceAnalysis: PerformanceAnalysis
+  performanceAnalysis: PerformanceAnalysis,
+  recentQuizScore?: number
 ): Promise<LearningRecommendation[]> => {
   // Fetch user profile to get role
   const { data: userProfile, error: profileError } = await supabase
@@ -46,11 +48,11 @@ export const generateRecommendations = async (
 
   const userRole = userProfile.role;
 
-  // Use role-specific path generation
+  // Use role-specific path generation with adaptive logic
   if (userRole === 'deaf') {
-    return generateDeafUserPath(proficiencyLevel, performanceAnalysis);
+    return generateDeafUserPath(proficiencyLevel, performanceAnalysis, recentQuizScore);
   } else if (userRole === 'non-deaf') {
-    return generateNonDeafUserPath(proficiencyLevel, performanceAnalysis);
+    return generateNonDeafUserPath(proficiencyLevel, performanceAnalysis, recentQuizScore);
   }
 
   // Fallback to generic recommendations for admin or unknown roles
@@ -222,21 +224,56 @@ export const prioritizeContent = (
 };
 
 /**
+ * Adjusts proficiency level based on recent quiz performance.
+ * @param currentLevel - The user's current proficiency level.
+ * @param quizScore - Recent quiz score percentage (0-100).
+ * @returns Adjusted proficiency level for content recommendations.
+ */
+const adjustLevelByPerformance = (
+  currentLevel: 'Beginner' | 'Intermediate' | 'Advanced',
+  quizScore?: number
+): 'Beginner' | 'Intermediate' | 'Advanced' => {
+  if (!quizScore) return currentLevel;
+
+  // High performance (>80%) - suggest advanced content
+  if (quizScore > 80) {
+    if (currentLevel === 'Beginner') return 'Intermediate';
+    if (currentLevel === 'Intermediate') return 'Advanced';
+    return 'Advanced';
+  }
+
+  // Low performance (<50%) - suggest foundational content
+  if (quizScore < 50) {
+    if (currentLevel === 'Advanced') return 'Intermediate';
+    if (currentLevel === 'Intermediate') return 'Beginner';
+    return 'Beginner';
+  }
+
+  // Average performance (50-80%) - keep current level
+  return currentLevel;
+};
+
+/**
  * Generates learning path specifically for deaf users.
  * Prioritizes visual learning materials and sign language-first content.
  * @param proficiencyLevel - The user's proficiency level.
  * @param performanceAnalysis - Analysis of the user's test performance.
+ * @param recentQuizScore - Optional recent quiz score percentage for adaptive recommendations.
  * @returns Array of learning recommendations tailored for deaf users.
  */
 export const generateDeafUserPath = async (
   proficiencyLevel: 'Beginner' | 'Intermediate' | 'Advanced',
-  performanceAnalysis: PerformanceAnalysis
+  performanceAnalysis: PerformanceAnalysis,
+  recentQuizScore?: number
 ): Promise<LearningRecommendation[]> => {
-  // Fetch all available learning content
+  // Adjust level based on recent performance
+  const adjustedLevel = adjustLevelByPerformance(proficiencyLevel, recentQuizScore);
+  
+  // Fetch all available learning content using adjusted level
   const [tutorials, quizzes, materials] = await Promise.all([
-    fetchTutorials(proficiencyLevel),
-    fetchQuizzes(proficiencyLevel),
-    fetchMaterials(proficiencyLevel),
+    fetchTutorials(adjustedLevel),
+    fetchQuizzes(adjustedLevel),
+    fetchMaterials(adjustedLevel),
   ]);
 
   // Filter for deaf-specific and universal content
@@ -252,6 +289,16 @@ export const generateDeafUserPath = async (
 
   const recommendations: LearningRecommendation[] = [];
 
+  // Determine reason based on performance
+  let recommendationReason = `Visual learning to strengthen ${performanceAnalysis.weaknesses[0]}`;
+  if (recentQuizScore !== undefined) {
+    if (recentQuizScore > 80) {
+      recommendationReason = `Advanced content based on your excellent performance (${Math.round(recentQuizScore)}%)`;
+    } else if (recentQuizScore < 50) {
+      recommendationReason = `Foundational content to strengthen ${performanceAnalysis.weaknesses[0]}`;
+    }
+  }
+
   // Prioritize visual learning tutorials addressing weak areas
   if (performanceAnalysis.weaknesses.length > 0) {
     deafTutorials.forEach((tutorial) => {
@@ -263,7 +310,7 @@ export const generateDeafUserPath = async (
         level: tutorial.level,
         language: tutorial.language,
         priority: tutorial.recommended_for_role === 'deaf' ? 1 : 2,
-        reason: `Visual learning to strengthen ${performanceAnalysis.weaknesses[0]}`,
+        reason: recommendationReason,
         recommended_for_role: tutorial.recommended_for_role as 'deaf' | 'non-deaf' | 'all' || 'all',
       });
     });
@@ -307,17 +354,22 @@ export const generateDeafUserPath = async (
  * Includes comparative content with sign language and spoken language.
  * @param proficiencyLevel - The user's proficiency level.
  * @param performanceAnalysis - Analysis of the user's test performance.
+ * @param recentQuizScore - Optional recent quiz score percentage for adaptive recommendations.
  * @returns Array of learning recommendations tailored for non-deaf users.
  */
 export const generateNonDeafUserPath = async (
   proficiencyLevel: 'Beginner' | 'Intermediate' | 'Advanced',
-  performanceAnalysis: PerformanceAnalysis
+  performanceAnalysis: PerformanceAnalysis,
+  recentQuizScore?: number
 ): Promise<LearningRecommendation[]> => {
-  // Fetch all available learning content
+  // Adjust level based on recent performance
+  const adjustedLevel = adjustLevelByPerformance(proficiencyLevel, recentQuizScore);
+  
+  // Fetch all available learning content using adjusted level
   const [tutorials, quizzes, materials] = await Promise.all([
-    fetchTutorials(proficiencyLevel),
-    fetchQuizzes(proficiencyLevel),
-    fetchMaterials(proficiencyLevel),
+    fetchTutorials(adjustedLevel),
+    fetchQuizzes(adjustedLevel),
+    fetchMaterials(adjustedLevel),
   ]);
 
   // Filter for non-deaf-specific and universal content
@@ -333,6 +385,16 @@ export const generateNonDeafUserPath = async (
 
   const recommendations: LearningRecommendation[] = [];
 
+  // Determine reason based on performance
+  let recommendationReason = `Comparative learning to strengthen ${performanceAnalysis.weaknesses[0]}`;
+  if (recentQuizScore !== undefined) {
+    if (recentQuizScore > 80) {
+      recommendationReason = `Advanced content based on your excellent performance (${Math.round(recentQuizScore)}%)`;
+    } else if (recentQuizScore < 50) {
+      recommendationReason = `Foundational content to strengthen ${performanceAnalysis.weaknesses[0]}`;
+    }
+  }
+
   // Prioritize comparative content (sign + spoken language)
   if (performanceAnalysis.weaknesses.length > 0) {
     nonDeafTutorials.forEach((tutorial) => {
@@ -344,7 +406,7 @@ export const generateNonDeafUserPath = async (
         level: tutorial.level,
         language: tutorial.language,
         priority: tutorial.recommended_for_role === 'non-deaf' ? 1 : 2,
-        reason: `Comparative learning to strengthen ${performanceAnalysis.weaknesses[0]}`,
+        reason: recommendationReason,
         recommended_for_role: tutorial.recommended_for_role as 'deaf' | 'non-deaf' | 'all' || 'all',
       });
     });

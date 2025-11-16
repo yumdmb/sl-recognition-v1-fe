@@ -2,16 +2,18 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useLearning } from '@/context/LearningContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, FileText, Brain, ArrowRight, Loader2 } from 'lucide-react';
+import { BookOpen, FileText, Brain, ArrowRight, Loader2, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getTestResultsWithAnalysis } from '@/lib/services/proficiencyTestService';
 import { LearningRecommendation } from '@/lib/services/recommendationEngine';
 
 const LearningPathPanel: React.FC = () => {
   const { currentUser } = useAuth();
+  const { hasNewRecommendations, lastUpdateTrigger, clearNewRecommendationsFlag } = useLearning();
   const router = useRouter();
   const [recommendations, setRecommendations] = useState<LearningRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -191,11 +193,26 @@ const LearningPathPanel: React.FC = () => {
           <div className="flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
             Your Learning Path
+            {hasNewRecommendations && (
+              <Badge 
+                variant="default" 
+                className="bg-green-500 hover:bg-green-600 text-white animate-pulse"
+                onClick={() => clearNewRecommendationsFlag()}
+              >
+                <Sparkles className="h-3 w-3 mr-1" />
+                New
+              </Badge>
+            )}
           </div>
           <Badge variant="outline" className="capitalize">
             {currentUser.proficiency_level}
           </Badge>
         </CardTitle>
+        {hasNewRecommendations && lastUpdateTrigger && (
+          <p className="text-sm text-muted-foreground mt-2">
+            {lastUpdateTrigger}
+          </p>
+        )}
       </CardHeader>
       <CardContent>
         <div className="space-y-3">

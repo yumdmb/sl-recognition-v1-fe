@@ -71,7 +71,9 @@ Get keys: `npx supabase status` → Copy "API URL" and "Publishable key"
 
 ## Task Completion Verification
 
-**After completing any task**, you MUST provide the user with:
+**After completing any task**, you MUST provide the user by writing in md file in docs/verification-steps-docs/ folder with:
+
+**File Naming Convention**: `[spec-name]-[task-number].md` (e.g., `generate-learning-path-uc2-1.md`, `generate-learning-path-uc2-1-1.md` for subtasks)
 
 1. **Summary of Changes**: Brief list of what was implemented
 2. **Verification Steps**: Clear, actionable steps to verify the task works correctly

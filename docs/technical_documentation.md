@@ -133,6 +133,13 @@ The proficiency testing system (in [`src/app/proficiency-test/`](src/app/profici
     - Displays questions one at a time with progress indicator
     - Tracks user answers locally before submission
     - Submits all answers and calculates results on test completion
+    - **Error Handling & Recovery**:
+      - Implements retry logic with up to 3 attempts for test loading failures
+      - Distinguishes between critical errors (invalid test ID, unauthorized) and transient errors (network issues)
+      - Logs errors with timestamps for administrative review
+      - Provides user-friendly error messages with retry options
+      - Auto-saves user answers to localStorage to prevent data loss during network issues
+      - Offers manual retry option after automatic retry attempts are exhausted
 
 3.  **Scoring & Analysis**: The system calculates scores and assigns proficiency levels (Beginner/Intermediate/Advanced).
 
@@ -146,6 +153,10 @@ The proficiency testing system (in [`src/app/proficiency-test/`](src/app/profici
       - **Deaf users**: Prioritizes visual learning materials and sign language-first content
       - **Non-deaf users**: Includes comparative content with spoken language context
       - **Universal content**: Available to all users regardless of role
+    - **Adaptive Difficulty Adjustment**: Uses `adjustLevelByPerformance()` to dynamically adjust content difficulty based on recent quiz scores:
+      - High performance (>80%): Suggests content one level higher
+      - Low performance (<50%): Suggests content one level lower
+      - Average performance (50-80%): Maintains current level
 
 6.  **Results Display** ([`results/page.tsx`](src/app/proficiency-test/results/page.tsx:1)): 
     - Uses `LearningContext.getTestResults()` to fetch comprehensive analysis
@@ -159,12 +170,20 @@ The proficiency testing system (in [`src/app/proficiency-test/`](src/app/profici
     - The [`LearningPathPanel.tsx`](src/components/user/LearningPathPanel.tsx:1) component displays top 5 personalized recommendations on the user dashboard
     - The profile page ([`src/app/(main)/profile/page.tsx`](src/app/(main)/profile/page.tsx:1)) shows proficiency level with a visual progress bar indicating advancement toward the next level (Beginner→Intermediate requires 50%, Intermediate→Advanced requires 80%)
 
+8.  **Dynamic Learning Path Updates**: The system automatically updates learning paths based on user progress:
+    - **Tutorial Completion**: When a user completes a tutorial via `markTutorialDone()`, the system triggers `updateLearningPath()` to refresh recommendations
+    - **Quiz Completion**: When a user completes a quiz via `submitQuizAnswers()`, the system passes the quiz score to `updateLearningPath()` for adaptive difficulty adjustment
+    - **Adaptive Feedback**: Users receive contextual toast notifications explaining why their learning path was updated (e.g., "Great job! Your learning path now includes more advanced content" for scores >80%)
+    - **Progress Tracking Integration**: Seamlessly integrates with UC10 progress tracking to ensure recommendations stay current with user achievements
+
 **State Management**: All proficiency test state and operations are centralized in [`LearningContext.tsx`](src/context/LearningContext.tsx:1), which provides:
 - `proficiencyLevel`: Current user proficiency level
 - `currentTest`: Active test with questions
 - `testAttempt`: Current test attempt record
 - `learningPath`: Personalized learning recommendations
-- Methods: `startTest()`, `submitAnswer()`, `submitTest()`, `getTestResults()`, `generateLearningPath()`
+- `hasNewRecommendations`: Flag indicating new recommendations are available
+- `lastUpdateTrigger`: Message explaining what triggered the last path update
+- Methods: `startTest()`, `submitAnswer()`, `submitTest()`, `getTestResults()`, `generateLearningPath()`, `updateLearningPath()`, `getLearningRecommendations()`
 
 ## 4. Conclusion
 

@@ -196,13 +196,17 @@ export const calculateResultAndAssignProficiency = async (attemptId: string, use
   return { score, proficiency_level };
 };
 /**
- 
-* Gets comprehensive test results including performance analysis and recommendations.
+ * Gets comprehensive test results including performance analysis and recommendations.
  * @param attemptId - The ID of the test attempt.
  * @param userId - The ID of the user.
+ * @param recentQuizScore - Optional recent quiz score percentage for adaptive recommendations.
  * @returns Complete test results with analysis and recommendations.
  */
-export const getTestResultsWithAnalysis = async (attemptId: string, userId: string) => {
+export const getTestResultsWithAnalysis = async (
+  attemptId: string, 
+  userId: string,
+  recentQuizScore?: number
+) => {
   // Get basic attempt data
   const { data: attempt, error: attemptError } = await supabase
     .from('proficiency_test_attempts')
@@ -235,11 +239,12 @@ export const getTestResultsWithAnalysis = async (attemptId: string, userId: stri
   // Identify knowledge gaps
   const knowledgeGaps = await identifyKnowledgeGaps(attemptId);
 
-  // Generate learning recommendations
+  // Generate learning recommendations with adaptive logic
   const recommendations = await generateRecommendations(
     userId,
     proficiencyLevel,
-    performanceAnalysis
+    performanceAnalysis,
+    recentQuizScore
   );
 
   return {

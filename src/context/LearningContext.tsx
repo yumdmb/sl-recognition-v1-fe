@@ -15,6 +15,7 @@ import type {
   QuizSetWithQuestions,
   Database 
 } from '@/types/database';
+export type { LearningRecommendation };
 
 interface LearningContextProps {
   // Loaders - separate loading states for each section
@@ -57,6 +58,8 @@ interface LearningContextProps {
   currentTest: ProficiencyTestService.ProficiencyTest | null;
   testAttempt: Database['public']['Tables']['proficiency_test_attempts']['Row'] | null;
   learningPath: LearningRecommendation[];
+  hasNewRecommendations: boolean;
+  lastUpdateTrigger: string | null;
   
   // Proficiency Test Methods
   startTest: (testId: string) => Promise<void>;
@@ -70,8 +73,9 @@ interface LearningContextProps {
   
   // Learning Path Methods
   generateLearningPath: () => Promise<void>;
-  updateLearningPath: () => Promise<void>;
+  updateLearningPath: (recentQuizScore?: number) => Promise<void>;
   getLearningRecommendations: () => Promise<LearningRecommendation[]>;
+  clearNewRecommendationsFlag: () => void;
 }
 
 const LearningContext = createContext<LearningContextProps | null>(null);
@@ -91,6 +95,8 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [currentTest, setCurrentTest] = useState<ProficiencyTestService.ProficiencyTest | null>(null);
   const [testAttempt, setTestAttempt] = useState<Database['public']['Tables']['proficiency_test_attempts']['Row'] | null>(null);
   const [learningPath, setLearningPath] = useState<LearningRecommendation[]>([]);
+  const [hasNewRecommendations, setHasNewRecommendations] = useState(false);
+  const [lastUpdateTrigger, setLastUpdateTrigger] = useState<string | null>(null);
   // Helper function to handle errors
   const handleError = (error: any, operation: string) => {
     console.error(`Error in ${operation}:`, error);
@@ -204,6 +210,11 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
         t.id === tutorialId ? { ...t, status: 'completed' } : t
       ));
       toast.success('Tutorial marked as completed!');
+      
+      // Trigger learning path update after tutorial completion
+      if (currentUser.proficiency_level) {
+        await updateLearningPath();
+      }
     } catch (error) {
       handleError(error, 'mark tutorial as done');
     }
@@ -423,12 +434,19 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
           : q
       ));
 
+      const scorePercentage = Math.round((result.score / result.totalQuestions) * 100);
+      
       toast.success(
         result.passed ? 'Quiz completed successfully!' : 'Quiz completed',
         {
-          description: `Score: ${result.score}/${result.totalQuestions} (${Math.round((result.score / result.totalQuestions) * 100)}%)`
+          description: `Score: ${result.score}/${result.totalQuestions} (${scorePercentage}%)`
         }
       );
+
+      // Trigger learning path update after quiz completion with adaptive logic
+      if (currentUser.proficiency_level) {
+        await updateLearningPath(scorePercentage);
+      }
 
       return result;
     } catch (error) {
@@ -463,18 +481,25 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
-  const submitAnswer = async (questionId: string, choiceId: string) => {
+  const submitAnswer = async (questionId: string, choiceId: string, retryCount: number = 0) => {
     try {
       if (!testAttempt) throw new Error('No active test attempt');
       
       await ProficiencyTestService.submitAnswer(testAttempt.id, questionId, choiceId);
-    } catch (error) {
+    } catch (error: any) {
+      // Retry logic with exponential backoff for network errors
+      if (retryCount < 3 && (error?.message?.includes('network') || error?.message?.includes('fetch'))) {
+        const backoffDelay = Math.pow(2, retryCount) * 500; // 500ms, 1s, 2s
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+        return submitAnswer(questionId, choiceId, retryCount + 1);
+      }
+      
       handleError(error, 'submit answer');
       throw error;
     }
   };
 
-  const submitTest = async (): Promise<{ 
+  const submitTest = async (retryCount: number = 0): Promise<{ 
     score: number; 
     proficiency_level: 'Beginner' | 'Intermediate' | 'Advanced';
     attemptId: string;
@@ -507,7 +532,14 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
         ...result,
         attemptId
       };
-    } catch (error) {
+    } catch (error: any) {
+      // Retry logic with exponential backoff for network errors
+      if (retryCount < 3 && (error?.message?.includes('network') || error?.message?.includes('fetch'))) {
+        const backoffDelay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+        return submitTest(retryCount + 1);
+      }
+      
       handleError(error, 'submit proficiency test');
       throw error;
     } finally {
@@ -539,11 +571,13 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   // Learning Path Methods
-  const generateLearningPath = async () => {
+  const generateLearningPath = async (retryInBackground: boolean = false) => {
     try {
       if (!currentUser) throw new Error('User not authenticated');
       
-      setProficiencyTestLoading(true);
+      if (!retryInBackground) {
+        setProficiencyTestLoading(true);
+      }
       
       // Create Supabase client
       const { createBrowserClient } = await import('@supabase/ssr');
@@ -563,7 +597,17 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       
       if (error || !latestAttempt) {
         console.warn('No test attempt found for learning path generation');
-        setLearningPath([]);
+        
+        // Fallback to default recommendations based on user's proficiency level
+        if (currentUser.proficiency_level) {
+          const defaultRecommendations = await getDefaultRecommendations(
+            currentUser.proficiency_level,
+            currentUser.role || 'non-deaf'
+          );
+          setLearningPath(defaultRecommendations);
+        } else {
+          setLearningPath([]);
+        }
         return;
       }
       
@@ -573,30 +617,263 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
         currentUser.id
       );
       
-      setLearningPath(results.recommendations);
+      // Filter out null/undefined items
+      const validRecommendations = results.recommendations.filter(
+        (rec: any) => rec && rec.id && rec.title
+      );
+      
+      setLearningPath(validRecommendations);
       setProficiencyLevel(results.proficiencyLevel);
       
-    } catch (error) {
-      handleError(error, 'generate learning path');
+    } catch (error: any) {
+      console.error('Learning path generation error:', error);
+      
+      // Fallback to default recommendations
+      try {
+        if (currentUser && currentUser.proficiency_level) {
+          const defaultRecommendations = await getDefaultRecommendations(
+            currentUser.proficiency_level,
+            currentUser.role || 'non-deaf'
+          );
+          setLearningPath(defaultRecommendations);
+          
+          if (!retryInBackground) {
+            toast.error('Using default recommendations', {
+              description: 'Unable to generate personalized path. Showing general content for your level.'
+            });
+          }
+          
+          // Retry in background after 5 seconds
+          if (!retryInBackground) {
+            setTimeout(() => {
+              generateLearningPath(true);
+            }, 5000);
+          }
+        }
+      } catch (fallbackError) {
+        console.error('Fallback recommendations failed:', fallbackError);
+        setLearningPath([]);
+        
+        if (!retryInBackground) {
+          handleError(error, 'generate learning path');
+        }
+      }
     } finally {
-      setProficiencyTestLoading(false);
+      if (!retryInBackground) {
+        setProficiencyTestLoading(false);
+      }
     }
   };
 
-  const updateLearningPath = async () => {
+  // Helper function to get default recommendations
+  const getDefaultRecommendations = async (
+    proficiencyLevel: string,
+    userRole: string
+  ): Promise<LearningRecommendation[]> => {
+    const { createBrowserClient } = await import('@supabase/ssr');
+    const supabase = createBrowserClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    
+    const recommendations: LearningRecommendation[] = [];
+    
+    // Fetch tutorials
+    const { data: tutorials } = await supabase
+      .from('tutorials')
+      .select('*')
+      .eq('level', proficiencyLevel)
+      .limit(5);
+    
+    if (tutorials) {
+      tutorials.forEach(tutorial => {
+        if (tutorial.id && tutorial.title && tutorial.description) {
+          recommendations.push({
+            id: tutorial.id,
+            type: 'tutorial',
+            title: tutorial.title,
+            description: tutorial.description,
+            level: tutorial.level || proficiencyLevel,
+            language: tutorial.language || 'MSL',
+            priority: 1,
+            reason: `Recommended for ${proficiencyLevel} level`,
+            recommended_for_role: tutorial.recommended_for_role as 'deaf' | 'non-deaf' | 'all'
+          });
+        }
+      });
+    }
+    
+    // Fetch quizzes
+    const { data: quizzes } = await supabase
+      .from('quiz_sets')
+      .select('*')
+      .limit(5);
+    
+    if (quizzes) {
+      quizzes.forEach(quiz => {
+        if (quiz.id && quiz.title && quiz.description) {
+          recommendations.push({
+            id: quiz.id,
+            type: 'quiz',
+            title: quiz.title,
+            description: quiz.description,
+            level: proficiencyLevel,
+            language: quiz.language || 'MSL',
+            priority: 2,
+            reason: 'Practice quiz',
+            recommended_for_role: quiz.recommended_for_role as 'deaf' | 'non-deaf' | 'all'
+          });
+        }
+      });
+    }
+    
+    // Fetch materials
+    const { data: materials } = await supabase
+      .from('materials')
+      .select('*')
+      .eq('level', proficiencyLevel)
+      .limit(5);
+    
+    if (materials) {
+      materials.forEach(material => {
+        if (material.id && material.title && material.description) {
+          recommendations.push({
+            id: material.id,
+            type: 'material',
+            title: material.title,
+            description: material.description,
+            level: material.level || proficiencyLevel,
+            language: material.language || 'MSL',
+            priority: 3,
+            reason: 'Reference material',
+            recommended_for_role: material.recommended_for_role as 'deaf' | 'non-deaf' | 'all'
+          });
+        }
+      });
+    }
+    
+    return recommendations;
+  };
+
+  const updateLearningPath = async (recentQuizScore?: number, retryInBackground: boolean = false) => {
     try {
       if (!currentUser) throw new Error('User not authenticated');
       
-      setProficiencyTestLoading(true);
+      if (!retryInBackground) {
+        setProficiencyTestLoading(true);
+      }
       
-      // Regenerate learning path based on current progress
-      await generateLearningPath();
+      // Create Supabase client
+      const { createBrowserClient } = await import('@supabase/ssr');
+      const supabase = createBrowserClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
       
-      toast.success('Learning path updated based on your progress');
-    } catch (error) {
-      handleError(error, 'update learning path');
+      // Get the latest test results
+      const { data: latestAttempt, error } = await supabase
+        .from('proficiency_test_attempts')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error || !latestAttempt) {
+        console.warn('No test attempt found for learning path update');
+        
+        // Fallback to default recommendations
+        if (currentUser.proficiency_level) {
+          const defaultRecommendations = await getDefaultRecommendations(
+            currentUser.proficiency_level,
+            currentUser.role || 'non-deaf'
+          );
+          setLearningPath(defaultRecommendations);
+        } else {
+          setLearningPath([]);
+        }
+        return;
+      }
+      
+      // Get recommendations with adaptive logic based on recent quiz score
+      const results = await ProficiencyTestService.getTestResultsWithAnalysis(
+        latestAttempt.id,
+        currentUser.id,
+        recentQuizScore
+      );
+      
+      // Filter out null/undefined items
+      const validRecommendations = results.recommendations.filter(
+        (rec: any) => rec && rec.id && rec.title
+      );
+      
+      setLearningPath(validRecommendations);
+      setProficiencyLevel(results.proficiencyLevel);
+      setHasNewRecommendations(true);
+      
+      // Set the trigger message for the notification
+      let triggerMessage = 'Based on your recent progress';
+      if (recentQuizScore !== undefined) {
+        if (recentQuizScore > 80) {
+          triggerMessage = `Based on your excellent quiz score (${Math.round(recentQuizScore)}%)`;
+          if (!retryInBackground) {
+            toast.success('Great job! Your learning path now includes more advanced content');
+          }
+        } else if (recentQuizScore < 50) {
+          triggerMessage = `Based on your quiz score (${Math.round(recentQuizScore)}%)`;
+          if (!retryInBackground) {
+            toast.success('Learning path updated with foundational materials to help you improve');
+          }
+        } else {
+          triggerMessage = `Based on your quiz score (${Math.round(recentQuizScore)}%)`;
+          if (!retryInBackground) {
+            toast.success('Learning path updated based on your progress');
+          }
+        }
+      } else {
+        if (!retryInBackground) {
+          toast.success('Learning path updated based on your progress');
+        }
+      }
+      
+      setLastUpdateTrigger(triggerMessage);
+    } catch (error: any) {
+      console.error('Learning path update error:', error);
+      
+      // Fallback to default recommendations
+      try {
+        if (currentUser && currentUser.proficiency_level) {
+          const defaultRecommendations = await getDefaultRecommendations(
+            currentUser.proficiency_level,
+            currentUser.role || 'non-deaf'
+          );
+          setLearningPath(defaultRecommendations);
+          
+          if (!retryInBackground) {
+            toast.error('Using default recommendations', {
+              description: 'Unable to update personalized path. Showing general content for your level.'
+            });
+          }
+          
+          // Retry in background after 5 seconds
+          if (!retryInBackground) {
+            setTimeout(() => {
+              updateLearningPath(recentQuizScore, true);
+            }, 5000);
+          }
+        }
+      } catch (fallbackError) {
+        console.error('Fallback recommendations failed:', fallbackError);
+        setLearningPath([]);
+        
+        if (!retryInBackground) {
+          handleError(error, 'update learning path');
+        }
+      }
     } finally {
-      setProficiencyTestLoading(false);
+      if (!retryInBackground) {
+        setProficiencyTestLoading(false);
+      }
     }
   };
 
@@ -616,6 +893,10 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       handleError(error, 'fetch learning recommendations');
       return [];
     }
+  };
+
+  const clearNewRecommendationsFlag = () => {
+    setHasNewRecommendations(false);
   };
 
   return (
@@ -654,6 +935,8 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
         currentTest,
         testAttempt,
         learningPath,
+        hasNewRecommendations,
+        lastUpdateTrigger,
         // Proficiency Test Methods
         startTest,
         submitAnswer,
@@ -662,7 +945,8 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
         // Learning Path Methods
         generateLearningPath,
         updateLearningPath,
-        getLearningRecommendations
+        getLearningRecommendations,
+        clearNewRecommendationsFlag
       }}
     >
       {children}
