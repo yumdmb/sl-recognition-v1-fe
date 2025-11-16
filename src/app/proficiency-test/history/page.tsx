@@ -41,6 +41,7 @@ interface TestAttempt {
     id: string;
     title: string;
     description: string | null;
+    language: string;
   };
 }
 

@@ -284,7 +284,7 @@ export const getUserTestHistory = async (userId: string) => {
   // Fetch test details
   const { data: tests, error: testsError } = await supabase
     .from('proficiency_tests')
-    .select('id, title, description')
+    .select('id, title, description, language')
     .in('id', testIds);
 
   if (testsError) {
@@ -301,7 +301,8 @@ export const getUserTestHistory = async (userId: string) => {
     test: testMap.get(attempt.test_id) || {
       id: attempt.test_id,
       title: 'Unknown Test',
-      description: null
+      description: null,
+      language: 'MSL'
     }
   }));
 
