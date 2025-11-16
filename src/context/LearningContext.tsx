@@ -6,14 +6,13 @@ import { useAuth } from './AuthContext';
 import { TutorialService } from '@/lib/services/tutorialService';
 import * as MaterialService from '@/lib/services/materialService';
 import { QuizService } from '@/lib/services/quizService';
+import * as ProficiencyTestService from '@/lib/services/proficiencyTestService';
+import { LearningRecommendation } from '@/lib/services/recommendationEngine';
 import type { 
   TutorialWithProgress, 
   Material, 
   QuizSetWithProgress,
   QuizSetWithQuestions,
-  Tutorial,
-  QuizSet,
-  QuizQuestion,
   Database 
 } from '@/types/database';
 
@@ -23,6 +22,7 @@ interface LearningContextProps {
   tutorialsLoading: boolean;
   materialsLoading: boolean;
   quizSetsLoading: boolean;
+  proficiencyTestLoading: boolean;
     // Tutorials
   tutorials: TutorialWithProgress[];
   getTutorials: (language?: 'ASL' | 'MSL') => Promise<void>;
@@ -51,19 +51,46 @@ interface LearningContextProps {
   updateQuizQuestion: (id: string, updates: Database['public']['Tables']['quiz_questions']['Update']) => Promise<void>;
   deleteQuizQuestion: (id: string) => Promise<void>;
   submitQuizAnswers: (quizSetId: string, answers: { questionId: string; answer: string }[]) => Promise<{ score: number; totalQuestions: number; passed: boolean }>;
+  
+  // Proficiency Test State
+  proficiencyLevel: 'Beginner' | 'Intermediate' | 'Advanced' | null;
+  currentTest: ProficiencyTestService.ProficiencyTest | null;
+  testAttempt: Database['public']['Tables']['proficiency_test_attempts']['Row'] | null;
+  learningPath: LearningRecommendation[];
+  
+  // Proficiency Test Methods
+  startTest: (testId: string) => Promise<void>;
+  submitAnswer: (questionId: string, choiceId: string) => Promise<void>;
+  submitTest: () => Promise<{ 
+    score: number; 
+    proficiency_level: 'Beginner' | 'Intermediate' | 'Advanced';
+    attemptId: string;
+  }>;
+  getTestResults: (attemptId: string) => Promise<any>;
+  
+  // Learning Path Methods
+  generateLearningPath: () => Promise<void>;
+  updateLearningPath: () => Promise<void>;
+  getLearningRecommendations: () => Promise<LearningRecommendation[]>;
 }
 
 const LearningContext = createContext<LearningContextProps | null>(null);
 
 export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { currentUser } = useAuth();
-  const [isLoading, setIsLoading] = useState(false); // Keep for backward compatibility
   const [tutorialsLoading, setTutorialsLoading] = useState(false);
   const [materialsLoading, setMaterialsLoading] = useState(false);
   const [quizSetsLoading, setQuizSetsLoading] = useState(false);
+  const [proficiencyTestLoading, setProficiencyTestLoading] = useState(false);
   const [tutorials, setTutorials] = useState<TutorialWithProgress[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [quizSets, setQuizSets] = useState<QuizSetWithProgress[]>([]);
+  
+  // Proficiency Test State
+  const [proficiencyLevel, setProficiencyLevel] = useState<'Beginner' | 'Intermediate' | 'Advanced' | null>(null);
+  const [currentTest, setCurrentTest] = useState<ProficiencyTestService.ProficiencyTest | null>(null);
+  const [testAttempt, setTestAttempt] = useState<Database['public']['Tables']['proficiency_test_attempts']['Row'] | null>(null);
+  const [learningPath, setLearningPath] = useState<LearningRecommendation[]>([]);
   // Helper function to handle errors
   const handleError = (error: any, operation: string) => {
     console.error(`Error in ${operation}:`, error);
@@ -409,13 +436,197 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       throw error;
     }
   };
+
+  // Proficiency Test Methods
+  const startTest = async (testId: string) => {
+    try {
+      if (!currentUser) throw new Error('User not authenticated');
+      
+      setProficiencyTestLoading(true);
+      
+      // Fetch the test with questions
+      const test = await ProficiencyTestService.getProficiencyTest(testId);
+      if (!test) throw new Error('Test not found');
+      
+      // Create a new test attempt
+      const attempt = await ProficiencyTestService.createTestAttempt(currentUser.id, testId);
+      
+      setCurrentTest(test);
+      setTestAttempt(attempt);
+      
+      toast.success('Test started! Good luck!');
+    } catch (error) {
+      handleError(error, 'start proficiency test');
+      throw error;
+    } finally {
+      setProficiencyTestLoading(false);
+    }
+  };
+
+  const submitAnswer = async (questionId: string, choiceId: string) => {
+    try {
+      if (!testAttempt) throw new Error('No active test attempt');
+      
+      await ProficiencyTestService.submitAnswer(testAttempt.id, questionId, choiceId);
+    } catch (error) {
+      handleError(error, 'submit answer');
+      throw error;
+    }
+  };
+
+  const submitTest = async (): Promise<{ 
+    score: number; 
+    proficiency_level: 'Beginner' | 'Intermediate' | 'Advanced';
+    attemptId: string;
+  }> => {
+    try {
+      if (!currentUser) throw new Error('User not authenticated');
+      if (!testAttempt) throw new Error('No active test attempt');
+      
+      setProficiencyTestLoading(true);
+      
+      const attemptId = testAttempt.id;
+      
+      // Calculate results and assign proficiency level
+      const result = await ProficiencyTestService.calculateResultAndAssignProficiency(
+        attemptId,
+        currentUser.id
+      );
+      
+      // Update local state
+      setProficiencyLevel(result.proficiency_level);
+      
+      // Generate learning path automatically
+      await generateLearningPath();
+      
+      toast.success('Test completed successfully!', {
+        description: `Your proficiency level: ${result.proficiency_level}`
+      });
+      
+      return {
+        ...result,
+        attemptId
+      };
+    } catch (error) {
+      handleError(error, 'submit proficiency test');
+      throw error;
+    } finally {
+      setProficiencyTestLoading(false);
+    }
+  };
+
+  const getTestResults = async (attemptId: string) => {
+    try {
+      if (!currentUser) throw new Error('User not authenticated');
+      
+      setProficiencyTestLoading(true);
+      
+      const results = await ProficiencyTestService.getTestResultsWithAnalysis(
+        attemptId,
+        currentUser.id
+      );
+      
+      // Update local state with proficiency level
+      setProficiencyLevel(results.proficiencyLevel);
+      
+      return results;
+    } catch (error) {
+      handleError(error, 'fetch test results');
+      throw error;
+    } finally {
+      setProficiencyTestLoading(false);
+    }
+  };
+
+  // Learning Path Methods
+  const generateLearningPath = async () => {
+    try {
+      if (!currentUser) throw new Error('User not authenticated');
+      
+      setProficiencyTestLoading(true);
+      
+      // Create Supabase client
+      const { createBrowserClient } = await import('@supabase/ssr');
+      const supabase = createBrowserClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+      
+      // Get the latest test results with recommendations
+      const { data: latestAttempt, error } = await supabase
+        .from('proficiency_test_attempts')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error || !latestAttempt) {
+        console.warn('No test attempt found for learning path generation');
+        setLearningPath([]);
+        return;
+      }
+      
+      // Get recommendations using the test results
+      const results = await ProficiencyTestService.getTestResultsWithAnalysis(
+        latestAttempt.id,
+        currentUser.id
+      );
+      
+      setLearningPath(results.recommendations);
+      setProficiencyLevel(results.proficiencyLevel);
+      
+    } catch (error) {
+      handleError(error, 'generate learning path');
+    } finally {
+      setProficiencyTestLoading(false);
+    }
+  };
+
+  const updateLearningPath = async () => {
+    try {
+      if (!currentUser) throw new Error('User not authenticated');
+      
+      setProficiencyTestLoading(true);
+      
+      // Regenerate learning path based on current progress
+      await generateLearningPath();
+      
+      toast.success('Learning path updated based on your progress');
+    } catch (error) {
+      handleError(error, 'update learning path');
+    } finally {
+      setProficiencyTestLoading(false);
+    }
+  };
+
+  const getLearningRecommendations = async (): Promise<LearningRecommendation[]> => {
+    try {
+      if (!currentUser) throw new Error('User not authenticated');
+      
+      // If we already have recommendations in state, return them
+      if (learningPath.length > 0) {
+        return learningPath;
+      }
+      
+      // Otherwise, generate new recommendations
+      await generateLearningPath();
+      return learningPath;
+    } catch (error) {
+      handleError(error, 'fetch learning recommendations');
+      return [];
+    }
+  };
+
   return (
     <LearningContext.Provider
       value={{
-        isLoading: tutorialsLoading || materialsLoading || quizSetsLoading, // Computed from individual states
+        isLoading: tutorialsLoading || materialsLoading || quizSetsLoading || proficiencyTestLoading, // Computed from individual states
         tutorialsLoading,
         materialsLoading,
-        quizSetsLoading,        tutorials,
+        quizSetsLoading,
+        proficiencyTestLoading,
+        tutorials,
         getTutorials,
         createTutorial,
         updateTutorial,
@@ -437,7 +648,21 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
         createQuizQuestion,
         updateQuizQuestion,
         deleteQuizQuestion,
-        submitQuizAnswers
+        submitQuizAnswers,
+        // Proficiency Test State
+        proficiencyLevel,
+        currentTest,
+        testAttempt,
+        learningPath,
+        // Proficiency Test Methods
+        startTest,
+        submitAnswer,
+        submitTest,
+        getTestResults,
+        // Learning Path Methods
+        generateLearningPath,
+        updateLearningPath,
+        getLearningRecommendations
       }}
     >
       {children}

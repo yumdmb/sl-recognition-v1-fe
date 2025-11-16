@@ -152,8 +152,8 @@
     - Update user profile with new proficiency level
     - Trigger learning path generation
     - _Requirements: FR-017 (3.1, 3.2, 3.3, 3.4, 3.5), FR-018 (4.1), FR-019 (5.1, 5.2, 5.3, 5.4, 5.5)_
-    - _Implementation: getTestResultsWithAnalysis() in proficiencyTestService.ts fetches attempt, analysis, and recommendations_
-    - _Note: ✅ Complete - Results page displays AI-generated insights, category performance, strengths/weaknesses, and personalized learning recommendations. Profile update happens during test submission._
+    - _Implementation: Uses LearningContext.getTestResults() which calls proficiencyTestService.getTestResultsWithAnalysis()_
+    - _Note: ✅ Complete - Results page (results/page.tsx) uses centralized LearningContext for state management. Displays AI-generated insights, category performance, strengths/weaknesses, and personalized learning recommendations. Profile update happens during test submission via submitTest()._
 
 - [x] 8. Integrate with dashboard
 
@@ -193,67 +193,71 @@
     - _Implementation: src/components/proficiency-test/ProficiencyTestPrompt.tsx integrated in src/app/(main)/dashboard/page.tsx_
     - _Note: ✅ Fully integrated - Shows on first dashboard visit for users without proficiency_level, uses localStorage to prevent repeated prompts_
 
-- [ ] 9. Implement LearningContext updates
-  - [ ] 9.1 Extend LearningContext with proficiency test state
+- [x] 9. Implement LearningContext updates
+
+  - [x] 9.1 Extend LearningContext with proficiency test state
     - Add proficiency level state to context
     - Add current test and test attempt state
     - Add learning path state
-    - _Requirements: FR-015 (1.4), FR-016 (2.1), FR-017 (3.3), FR-018 (4.1)_
-    - _Status: NOT IMPLEMENTED - LearningContext has no proficiency test state_
+    - _Requirements: 1.4, 2.1, 3.3, 4.1_
+    - _Implementation: src/context/LearningContext.tsx_
+    - _Note: ✅ Complete - Added proficiencyLevel, currentTest, testAttempt, and learningPath state variables with proper TypeScript typing. All proficiency test pages now use LearningContext for centralized state management instead of direct service calls._
 
-  - [ ] 9.2 Add proficiency test methods to context
+  - [x] 9.2 Add proficiency test methods to context
     - Implement startTest() method
     - Implement submitAnswer() method
     - Implement submitTest() method
     - Implement getTestResults() method
-    - _Requirements: FR-016 (2.1, 2.4, 2.5), FR-017 (3.1, 3.5)_
-    - _Status: NOT IMPLEMENTED_
+    - _Requirements: 2.1, 2.4, 2.5, 3.1, 3.5_
+    - _Implementation: src/context/LearningContext.tsx_
+    - _Note: ✅ Complete - All methods implemented with proper error handling, loading states, and toast notifications. startTest() fetches test and creates attempt, submitAnswer() records answers, submitTest() calculates results and triggers learning path generation, getTestResults() fetches comprehensive analysis_
 
-  - [ ] 9.3 Add learning path methods to context
+  - [x] 9.3 Add learning path methods to context
     - Implement generateLearningPath() method
     - Implement updateLearningPath() method
     - Implement getLearningRecommendations() method
-    - _Requirements: FR-018 (4.1, 4.2, 4.3), FR-020 (6.1, 6.4, 6.5)_
-    - _Status: NOT IMPLEMENTED_
+    - _Requirements: 4.1, 4.2, 4.3, 6.1, 6.4, 6.5_
+    - _Implementation: src/context/LearningContext.tsx_
+    - _Note: ✅ Complete - generateLearningPath() fetches latest test results and recommendations, updateLearningPath() regenerates path based on progress, getLearningRecommendations() returns cached or generates new recommendations. All methods integrated with proficiencyTestService and recommendationEngine_
 
 - [ ] 10. Build role-specific learning path logic
   - [ ] 10.1 Implement deaf user path generation
     - Filter content for visual learning materials
     - Prioritize sign language-first content
     - Include deaf community-specific resources
-    - _Requirements: FR-021 (7.1, 7.3)_
+    - _Requirements: 7.1, 7.3_
 
   - [ ] 10.2 Implement non-deaf user path generation
     - Include comparative content (sign + spoken language)
     - Add pronunciation and context explanations
     - Include hearing perspective resources
-    - _Requirements: FR-021 (7.2, 7.3)_
+    - _Requirements: 7.2, 7.3_
 
   - [ ] 10.3 Create role indicator in learning path
     - Mark content as deaf-specific, non-deaf-specific, or universal
     - Display role indicators on learning items
     - Allow cross-role content access with clear labeling
-    - _Requirements: FR-021 (7.4, 7.5)_
+    - _Requirements: 7.4, 7.5_
 
 - [ ] 11. Implement dynamic learning path updates
   - [ ] 11.1 Create progress tracking integration
     - Connect to UC10 progress tracking system
     - Listen for tutorial completion events
     - Listen for quiz completion events
-    - _Requirements: FR-020 (6.1, 6.4)_
+    - _Requirements: 6.1, 6.4_
 
   - [ ] 11.2 Build adaptive recommendation logic
     - Recalculate recommendations when user completes content
     - Suggest advanced content for high quiz scores
     - Recommend foundational materials for struggling topics
     - Update learning path automatically
-    - _Requirements: FR-020 (6.1, 6.2, 6.3, 6.4)_
+    - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
   - [ ] 11.3 Add learning path update notifications
     - Notify users when new content is recommended
     - Display "New Recommendations" badge on dashboard
     - Show what triggered the update (e.g., "Based on your recent quiz score")
-    - _Requirements: FR-020 (6.5)_
+    - _Requirements: 6.5_
 
 - [ ] 12. Add error handling and validation
   - [ ] 12.1 Implement test loading error handling

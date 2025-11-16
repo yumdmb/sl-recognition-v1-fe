@@ -11,7 +11,7 @@
 | UC# | Use Case Name | Core Functionality | Database | Service Layer | UI Pages | Status |
 |-----|---------------|-------------------|----------|---------------|----------|--------|
 | UC1 | User Account Management | ✅ | ✅ | ✅ | ✅ | **90% Complete** |
-| UC2 | Generate Learning Path | ⚠️ | ✅ | ✅ | ✅ | **65% Complete** |
+| UC2 | Generate Learning Path | ✅ | ✅ | ✅ | ✅ | **75% Complete** |
 | UC3 | Access Dashboard | ✅ | ✅ | ✅ | ✅ | **85% Complete** |
 | UC4 | Recognize Word Through Gesture | ⚠️ | ❌ | ⚠️ | ✅ | **40% Complete** |
 | UC5 | Search Gesture Through Word | ✅ | ✅ | ✅ | ✅ | **80% Complete** |
@@ -59,12 +59,13 @@
 
 ---
 
-### UC2: Generate Learning Path ⚠️ 65%
+### UC2: Generate Learning Path ✅ 75%
 
 **Implementation Locations:**
 - Service: `src/lib/services/proficiencyTestService.ts`, `evaluationService.ts`, `recommendationEngine.ts`
 - Pages: `src/app/proficiency-test/select/`, `src/app/proficiency-test/[testId]/`, `src/app/proficiency-test/results/page.tsx`
-- Components: `src/components/proficiency-test/`
+- Components: `src/components/proficiency-test/`, `src/components/user/LearningPathPanel.tsx`
+- Profile: `src/app/(main)/profile/page.tsx`
 - Database: `supabase/migrations/20250615115100_create_proficiency_test_schema.sql`
 
 **What's Implemented:**
@@ -84,9 +85,10 @@
 - ✅ **Content recommendations** (tutorials, quizzes, materials) matching proficiency level
 - ✅ **Priority-based recommendations** (weak areas = Priority 1, practice = Priority 2, reference = Priority 3)
 - ✅ Proficiency test prompt component
+- ✅ **Learning path dashboard widget** (LearningPathPanel.tsx) - Shows top 5 recommendations on user dashboard
+- ✅ **Proficiency progress visualization** - Profile page displays visual progress bar toward next level with percentage thresholds
 
 **What's Missing:**
-- ❌ **Dedicated learning path page/dashboard widget** - Recommendations shown on results page only
 - ❌ Dynamic learning path updates based on progress
 - ❌ Role-specific path generation (deaf vs non-deaf) - filterByRole() exists but not used
 - ❌ Integration with LearningContext
@@ -94,7 +96,7 @@
 - ❌ Language filter (ASL/MSL) on test selection
 - ❌ Learning path persistence and tracking
 
-**Priority Gaps**: Core recommendation engine exists but needs dashboard integration and progress-based updates
+**Priority Gaps**: Dashboard integration complete; needs progress-based updates and test history
 
 ---
 
@@ -337,24 +339,23 @@
 4. **Admin Tools**: Good admin dashboard and content management capabilities
 
 ### Critical Gaps
-1. **UC2 Learning Path**: The actual "learning path generation" is completely missing - only proficiency test exists
-2. **UC4 AI Integration**: Gesture recognition returns mock data - no actual AI model integration
-3. **UC7 Avatar Generation**: No 3D avatar creation - just media upload/storage
+1. **UC4 AI Integration**: Gesture recognition returns mock data - no actual AI model integration
+2. **UC7 Avatar Generation**: No 3D avatar creation - just media upload/storage
 
 ### Recommendations Priority
 
 **Priority 1 - Critical**:
-1. Implement learning path generation service (UC2)
-2. Integrate actual gesture recognition AI model (UC4)
+1. Integrate actual gesture recognition AI model (UC4)
 
 **Priority 2 - Important**:
 1. Wire profile edit and change password functionality (UC1)
 2. Implement actual 3D avatar generation or clarify if it's just media storage (UC7)
 
 **Priority 3 - Enhancement**:
-1. Add test history and analytics (UC2)
-2. Add notifications for submissions/messages (UC6, UC11)
-3. Improve admin statistics and analytics (UC3, UC9)
+1. Add dynamic learning path updates based on progress (UC2)
+2. Add test history and analytics (UC2)
+3. Add notifications for submissions/messages (UC6, UC11)
+4. Improve admin statistics and analytics (UC3, UC9)
 
 ---
 

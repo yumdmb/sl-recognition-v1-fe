@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { getTestResultsWithAnalysis } from '@/lib/services/proficiencyTestService';
-import { useAuth } from '@/hooks/useAuth';
+import { useLearning } from '@/context/LearningContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,40 +12,34 @@ import { AlertCircle, Trophy, TrendingUp, BookOpen, RotateCcw } from 'lucide-rea
 import Link from 'next/link';
 
 const ProficiencyTestResultsPage = () => {
-  const auth = useAuth();
-  const user = auth?.currentUser;
+  const { getTestResults, proficiencyTestLoading } = useLearning();
   const router = useRouter();
   const searchParams = useSearchParams();
   const attemptId = searchParams.get('attemptId');
 
   const [results, setResults] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchResults = async () => {
-      if (!user || !attemptId) {
-        setError('Missing required information to display results.');
-        setIsLoading(false);
+      if (!attemptId) {
+        setError('No test attempt ID provided. Please complete a test first.');
         return;
       }
 
       try {
-        setIsLoading(true);
-        const data = await getTestResultsWithAnalysis(attemptId, user.id);
+        const data = await getTestResults(attemptId);
         setResults(data);
       } catch (err) {
         console.error('Error fetching test results:', err);
         setError('Failed to load test results. Please try again.');
-      } finally {
-        setIsLoading(false);
       }
     };
 
     fetchResults();
-  }, [user, attemptId]);
+  }, [attemptId, getTestResults]);
 
-  if (isLoading) {
+  if (proficiencyTestLoading || (!results && !error)) {
     return (
       <div className="container mx-auto py-8 max-w-4xl">
         <Card>

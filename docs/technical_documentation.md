@@ -58,7 +58,13 @@ This folder contains React Context providers to manage global state across the a
 
 -   [`src/context/AuthContext.tsx`](src/context/AuthContext.tsx:1): Manages user authentication state, including the user object and session information.
 -   [`src/context/LanguageContext.tsx`](src/context/LanguageContext.tsx:1): Manages the currently selected sign language (e.g., ASL, MSL) for a consistent user experience.
--   [`src/context/LearningContext.tsx`](src/context/LearningContext.tsx:1): Manages state related to the learning module, such as the current tutorial or quiz.
+-   [`src/context/LearningContext.tsx`](src/context/LearningContext.tsx:1): Manages comprehensive learning state including:
+    - Tutorial, quiz, and material management with CRUD operations
+    - Proficiency test state (current test, test attempts, proficiency level)
+    - Learning path recommendations and generation
+    - Progress tracking across all learning modules
+    - Centralized loading states (`tutorialsLoading`, `materialsLoading`, `quizSetsLoading`, `proficiencyTestLoading`)
+    - Error handling with user-friendly toast notifications
 -   [`src/context/SidebarContext.tsx`](src/context/SidebarContext.tsx:1): Manages the collapsed/expanded state of the application's sidebar.
 
 ### 2.4. `src/lib` - Services and Utilities
@@ -116,14 +122,45 @@ The gesture recognition module (in [`src/components/gesture-recognition/`](src/c
 
 The proficiency testing system (in [`src/app/proficiency-test/`](src/app/proficiency-test/)) evaluates user sign language skills and generates personalized learning paths:
 
-1.  **Test Taking**: Users answer multiple-choice questions about sign language concepts.
-2.  **Scoring & Analysis**: The system calculates scores and assigns proficiency levels (Beginner/Intermediate/Advanced).
-3.  **AI Evaluation**: The [`evaluationService.ts`](src/lib/services/evaluationService.ts:1) analyzes performance by category, identifies strengths (>70% correct) and weaknesses (<50% correct), and generates personalized insights.
-4.  **Recommendation Engine**: The [`recommendationEngine.ts`](src/lib/services/recommendationEngine.ts:1) generates learning paths by:
+1.  **Test Selection** ([`select/page.tsx`](src/app/proficiency-test/select/page.tsx:1)): 
+    - Displays available proficiency tests fetched via `getAllProficiencyTests()`
+    - Shows test cards with title, description, and "Start Test" button
+    - Navigates to test taking interface when user selects a test
+
+2.  **Test Taking** ([`[testId]/page.tsx`](src/app/proficiency-test/[testId]/page.tsx:1)): 
+    - Uses `LearningContext` methods (`startTest`, `submitAnswer`, `submitTest`)
+    - Initializes test attempt when user starts
+    - Displays questions one at a time with progress indicator
+    - Tracks user answers locally before submission
+    - Submits all answers and calculates results on test completion
+
+3.  **Scoring & Analysis**: The system calculates scores and assigns proficiency levels (Beginner/Intermediate/Advanced).
+
+4.  **AI Evaluation**: The [`evaluationService.ts`](src/lib/services/evaluationService.ts:1) analyzes performance by category, identifies strengths (>70% correct) and weaknesses (<50% correct), and generates personalized insights.
+
+5.  **Recommendation Engine**: The [`recommendationEngine.ts`](src/lib/services/recommendationEngine.ts:1) generates learning paths by:
     - Fetching tutorials, quizzes, and materials matching the user's proficiency level
     - Prioritizing content addressing weak areas (Priority 1)
     - Including practice quizzes (Priority 2) and reference materials (Priority 3)
-5.  **Results Display**: The results page shows comprehensive feedback including score, proficiency level, category performance breakdown, strengths/weaknesses, insights, and recommended learning resources.
+
+6.  **Results Display** ([`results/page.tsx`](src/app/proficiency-test/results/page.tsx:1)): 
+    - Uses `LearningContext.getTestResults()` to fetch comprehensive analysis
+    - Shows score percentage and proficiency level badge
+    - Displays category performance breakdown with visual progress bars
+    - Lists strengths, weaknesses, and AI-generated insights
+    - Shows top 5 personalized learning recommendations
+    - Provides "Retake Test" and "View Learning Path" action buttons
+
+7.  **Dashboard Integration**: 
+    - The [`LearningPathPanel.tsx`](src/components/user/LearningPathPanel.tsx:1) component displays top 5 personalized recommendations on the user dashboard
+    - The profile page ([`src/app/(main)/profile/page.tsx`](src/app/(main)/profile/page.tsx:1)) shows proficiency level with a visual progress bar indicating advancement toward the next level (Beginner→Intermediate requires 50%, Intermediate→Advanced requires 80%)
+
+**State Management**: All proficiency test state and operations are centralized in [`LearningContext.tsx`](src/context/LearningContext.tsx:1), which provides:
+- `proficiencyLevel`: Current user proficiency level
+- `currentTest`: Active test with questions
+- `testAttempt`: Current test attempt record
+- `learningPath`: Personalized learning recommendations
+- Methods: `startTest()`, `submitAnswer()`, `submitTest()`, `getTestResults()`, `generateLearningPath()`
 
 ## 4. Conclusion
 
