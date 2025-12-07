@@ -1,0 +1,7 @@
+{
+  "git": {
+    "deploymentEnabled": {
+      "with-supbase-v2": false
+    }
+  }
+}
