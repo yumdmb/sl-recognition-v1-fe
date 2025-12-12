@@ -1,12 +1,11 @@
 import { createClient } from '@/utils/supabase/client';
 import { GestureContribution, GestureContributionFilters, GestureContributionFormData } from '@/types/gestureContributions';
 
-const supabase = createClient();
-
 export class GestureContributionService {
   
   // Submit a new gesture contribution
   static async submitContribution(data: GestureContributionFormData): Promise<{ data: GestureContribution | null; error: { message: string; originalError?: any } | null }> {
+    const supabase = createClient();
     try {
       let mediaUrl = '';
       const { data: userSession } = await supabase.auth.getUser();
@@ -108,6 +107,7 @@ export class GestureContributionService {
   
   // Get gesture contributions with filters
   static async getContributions(filters?: GestureContributionFilters): Promise<{ data: GestureContribution[] | null; error: any }> {
+    const supabase = createClient();
     try {
       let query = supabase
         .from('gesture_contributions')
@@ -146,6 +146,7 @@ export class GestureContributionService {
   
   // Get single contribution
   static async getContribution(id: string): Promise<{ data: GestureContribution | null; error: any }> {
+    const supabase = createClient();
     try {
       const { data: contribution, error } = await supabase
         .from('gesture_contributions')
@@ -168,6 +169,7 @@ export class GestureContributionService {
   
   // Approve contribution (admin only - RLS should enforce this)
   static async approveContribution(id: string): Promise<{ error: any }> {
+    const supabase = createClient();
     try {
       const { data: userSession } = await supabase.auth.getUser();
       if (!userSession.user) throw new Error('User not authenticated');
@@ -190,6 +192,7 @@ export class GestureContributionService {
   
   // Reject contribution (admin only)
   static async rejectContribution(id: string, reason?: string): Promise<{ error: any }> {
+    const supabase = createClient();
     try {
       const { data: userSession } = await supabase.auth.getUser();
       if (!userSession.user) throw new Error('User not authenticated');
@@ -213,6 +216,7 @@ export class GestureContributionService {
   
   // Delete contribution (admin or owner as per RLS)
   static async deleteContribution(id: string): Promise<{ error: any }> {
+    const supabase = createClient();
     try {
       const { data: userSession } = await supabase.auth.getUser();
       if (!userSession.user) throw new Error('User not authenticated for delete operation');

@@ -1,10 +1,10 @@
 import { createClient } from '@/utils/supabase/client';
 import type { UserProfile, Database } from '@/types/database';
 
-const supabase = createClient();
-
-export class UserService {  // Get user profile by ID
+export class UserService {
+  // Get user profile by ID
   static async getUserProfile(userId: string): Promise<UserProfile | null> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('user_profiles')
@@ -65,6 +65,7 @@ export class UserService {  // Get user profile by ID
   static async createUserProfile(
     profile: Database['public']['Tables']['user_profiles']['Insert']
   ): Promise<UserProfile> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('user_profiles')
@@ -85,6 +86,7 @@ export class UserService {  // Get user profile by ID
     userId: string, 
     updates: Database['public']['Tables']['user_profiles']['Update']
   ): Promise<UserProfile> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('user_profiles')
@@ -103,6 +105,7 @@ export class UserService {  // Get user profile by ID
 
   // Get all user profiles (admin only)
   static async getAllUserProfiles(): Promise<UserProfile[]> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('user_profiles')
@@ -122,6 +125,7 @@ export class UserService {  // Get user profile by ID
     userId: string, 
     role: 'admin' | 'deaf' | 'non-deaf'
   ): Promise<UserProfile> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('user_profiles')
@@ -143,6 +147,7 @@ export class UserService {  // Get user profile by ID
 
   // Check if user is admin
   static async isAdmin(userId: string): Promise<boolean> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('user_profiles')
@@ -160,6 +165,7 @@ export class UserService {  // Get user profile by ID
 
   // Get users by role
   static async getUsersByRole(role: 'admin' | 'deaf' | 'non-deaf'): Promise<UserProfile[]> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('user_profiles')

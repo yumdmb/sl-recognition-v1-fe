@@ -1,8 +1,6 @@
 import { createClient } from '@/utils/supabase/client';
 import type { Database } from '@/types/database';
 
-const supabase = createClient();
-
 export type ForumPost = {
   id: string;
   title: string;
@@ -34,6 +32,7 @@ export type ForumComment = {
 export class ForumService {
   // Posts CRUD operations
   static async getPosts(): Promise<ForumPost[]> {
+    const supabase = createClient();
     try {
       // First, let's try without the join to see if basic query works
       const { data, error } = await supabase
@@ -84,6 +83,7 @@ export class ForumService {
   }
   
   static async getPostById(id: string): Promise<ForumPost | null> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('forum_posts')
@@ -122,6 +122,7 @@ export class ForumService {
     title: string;
     content: string;
   }): Promise<ForumPost> {
+    const supabase = createClient();
     try {
       // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -149,6 +150,7 @@ export class ForumService {
     title?: string;
     content?: string;
   }): Promise<ForumPost> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('forum_posts')
@@ -169,6 +171,7 @@ export class ForumService {
   }
 
   static async deletePost(id: string): Promise<void> {
+    const supabase = createClient();
     try {
       // First delete all comments related to this post
       await supabase
@@ -191,6 +194,7 @@ export class ForumService {
   
   // Comments CRUD operations
   static async getCommentsByPostId(postId: string): Promise<ForumComment[]> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('forum_comments')
@@ -255,6 +259,7 @@ export class ForumService {
     content: string;
     parent_comment_id?: string | null;
   }): Promise<ForumComment> {
+    const supabase = createClient();
     try {
       // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -280,6 +285,7 @@ export class ForumService {
   }
 
   static async updateComment(id: string, content: string): Promise<ForumComment> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('forum_comments')
@@ -300,6 +306,7 @@ export class ForumService {
   }
 
   static async deleteComment(id: string): Promise<void> {
+    const supabase = createClient();
     try {
       const { error } = await supabase
         .from('forum_comments')

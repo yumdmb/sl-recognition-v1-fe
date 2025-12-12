@@ -8,11 +8,10 @@ import type {
   Database 
 } from '@/types/database';
 
-const supabase = createClient();
-
 export class QuizService {
   // Get all quiz sets with optional progress for a user
   static async getQuizSets(userId?: string, language?: 'ASL' | 'MSL'): Promise<QuizSetWithProgress[]> {
+    const supabase = createClient();
     try {
       let query = supabase
         .from('quiz_sets')
@@ -73,6 +72,7 @@ export class QuizService {
 
   // Get single quiz set with questions
   static async getQuizSetWithQuestions(id: string): Promise<QuizSetWithQuestions | null> {
+    const supabase = createClient();
     try {
       const { data: quizSet, error: quizError } = await supabase
         .from('quiz_sets')
@@ -106,6 +106,7 @@ export class QuizService {
   static async createQuizSet(
     quizSet: Database['public']['Tables']['quiz_sets']['Insert']
   ): Promise<QuizSet> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('quiz_sets')
@@ -126,6 +127,7 @@ export class QuizService {
     id: string, 
     updates: Database['public']['Tables']['quiz_sets']['Update']
   ): Promise<QuizSet> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('quiz_sets')
@@ -144,6 +146,7 @@ export class QuizService {
 
   // Delete quiz set (admin only)
   static async deleteQuizSet(id: string): Promise<void> {
+    const supabase = createClient();
     try {
       const { error } = await supabase
         .from('quiz_sets')
@@ -161,6 +164,7 @@ export class QuizService {
   static async createQuizQuestion(
     question: Database['public']['Tables']['quiz_questions']['Insert']
   ): Promise<QuizQuestion> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('quiz_questions')
@@ -181,6 +185,7 @@ export class QuizService {
     id: string, 
     updates: Database['public']['Tables']['quiz_questions']['Update']
   ): Promise<QuizQuestion> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('quiz_questions')
@@ -199,6 +204,7 @@ export class QuizService {
 
   // Delete quiz question (admin only)
   static async deleteQuizQuestion(id: string): Promise<void> {
+    const supabase = createClient();
     try {
       const { error } = await supabase
         .from('quiz_questions')
@@ -218,6 +224,7 @@ export class QuizService {
     quizSetId: string,
     answers: { questionId: string; answer: string }[]
   ): Promise<{ score: number; totalQuestions: number; passed: boolean }> {
+    const supabase = createClient();
     try {
       // Get quiz questions to check answers
       const { data: questions, error: questionsError } = await supabase
@@ -267,6 +274,7 @@ export class QuizService {
 
   // Get user's quiz progress
   static async getUserQuizProgress(userId: string): Promise<QuizProgress[]> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('quiz_progress')
@@ -284,6 +292,7 @@ export class QuizService {
 
   // Get quiz progress for specific quiz set
   static async getQuizProgress(userId: string, quizSetId: string): Promise<QuizProgress | null> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('quiz_progress')
