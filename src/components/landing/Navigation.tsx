@@ -82,9 +82,6 @@ export default function Navigation({
             )}
           </div>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Link href="/contact" className="text-gray-600 hover:text-gray-900">Contact</Link>
-          </motion.div>
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button variant="ghost" asChild>
               <Link href="/auth/login">Login</Link>
             </Button>

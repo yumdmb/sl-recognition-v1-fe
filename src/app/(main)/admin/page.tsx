@@ -127,7 +127,6 @@ const UserVerification: React.FC = () => {
   );
 };
 
-// Word Verification Component (placeholder for now)
 const WordVerification: React.FC = () => {
   return (
     <Card>

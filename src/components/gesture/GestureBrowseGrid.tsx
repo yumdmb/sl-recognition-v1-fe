@@ -4,6 +4,7 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { GestureContribution } from '@/types/gestureContributions';
 import { Play, Image as ImageIcon } from 'lucide-react';
 import {
@@ -139,14 +140,14 @@ function LoadingSkeleton() {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {Array.from({ length: 8 }).map((_, index) => (
         <Card key={index} className="overflow-hidden">
-          <div className="relative aspect-video bg-gray-200 animate-pulse"></div>
+          <Skeleton className="relative aspect-video" />
           <CardContent className="p-4 space-y-3">
-            <div className="h-6 bg-gray-200 rounded animate-pulse w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded animate-pulse w-1/4"></div>
-            <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-1/4" />
+            <Skeleton className="h-10 w-full" />
             <div className="flex justify-between items-center pt-2 border-t">
-              <div className="h-4 bg-gray-200 rounded animate-pulse w-1/3"></div>
-              <div className="h-8 bg-gray-200 rounded animate-pulse w-1/4"></div>
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-8 w-1/4" />
             </div>
           </CardContent>
         </Card>

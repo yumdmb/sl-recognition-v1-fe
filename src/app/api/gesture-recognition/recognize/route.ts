@@ -35,8 +35,7 @@ export async function POST(request: NextRequest) {
     // Save the file
     await writeFile(filepath, buffer);
 
-    // TODO: Implement actual gesture recognition logic here
-    // For now, we'll return a mock response
+    // Mock response for development - integrate with AI model for production
     return NextResponse.json({
       word: "Hello",
       confidence: 0.95,

@@ -46,15 +46,15 @@ export default function HeroSection({ scrollToFeatures }: HeroSectionProps) {
             className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 text-gray-900"
             variants={itemVariants}
           >
-            Learn Sign Language{' '}
-            <span className="text-signlang-primary">Easily</span>
+            Master ASL and MSL with{' '}
+            <span className="text-signlang-primary">AI-Powered Recognition</span>
           </motion.h1>
           <motion.p
             className="text-lg sm:text-xl text-gray-600 mb-10"
             variants={itemVariants}
           >
-            Our platform helps you learn, practice, and recognize sign language gestures
-            with advanced AI technology.
+            Bridge communication gaps with interactive tutorials, real-time gesture recognition,
+            and a community-driven approach to learning American and Malaysian Sign Languages.
           </motion.p>
           <motion.div
             className="space-x-4"
