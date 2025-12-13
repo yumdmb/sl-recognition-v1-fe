@@ -1,25 +1,30 @@
 'use client'
 
-import React, { useState } from 'react';
+import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Home,
   Search,
   BookOpen,
   User,
-  Settings,
-  ChevronDown,
-  ChevronRight,
   Menu,
   X,
-  MessageCircle, // Add this import for the new icon
-  Users, // Add this import for the new icon
-  HandHeart // Add this import for gesture contributions
+  MessageCircle,
+  Users,
+  HandHeart,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useSidebar } from '@/context/SidebarContext';
-import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
+import type { LucideIcon } from 'lucide-react';
+
+interface MenuItem {
+  title: string;
+  href: string;
+  icon: LucideIcon;
+  roles?: ('admin' | 'deaf' | 'non-deaf')[];
+}
 
 type Props = {
   userRole: 'admin' | 'non-deaf' | 'deaf'
@@ -30,21 +35,13 @@ const AppSidebar: React.FC<Props> = ({ userRole }) => {
   const router = useRouter();
   const { state, toggleSidebar } = useSidebar();
   const { isAuthenticated, currentUser, logout } = useAuth();
-  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
-
-  const toggleItem = (href: string) => {
-    setExpandedItems(prev => ({
-      ...prev,
-      [href]: !prev[href]
-    }));
-  };
 
   const handleNavigation = (href: string) => {
     router.push(href);
   };
 
-  const getMenuItems = (userRole: 'admin' | 'non-deaf' | 'deaf') => {
-    const baseItems = [
+  const getMenuItems = (userRole: 'admin' | 'non-deaf' | 'deaf'): MenuItem[] => {
+    const allItems: MenuItem[] = [
       {
         title: 'Dashboard',
         href: '/dashboard',
@@ -52,51 +49,39 @@ const AppSidebar: React.FC<Props> = ({ userRole }) => {
       },
       {
         title: 'Gesture Recognition',
-        href: '/gesture-recognition',
+        href: '/gesture-recognition/upload',
         icon: Search,
-        subItems: [
-          { title: 'Recognize Gesture', href: '/gesture-recognition/upload' },
-          { title: 'Search Word → View Gesture Image', href: '/gesture-recognition/search' }
-        ]
       },
       {
-        title: 'Avatar Generation',
-        href: '/avatar',
-        icon: User,
-        subItems: [
-          { title: 'Generate', href: '/avatar/generate' },
-          { title: userRole === 'admin' ? 'Avatar Database' : 'My Avatar', href: userRole === 'admin' ? '/avatar/admin-database' : '/avatar/my-avatars' }
-        ]
-      },
-      {
-        title: 'Learning',
-        href: '/learning',
+        title: 'Gesture Dictionary',
+        href: '/gesture-recognition/search',
         icon: BookOpen,
-        subItems: [
-          { title: 'Tutorials', href: '/learning/tutorials' },
-          { title: 'Quizzes', href: '/learning/quizzes' },
-          { title: 'Materials', href: '/learning/materials' }
-        ]      },
-// --- Add this block for the interaction module ---
-      {
-        title: 'Interaction',
-        href: '/interaction',
-        icon: MessageCircle,
-        subItems: [
-          { title: 'Personal Chat', href: '/interaction/chat' },
-          { title: 'Forum', href: '/interaction/forum' }
-        ]
       },
-    // --- End interaction module block ---
       {
-        title: 'Gesture Contributions',
-        href: '/gesture',
+        title: userRole === 'admin' ? 'Manage Submissions' : 'New Gesture Contribution',
+        href: userRole === 'admin' ? '/gesture/view' : '/gesture/submit',
         icon: HandHeart,
-        subItems: [
-          { title: 'Submit New Gesture', href: '/gesture/submit' },
-          { title: 'Browse Gestures', href: '/gesture/browse' },
-          { title: userRole === 'admin' ? 'Manage Submissions' : 'My Submissions', href: '/gesture/view' }
-        ]
+        roles: undefined, // Show to all roles
+      },
+      {
+        title: '3D Avatar Generation',
+        href: '/avatar/generate',
+        icon: Sparkles,
+      },
+      {
+        title: 'Learning Materials',
+        href: '/learning/materials',
+        icon: BookOpen,
+      },
+      {
+        title: 'Forum',
+        href: '/interaction/forum',
+        icon: Users,
+      },
+      {
+        title: 'Chat',
+        href: '/interaction/chat',
+        icon: MessageCircle,
       },
       {
         title: 'Profile',
@@ -105,15 +90,11 @@ const AppSidebar: React.FC<Props> = ({ userRole }) => {
       }
     ];
 
-    if (userRole === 'admin') {
-      baseItems.push({
-        title: 'Admin Settings',
-        href: '/admin',
-        icon: Settings,
-      });
-    }
-
-    return baseItems;
+    // Filter items based on role if roles array is defined
+    return allItems.filter(item => {
+      if (!item.roles) return true; // Show to all if roles not specified
+      return item.roles.includes(userRole);
+    });
   };
 
   const menuItems = getMenuItems(userRole);
@@ -148,43 +129,18 @@ const AppSidebar: React.FC<Props> = ({ userRole }) => {
 
           <div className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
             {menuItems.map((item) => (
-              <div key={item.href}>
-                <div
-                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
-                    pathname === item.href
-                      ? 'bg-gray-100 text-gray-900'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                  onClick={() => item.subItems ? toggleItem(item.href) : handleNavigation(item.href)}
-                >
-                  <item.icon className="w-5 h-5 mr-3" />
-                  {state.isOpen && (
-                    <>
-                      <span className="flex-1">{item.title}</span>
-                      {item.subItems && (
-                        expandedItems[item.href] ? 
-                        <ChevronDown className="w-4 h-4" /> : 
-                        <ChevronRight className="w-4 h-4" />
-                      )}
-                    </>
-                  )}
-                </div>
-                {state.isOpen && item.subItems && expandedItems[item.href] && (
-                  <div className="ml-8 mt-1 space-y-1">
-                    {item.subItems.map((subItem) => (
-                      <div
-                        key={subItem.href}
-                        onClick={() => handleNavigation(subItem.href)}
-                        className={`block px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
-                          pathname === subItem.href
-                            ? 'bg-gray-100 text-gray-900'
-                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                        }`}
-                      >
-                        {subItem.title}
-                      </div>
-                    ))}
-                  </div>
+              <div
+                key={item.href}
+                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                  pathname === item.href
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`}
+                onClick={() => handleNavigation(item.href)}
+              >
+                <item.icon className="w-5 h-5 mr-3" />
+                {state.isOpen && (
+                  <span className="flex-1">{item.title}</span>
                 )}
               </div>
             ))}
