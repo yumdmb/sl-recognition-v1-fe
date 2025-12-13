@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Eye, Plus } from 'lucide-react';
 import Link from 'next/link';
 
-export default function GestureBrowseHeader() {
+interface GestureBrowseHeaderProps {
+  userRole?: 'admin' | 'deaf' | 'non-deaf';
+}
+
+export default function GestureBrowseHeader({ userRole }: GestureBrowseHeaderProps) {
   return (
     <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center mb-6">
       <div>
@@ -19,16 +23,18 @@ export default function GestureBrowseHeader() {
         <Button asChild variant="outline">
           <Link href="/gesture/view">
             <Eye className="mr-2 h-4 w-4" />
-            My Contributions
+            {userRole === 'admin' ? 'All Contributions' : 'My Contributions'}
           </Link>
         </Button>
         
-        <Button asChild>
-          <Link href="/gesture/submit">
-            <Plus className="mr-2 h-4 w-4" />
-            Contribute Gesture
-          </Link>
-        </Button>
+        {userRole !== 'admin' && (
+          <Button asChild>
+            <Link href="/gesture/submit">
+              <Plus className="mr-2 h-4 w-4" />
+              Contribute Gesture
+            </Link>
+          </Button>
+        )}
       </div>
     </div>
   );

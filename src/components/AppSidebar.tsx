@@ -59,7 +59,7 @@ const AppSidebar: React.FC<Props> = ({ userRole }) => {
       },
       {
         title: userRole === 'admin' ? 'Manage Submissions' : 'New Gesture Contribution',
-        href: userRole === 'admin' ? '/gesture/view' : '/gesture/submit',
+        href: userRole === 'admin' ? '/gesture/view' : '/gesture/browse',
         icon: HandHeart,
         roles: undefined, // Show to all roles
       },
