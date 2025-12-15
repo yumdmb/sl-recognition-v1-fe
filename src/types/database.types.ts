@@ -903,6 +903,7 @@ export type Database = {
           proficiency_level:
             | Database["public"]["Enums"]["proficiency_level"]
             | null
+          profile_picture_url: string | null
           role: string
           updated_at: string | null
         }
@@ -914,6 +915,7 @@ export type Database = {
           proficiency_level?:
             | Database["public"]["Enums"]["proficiency_level"]
             | null
+          profile_picture_url?: string | null
           role?: string
           updated_at?: string | null
         }
@@ -925,6 +927,7 @@ export type Database = {
           proficiency_level?:
             | Database["public"]["Enums"]["proficiency_level"]
             | null
+          profile_picture_url?: string | null
           role?: string
           updated_at?: string | null
         }

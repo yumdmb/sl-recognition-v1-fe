@@ -104,6 +104,10 @@ export default function ChatList({
                 }`}
                 onClick={() => onSelectChat(chat)}
               >                <Avatar className="h-10 w-10">
+                  <AvatarImage 
+                    src={otherParticipant?.user?.profile_picture_url || undefined} 
+                    alt={chatName} 
+                  />
                   <AvatarFallback>
                     {getInitials(chatName)}
                   </AvatarFallback>

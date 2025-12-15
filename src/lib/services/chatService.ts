@@ -9,6 +9,7 @@ export interface Chat {
     user_id: string;
     user: {
       name: string;
+      profile_picture_url?: string | null;
     };
   }[];
 }
@@ -24,6 +25,7 @@ export interface Message {
   reply_to_id?: string;
   sender: {
     name: string;
+    profile_picture_url?: string | null;
   };
 }
 
@@ -35,6 +37,7 @@ export interface UnreadCount {
 interface UserProfile {
   id: string;
   name: string;
+  profile_picture_url?: string | null;
 }
 
 export class ChatService {
@@ -42,7 +45,7 @@ export class ChatService {
     const supabase = createClient();
     return supabase
       .from('user_profiles')
-      .select('id, name')
+      .select('id, name, profile_picture_url')
       .eq('id', userId)
       .single();
   }
@@ -56,7 +59,8 @@ export class ChatService {
         participants:chat_participants(
           user_id,
           user:user_profiles(
-            name
+            name,
+            profile_picture_url
           )
         )
       `)
@@ -73,7 +77,8 @@ export class ChatService {
       .select(`
         *,
         sender:user_profiles(
-          name
+          name,
+          profile_picture_url
         )
       `)
       .eq('chat_id', chatId)
@@ -96,7 +101,8 @@ export class ChatService {
       .select(`
         *,
         sender:user_profiles(
-          name
+          name,
+          profile_picture_url
         )
       `)
       .single();

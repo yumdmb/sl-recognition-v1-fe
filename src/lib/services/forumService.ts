@@ -9,7 +9,7 @@ export type ForumPost = {
   updated_at: string | null;
   user_profile?: {
     username: string;
-    avatar_url?: string;
+    avatar_url?: string | null;
   };
   comment_count?: number;
   like_count?: number;
@@ -26,7 +26,7 @@ export type ForumComment = {
   updated_at: string | null;
   user_profile?: {
     username: string;
-    avatar_url?: string;
+    avatar_url?: string | null;
   };
   replies?: ForumComment[];
 };
@@ -128,7 +128,7 @@ export class ForumService {
           const likeData = likeCountMap.get(post.id) || { count: 0, userLiked: false };
           return {
             ...post,
-            user_profile: { username: 'Anonymous', avatar_url: undefined },
+            user_profile: { username: 'Anonymous', avatar_url: null },
             comment_count: commentCountMap.get(post.id) || 0,
             like_count: likeData.count,
             user_liked: likeData.userLiked
@@ -138,7 +138,7 @@ export class ForumService {
 
       const { data: profiles, error: profileError } = await supabase
         .from('user_profiles')
-        .select('id, name')
+        .select('id, name, profile_picture_url')
         .in('id', userIds);
 
       if (profileError) {
@@ -148,7 +148,7 @@ export class ForumService {
           const likeData = likeCountMap.get(post.id) || { count: 0, userLiked: false };
           return {
             ...post,
-            user_profile: { username: 'Anonymous', avatar_url: undefined },
+            user_profile: { username: 'Anonymous', avatar_url: null },
             comment_count: commentCountMap.get(post.id) || 0,
             like_count: likeData.count,
             user_liked: likeData.userLiked
@@ -161,11 +161,12 @@ export class ForumService {
       
       return data.map(post => {
         const likeData = likeCountMap.get(post.id) || { count: 0, userLiked: false };
+        const profile = post.user_id ? profileMap.get(post.user_id) : null;
         return {
           ...post,
           user_profile: {
-            username: post.user_id ? (profileMap.get(post.user_id)?.name || 'Anonymous') : 'Anonymous',
-            avatar_url: undefined
+            username: profile?.name || 'Anonymous',
+            avatar_url: profile?.profile_picture_url || null
           },
           comment_count: commentCountMap.get(post.id) || 0,
           like_count: likeData.count,
@@ -204,15 +205,19 @@ export class ForumService {
       
       // Get user profile separately if user_id exists
       let profileName = 'Anonymous';
+      let profilePictureUrl: string | null = null;
       if (data.user_id) {
         const { data: profile } = await supabase
           .from('user_profiles')
-          .select('name')
+          .select('name, profile_picture_url')
           .eq('id', data.user_id)
           .single();
         
         if (profile?.name) {
           profileName = profile.name;
+        }
+        if (profile?.profile_picture_url) {
+          profilePictureUrl = profile.profile_picture_url;
         }
       }
       
@@ -220,7 +225,7 @@ export class ForumService {
         ...data,
         user_profile: {
           username: profileName,
-          avatar_url: undefined
+          avatar_url: profilePictureUrl
         }
       };
     } catch (error) {
@@ -330,27 +335,30 @@ export class ForumService {
       const userIds = [...new Set(data.map(c => c.user_id).filter((id): id is string => id !== null))];
       
       // Fetch all user profiles in a single query for efficiency
-      let profileMap = new Map<string, string>();
+      let profileMap = new Map<string, { name: string; profile_picture_url: string | null }>();
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
           .from('user_profiles')
-          .select('id, name')
+          .select('id, name, profile_picture_url')
           .in('id', userIds);
         
         if (profiles) {
-          profileMap = new Map(profiles.map(p => [p.id, p.name]));
+          profileMap = new Map(profiles.map(p => [p.id, { name: p.name, profile_picture_url: p.profile_picture_url }]));
         }
       }
 
       // Process comments with user profiles
-      const processedData: ForumComment[] = data.map(comment => ({
-        ...comment,
-        user_profile: {
-          username: comment.user_id ? (profileMap.get(comment.user_id) || 'Anonymous') : 'Anonymous',
-          avatar_url: undefined
-        },
-        replies: []
-      }));
+      const processedData: ForumComment[] = data.map(comment => {
+        const profile = comment.user_id ? profileMap.get(comment.user_id) : null;
+        return {
+          ...comment,
+          user_profile: {
+            username: profile?.name || 'Anonymous',
+            avatar_url: profile?.profile_picture_url || null
+          },
+          replies: []
+        };
+      });
       
       // Organize comments into a hierarchical structure
       const commentMap = new Map<string, ForumComment>();

@@ -92,6 +92,10 @@ export default function MessageList({
                 >
                   <div className="flex gap-2 max-w-[80%]">                    {!isCurrentUser && (
                       <Avatar className="h-8 w-8">
+                        <AvatarImage 
+                          src={message.sender?.profile_picture_url || undefined} 
+                          alt={message.sender?.name || "User"} 
+                        />
                         <AvatarFallback>
                           {getInitials(message.sender?.name || "")}
                         </AvatarFallback>
@@ -133,6 +137,10 @@ export default function MessageList({
                       </div>
                     </div>                    {isCurrentUser && (
                       <Avatar className="h-8 w-8">
+                        <AvatarImage 
+                          src={message.sender?.profile_picture_url || undefined} 
+                          alt={message.sender?.name || "User"} 
+                        />
                         <AvatarFallback>
                           {getInitials(message.sender?.name || "")}
                         </AvatarFallback>

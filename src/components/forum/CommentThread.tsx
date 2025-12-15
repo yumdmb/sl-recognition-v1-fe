@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { ForumComment } from '@/lib/services/forumService';
@@ -207,6 +208,15 @@ export function CommentThread({
           <div className="flex-1 min-w-0">
             {/* Author and timestamp */}
             <div className="flex items-center gap-2 text-sm">
+              <Avatar className="h-5 w-5">
+                <AvatarImage 
+                  src={comment.user_profile?.avatar_url || undefined} 
+                  alt={authorName} 
+                />
+                <AvatarFallback className="text-[10px]">
+                  {authorName.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
               <span className="font-medium text-foreground">{authorName}</span>
               <span className="text-muted-foreground">·</span>
               <span className="text-muted-foreground text-xs">

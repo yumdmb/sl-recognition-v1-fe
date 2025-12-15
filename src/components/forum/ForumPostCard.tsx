@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Edit3, Trash2, ChevronDown, ChevronUp, Clock, User, Heart, Loader2 } from 'lucide-react';
+import { MessageSquare, Edit3, Trash2, ChevronDown, ChevronUp, Clock, Heart, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ImageThumbnail } from './ImageThumbnail';
 import { ImageModal } from './ImageModal';
 import { FileAttachment } from './FileAttachment';
@@ -134,7 +135,15 @@ export function ForumPostCard({
           {/* Author and timestamp */}
           <div className="flex items-center gap-3 text-sm text-muted-foreground mt-2">
             <div className="flex items-center gap-1.5">
-              <User className="h-4 w-4" />
+              <Avatar className="h-6 w-6">
+                <AvatarImage 
+                  src={post.user_profile?.avatar_url || undefined} 
+                  alt={post.user_profile?.username || 'Anonymous'} 
+                />
+                <AvatarFallback className="text-xs">
+                  {(post.user_profile?.username || 'A').slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
               <span>{post.user_profile?.username || 'Anonymous'}</span>
             </div>
             <div className="flex items-center gap-1.5">

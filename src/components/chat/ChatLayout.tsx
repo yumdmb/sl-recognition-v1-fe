@@ -138,6 +138,7 @@ export default function ChatLayout() {
             reply_to_id: newRecord.reply_to_id,
             sender: {
               name: "Unknown User",
+              profile_picture_url: null,
             },
           };
 
@@ -162,6 +163,7 @@ export default function ChatLayout() {
           reply_to_id: newRecord.reply_to_id,
           sender: {
             name: sender?.name || "Unknown User",
+            profile_picture_url: sender?.profile_picture_url || null,
           },
         };
 
@@ -367,7 +369,12 @@ export default function ChatLayout() {
               
               <Avatar className="h-10 w-10">
                 {selectedChat && (
-                  <>                    <AvatarFallback>
+                  <>
+                    <AvatarImage
+                      src={selectedChat.participants.find(p => p.user_id !== user.id)?.user?.profile_picture_url || undefined}
+                      alt={getChatName(selectedChat)}
+                    />
+                    <AvatarFallback>
                       {getInitials(getChatName(selectedChat))}
                     </AvatarFallback>
                   </>
