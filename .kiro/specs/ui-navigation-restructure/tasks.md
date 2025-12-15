@@ -113,13 +113,28 @@
 - [ ] 7. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 8. Fix Chat Real-Time Message Bug
-  - [ ] 8.1 Debug and fix message subscription
+- [x] 8. Fix Chat Real-Time Message Bug
+
+
+
+
+
+
+
+
+
+
+
+  - [x] 8.1 Debug and fix message subscription
+
+
     - Review ChatLayout component's real-time subscription setup
     - Ensure new messages are added to state without page reload
     - Fix any issues with subscription callback handling
     - _Requirements: 5.1_
-  - [ ] 8.2 Implement proper message state updates
+  - [x] 8.2 Implement proper message state updates
+
+
     - Update message list state when new message received via subscription
     - Ensure sender information is properly fetched for new messages
     - Handle edge cases like duplicate messages
@@ -128,18 +143,28 @@
     - **Property 8: Real-Time Message Delivery**
     - **Validates: Requirements 5.1**
 
-- [ ] 9. Implement Unread Message Indicators
-  - [ ] 9.1 Add unread count tracking to ChatService
+- [x] 9. Implement Unread Message Indicators
+
+
+
+
+  - [x] 9.1 Add unread count tracking to ChatService
+
+
     - Implement `getUnreadCounts` method to fetch unread counts per chat
     - Add `subscribeToUnreadCounts` for real-time unread updates
     - Update message_status table queries for efficient unread counting
     - _Requirements: 5.2_
-  - [ ] 9.2 Create unread indicator badge component
+  - [x] 9.2 Create unread indicator badge component
+
+
     - Create `UnreadBadge` component with red indicator styling
     - Display count or dot based on unread message count
     - Integrate into ChatList component
     - _Requirements: 5.2_
-  - [ ] 9.3 Implement mark as read on chat open
+  - [x] 9.3 Implement mark as read on chat open
+
+
     - Call markMessagesAsRead when user opens a chat
     - Update unread count state after marking as read
     - Remove indicator badge when count reaches 0

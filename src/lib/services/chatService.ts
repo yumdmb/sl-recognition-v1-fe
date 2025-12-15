@@ -15,6 +15,7 @@ export interface Chat {
 
 export interface Message {
   id: string;
+  chat_id: string;
   content: string;
   sender_id: string;
   file_url?: string;
@@ -24,6 +25,11 @@ export interface Message {
   sender: {
     name: string;
   };
+}
+
+export interface UnreadCount {
+  chatId: string;
+  count: number;
 }
 
 interface UserProfile {
@@ -188,5 +194,107 @@ export class ChatService {
       .eq('id', chatId);
 
     if (error) throw error;
+  }
+
+  static async getUnreadCounts(userId: string): Promise<UnreadCount[]> {
+    const supabase = createClient();
+    
+    // Get all chats for the user
+    const { data: chats, error: chatsError } = await supabase
+      .from('chat_participants')
+      .select('chat_id')
+      .eq('user_id', userId);
+
+    if (chatsError) throw chatsError;
+    if (!chats || chats.length === 0) return [];
+
+    const chatIds = chats.map(c => c.chat_id);
+
+    // Get unread message counts for each chat
+    const { data: unreadData, error: unreadError } = await supabase
+      .from('messages')
+      .select(`
+        id,
+        chat_id,
+        sender_id,
+        message_status!left(is_read, user_id)
+      `)
+      .in('chat_id', chatIds)
+      .neq('sender_id', userId);
+
+    if (unreadError) throw unreadError;
+
+    // Process the data to count unread messages per chat
+    const unreadCounts: Record<string, number> = {};
+    
+    if (unreadData) {
+      for (const message of unreadData) {
+        const chatId = message.chat_id;
+        
+        // Check if there's a message_status entry for this user
+        const statusArray = message.message_status as any[];
+        const userStatus = statusArray?.find((s: any) => s.user_id === userId);
+        
+        // If no status entry or is_read is false, count as unread
+        if (!userStatus || !userStatus.is_read) {
+          unreadCounts[chatId] = (unreadCounts[chatId] || 0) + 1;
+        }
+      }
+    }
+
+    // Convert to array format
+    return Object.entries(unreadCounts).map(([chatId, count]) => ({
+      chatId,
+      count,
+    }));
+  }
+
+  static subscribeToUnreadCounts(
+    userId: string,
+    callback: (counts: UnreadCount[]) => void
+  ): RealtimeChannel {
+    const supabase = createClient();
+    
+    // Subscribe to changes in message_status table for this user
+    const channel = supabase
+      .channel(`unread_counts:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'message_status',
+          filter: `user_id=eq.${userId}`,
+        },
+        async () => {
+          // Refetch unread counts when message_status changes
+          try {
+            const counts = await ChatService.getUnreadCounts(userId);
+            callback(counts);
+          } catch (error) {
+            console.error('Failed to fetch unread counts:', error);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+        },
+        async () => {
+          // Refetch unread counts when new messages arrive
+          try {
+            const counts = await ChatService.getUnreadCounts(userId);
+            callback(counts);
+          } catch (error) {
+            console.error('Failed to fetch unread counts:', error);
+          }
+        }
+      )
+      .subscribe();
+
+    return channel;
   }
 }

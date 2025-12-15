@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Chat } from "@/lib/services/chatService";
 import { formatDistanceToNow } from "date-fns";
 import NewChatDialog from "@/components/chat/NewChatDialog";
+import UnreadBadge from "@/components/chat/UnreadBadge";
 
 interface ChatListProps {
   chats: Chat[];
@@ -15,6 +16,7 @@ interface ChatListProps {
   onSelectChat: (chat: Chat) => void;
   onCreateChat: (userId: string) => Promise<void> | void;
   currentUserId: string;
+  unreadCounts?: Record<string, number>;
 }
 
 export default function ChatList({
@@ -24,6 +26,7 @@ export default function ChatList({
   onSelectChat,
   onCreateChat,
   currentUserId,
+  unreadCounts = {},
 }: ChatListProps) {
   const [isNewChatDialogOpen, setIsNewChatDialogOpen] = useState(false);
 
@@ -106,15 +109,18 @@ export default function ChatList({
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 overflow-hidden">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <h3 className="font-medium truncate">{chatName}</h3>
-                    {chat.last_message_at && (
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(chat.last_message_at), {
-                          addSuffix: true,
-                        })}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {chat.last_message_at && (
+                        <span className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(chat.last_message_at), {
+                            addSuffix: true,
+                          })}
+                        </span>
+                      )}
+                      <UnreadBadge count={unreadCounts[chat.id] || 0} />
+                    </div>
                   </div>
                   {/* You could add last message preview here */}
                 </div>

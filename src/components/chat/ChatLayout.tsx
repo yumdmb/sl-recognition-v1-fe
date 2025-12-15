@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { useRouter } from "next/navigation";
-import { Chat, Message, ChatService } from "@/lib/services/chatService";
+import { Chat, Message, ChatService, UnreadCount } from "@/lib/services/chatService";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { AuthContext } from "@/context/AuthContext";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ export default function ChatLayout() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingChats, setIsLoadingChats] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
   // Load chats when component mounts
   useEffect(() => {
@@ -29,6 +30,23 @@ export default function ChatLayout() {
     }
 
     loadChats();
+    loadUnreadCounts();
+
+    // Subscribe to unread count changes
+    const unreadChannel = ChatService.subscribeToUnreadCounts(
+      user.id,
+      (counts: UnreadCount[]) => {
+        const countsMap: Record<string, number> = {};
+        counts.forEach(({ chatId, count }) => {
+          countsMap[chatId] = count;
+        });
+        setUnreadCounts(countsMap);
+      }
+    );
+
+    return () => {
+      unreadChannel.unsubscribe();
+    };
   }, [user, router]);
 
   // Load messages when a chat is selected
@@ -61,6 +79,21 @@ export default function ChatLayout() {
     }
   };
 
+  const loadUnreadCounts = async () => {
+    if (!user) return;
+    
+    try {
+      const counts = await ChatService.getUnreadCounts(user.id);
+      const countsMap: Record<string, number> = {};
+      counts.forEach(({ chatId, count }) => {
+        countsMap[chatId] = count;
+      });
+      setUnreadCounts(countsMap);
+    } catch (error) {
+      console.error("Failed to load unread counts:", error);
+    }
+  };
+
   const loadMessages = async () => {
     if (!selectedChat) return;
     
@@ -78,12 +111,14 @@ export default function ChatLayout() {
   };
 
   const subscribeToMessages = () => {
-    if (!selectedChat) return () => {};
+    if (!selectedChat || !user) return () => {};
 
     const channel = ChatService.subscribeToMessages(
       selectedChat.id,
       async (payload: RealtimePostgresChangesPayload<{ [key: string]: any }>) => {
-        const newRecord = payload.new as Message;
+        console.log("Real-time message received:", payload);
+        
+        const newRecord = payload.new as any;
 
         // The payload from a subscription doesn't include relational data.
         // We need to fetch the sender's profile separately.
@@ -91,45 +126,98 @@ export default function ChatLayout() {
 
         if (error) {
           console.error("Failed to fetch sender profile for new message:", error);
+          // Still add the message with a fallback name
+          const fallbackMessage: Message = {
+            id: newRecord.id,
+            content: newRecord.content,
+            sender_id: newRecord.sender_id,
+            chat_id: newRecord.chat_id,
+            file_url: newRecord.file_url,
+            created_at: newRecord.created_at,
+            is_edited: newRecord.is_edited || false,
+            reply_to_id: newRecord.reply_to_id,
+            sender: {
+              name: "Unknown User",
+            },
+          };
+
+          setMessages((prevMessages) => {
+            // Check for duplicates
+            if (prevMessages.some((msg) => msg.id === fallbackMessage.id)) {
+              return prevMessages;
+            }
+            return [...prevMessages, fallbackMessage];
+          });
           return;
         }
 
         const newMessage: Message = {
-          ...newRecord,
+          id: newRecord.id,
+          content: newRecord.content,
+          sender_id: newRecord.sender_id,
+          chat_id: newRecord.chat_id,
+          file_url: newRecord.file_url,
+          created_at: newRecord.created_at,
+          is_edited: newRecord.is_edited || false,
+          reply_to_id: newRecord.reply_to_id,
           sender: {
             name: sender?.name || "Unknown User",
           },
         };
 
+        console.log("Adding new message to state:", newMessage);
+
         setMessages((prevMessages) => {
+          // Check for duplicates
           if (prevMessages.some((msg) => msg.id === newMessage.id)) {
+            console.log("Duplicate message detected, skipping:", newMessage.id);
             return prevMessages;
           }
+          console.log("Adding message to list");
           return [...prevMessages, newMessage];
         });
 
-        if (newMessage.sender_id !== user?.id) {
-          markMessagesAsRead();
+        // Mark messages as read if from another user
+        if (newMessage.sender_id !== user.id) {
+          // Small delay to ensure message is in state before marking as read
+          setTimeout(() => {
+            markMessagesAsRead();
+          }, 100);
         }
       }
     );
 
     return () => {
+      console.log("Unsubscribing from messages channel");
       channel.unsubscribe();
     };
   };
 
   const markMessagesAsRead = async () => {
-    if (!user || !selectedChat || messages.length === 0) return;
+    if (!user || !selectedChat) return;
     
-    try {
-      await ChatService.markMessagesAsRead({
-        messages,
+    // Get current messages from state
+    setMessages((currentMessages) => {
+      if (currentMessages.length === 0) return currentMessages;
+      
+      // Mark messages as read asynchronously
+      ChatService.markMessagesAsRead({
+        messages: currentMessages,
         userId: user.id,
-      });
-    } catch (error) {
-      console.error("Failed to mark messages as read:", error);
-    }
+      })
+        .then(() => {
+          // Update unread count for this chat to 0
+          setUnreadCounts((prev) => ({
+            ...prev,
+            [selectedChat.id]: 0,
+          }));
+        })
+        .catch((error) => {
+          console.error("Failed to mark messages as read:", error);
+        });
+      
+      return currentMessages;
+    });
   };
 
   const handleSendMessage = async (content: string) => {
@@ -142,10 +230,23 @@ export default function ChatLayout() {
         content,
       });
       
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
+      console.log("Message sent successfully:", newMessage);
+      
+      // Add message to state immediately (optimistic update)
+      // The real-time subscription will also receive this, but we handle duplicates
+      setMessages((prevMessages) => {
+        // Check if message already exists (from subscription)
+        if (prevMessages.some((msg) => msg.id === newMessage.id)) {
+          console.log("Message already in state from subscription");
+          return prevMessages;
+        }
+        return [...prevMessages, newMessage];
+      });
+      
       await ChatService.updateLastMessageTime(selectedChat.id);
     } catch (error) {
       console.error("Failed to send message:", error);
+      toast.error("Failed to send message");
       throw error;
     }
   };
@@ -163,10 +264,23 @@ export default function ChatLayout() {
         file_url: fileUrl,
       });
       
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
+      console.log("File message sent successfully:", newMessage);
+      
+      // Add message to state immediately (optimistic update)
+      // The real-time subscription will also receive this, but we handle duplicates
+      setMessages((prevMessages) => {
+        // Check if message already exists (from subscription)
+        if (prevMessages.some((msg) => msg.id === newMessage.id)) {
+          console.log("File message already in state from subscription");
+          return prevMessages;
+        }
+        return [...prevMessages, newMessage];
+      });
+      
       await ChatService.updateLastMessageTime(selectedChat.id);
     } catch (error) {
       console.error("Failed to upload file:", error);
+      toast.error("Failed to upload file");
       throw error;
     }
   };
@@ -232,6 +346,7 @@ export default function ChatLayout() {
           onSelectChat={setSelectedChat}
           onCreateChat={handleCreateChat}
           currentUserId={user.id}
+          unreadCounts={unreadCounts}
         />
       </div>
       
