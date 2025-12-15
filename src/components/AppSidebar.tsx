@@ -99,8 +99,11 @@ const AppSidebar: React.FC<Props> = ({ userRole }) => {
   };
 
   const menuItems = getMenuItems(userRole);
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    const success = await logout();
+    if (success) {
+      router.push('/auth/login');
+    }
   };
 
   return (

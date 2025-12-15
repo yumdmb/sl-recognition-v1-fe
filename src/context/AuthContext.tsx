@@ -27,7 +27,7 @@ interface AuthContextProps {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => Promise<void>;
+  logout: () => Promise<boolean>;
   register: (name: string, email: string, password: string, role: 'non-deaf' | 'deaf') => Promise<boolean>;
   updateUser: (user: Partial<User>) => Promise<void>;
   changePassword: (newPassword: string) => Promise<boolean>;
@@ -308,8 +308,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Logout function
-  const logout = async () => {
+  // Logout function - returns true on success for caller to handle redirect
+  const logout = async (): Promise<boolean> => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
@@ -317,11 +317,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         toast.error("Logout failed", {
           description: error.message
         });
-      } else {
-        toast.success("Logged out successfully");
+        return false;
       }
+      toast.success("Logged out successfully");
+      return true;
     } catch (error) {
       console.error('Logout error:', error);
+      return false;
     }
   };
   // Update user information
