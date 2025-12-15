@@ -224,13 +224,20 @@
     - Ensure posts load correctly on page navigation
     - _Requirements: 6.1_
 
-- [ ] 14. Implement Comment Like System
-  - [ ] 14.1 Add like methods to ForumService
+- [x] 14. Implement Comment Like System
+
+
+
+  - [x] 14.1 Add like methods to ForumService
+
+
     - Implement `likeComment` method to add a like
     - Implement `unlikeComment` method to remove a like
     - Implement `getCommentLikes` to fetch like count and user's like status
     - _Requirements: 6.6_
-  - [ ] 14.2 Create like button component for comments
+
+  - [x] 14.2 Create like button component for comments
+
     - Create `LikeButton` component with heart icon
     - Display current like count
     - Highlight when user has liked
@@ -240,23 +247,35 @@
     - **Property 10: Comment Like Persistence and Consistency**
     - **Validates: Requirements 6.6**
 
-- [ ] 15. Implement Forum Image Attachments
-  - [ ] 15.1 Add attachment methods to ForumService
+- [x] 15. Implement Forum Image Attachments
+
+
+
+
+  - [x] 15.1 Add attachment methods to ForumService
+
     - Implement `uploadAttachment` method for image upload
     - Implement `getAttachments` to fetch attachments for a post
     - Support image attachments only (jpg, png, gif, webp)
     - _Requirements: 6.3_
-  - [ ] 15.2 Create image upload component
+
+  - [x] 15.2 Create image upload component
+
+
     - Create `ImageAttachmentUpload` component with drag-and-drop
     - Support image file types only
     - Show upload progress and preview
     - _Requirements: 6.3_
-  - [ ] 15.3 Display image attachments with fixed thumbnail size
+  - [x] 15.3 Display image attachments with fixed thumbnail size
+
+
     - Render image thumbnails with fixed dimensions (max 300x200px)
     - Use object-fit: cover to maintain aspect ratio
     - Create `ImageThumbnail` component with consistent sizing
     - _Requirements: 6.4_
-  - [ ] 15.4 Create image modal for full-size view
+  - [x] 15.4 Create image modal for full-size view
+
+
     - Create `ImageModal` component for viewing full-size images
     - Open modal when user clicks on thumbnail
     - Include close button and click-outside-to-close functionality
@@ -265,14 +284,23 @@
     - **Property 13: Image Thumbnail Consistency**
     - **Validates: Requirements 6.4, 6.5**
 
-- [ ] 16. Redesign Forum Card Layout
-  - [ ] 16.1 Update forum post card design
+- [x] 16. Redesign Forum Card Layout
+
+
+
+
+
+
+  - [x] 16.1 Update forum post card design
+
     - Show post title prominently
     - Add content preview with "Read more" expansion
     - Display author, timestamp, and comment count
     - Display image thumbnails with fixed sizing
     - _Requirements: 6.2_
-  - [ ] 16.2 Improve comment threading display
+
+  - [x] 16.2 Improve comment threading display
+
     - Add proper indentation for nested replies
     - Add collapse/expand functionality for threads
     - Add like button with count for each comment
@@ -281,8 +309,9 @@
     - **Property 11: Comment Threading Structure**
     - **Validates: Requirements 6.7**
 
-- [ ] 17. Checkpoint - Ensure all tests pass
+- [x] 17. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
+  - Note: No test framework configured in project. Property tests are optional.
 
 - [ ] 18. Implement Global Error Handling
   - [ ] 18.1 Create centralized error handler utility

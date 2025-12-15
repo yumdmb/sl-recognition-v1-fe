@@ -3,16 +3,17 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ForumService, ForumPost } from '@/lib/services/forumService';
-import type { ForumComment as ForumCommentType } from '@/lib/services/forumService'; // Renamed to avoid conflict
+import type { ForumComment as ForumCommentType } from '@/lib/services/forumService';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
-import { Loader2, MessageSquare, Edit3, Trash2, PlusCircle, Eye, EyeOff, Send } from 'lucide-react';
+import { Loader2, MessageSquare, PlusCircle, Send } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ForumPostCard, CommentThread, ImageModal } from '@/components/forum';
 
 // Recursive helper function to add a reply to a specific comment (or its children)
 const addReplyToComment = (comments: ForumCommentType[], parentCommentId: string, newComment: ForumCommentType): ForumCommentType[] => {
@@ -37,7 +38,7 @@ const removeCommentRecursive = (comments: ForumCommentType[], commentIdToDelete:
   const updatedComments = [];
   for (const comment of comments) {
     if (comment.id === commentIdToDelete) {
-      continue; // This is the comment to delete, so skip it
+      continue;
     }
     if (comment.replies && comment.replies.length > 0) {
       const updatedReplies = removeCommentRecursive(comment.replies, commentIdToDelete);
@@ -53,7 +54,7 @@ const removeCommentRecursive = (comments: ForumCommentType[], commentIdToDelete:
 const updateCommentRecursive = (comments: ForumCommentType[], commentIdToEdit: string, newText: string): ForumCommentType[] => {
   return comments.map(comment => {
     if (comment.id === commentIdToEdit) {
-      return { ...comment, content: newText }; // Found the comment, update its text
+      return { ...comment, content: newText };
     } else if (comment.replies && comment.replies.length > 0) {
       return {
         ...comment,
@@ -64,201 +65,18 @@ const updateCommentRecursive = (comments: ForumCommentType[], commentIdToEdit: s
   });
 };
 
-// --- Comment Component for Recursive Rendering ---
-interface ForumCommentDisplayProps { // Renamed to avoid conflict with the component itself
-  comment: ForumCommentType;
-  onReply: (parentCommentId: string, replyText: string) => void;
-  onDelete: (commentId: string) => void;
-  onEdit: (commentId: string, newText: string) => void;
-  currentUserId: string | undefined;
-}
-
-const ForumCommentDisplay: React.FC<ForumCommentDisplayProps> = ({ comment, onReply, onDelete, onEdit, currentUserId }) => {
-  const [showReplyInput, setShowReplyInput] = useState(false);
-  const [replyText, setReplyText] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedText, setEditedText] = useState(comment.content);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleReplySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (replyText.trim() && !isSubmitting) {
-      setIsSubmitting(true);
-      try {
-        await onReply(comment.id, replyText);
-        setReplyText('');
-        setShowReplyInput(false);
-      } catch (error) {
-        console.error('Error submitting reply:', error);
-        toast.error('Failed to submit reply. Please try again.');
-      } finally {
-        setIsSubmitting(false);
-      }
-    }
-  };
-
-  const handleEditSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editedText.trim() && editedText !== comment.content && !isSubmitting) {
-      setIsSubmitting(true);
-      try {
-        await onEdit(comment.id, editedText);
-      } catch (error) {
-        console.error('Error updating comment:', error);
-        toast.error('Failed to update comment. Please try again.');
-      } finally {
-        setIsSubmitting(false);
-        setIsEditing(false);
-      }
-    } else {
-      setIsEditing(false); // If no changes or empty, just close edit mode
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!isDeleting) {
-      setIsDeleting(true);
-      try {
-        await onDelete(comment.id);
-        // No need to setIsDeleting(false) here as the component might unmount
-      } catch (error) {
-        console.error('Error deleting comment:', error);
-        toast.error('Failed to delete comment. Please try again.');
-        setIsDeleting(false); // Only set back if error occurs
-      }
-    }
-  };
-
-  const isOwnComment = currentUserId === comment.user_id;
-  const authorName = comment.user_profile?.username || 'Anonymous';
-
-  return (
-    <Card className="mb-3">
-      <CardContent className="p-4">
-        {isEditing ? (
-          <form onSubmit={handleEditSubmit} className="flex flex-col gap-2">
-            <Textarea
-              value={editedText}
-              onChange={(e) => setEditedText(e.target.value)}
-              required
-              autoFocus
-              rows={3}
-              placeholder="Edit your comment..."
-            />
-            <div className="flex gap-2 justify-end">
-              <Button
-                type="submit"
-                size="sm"
-                disabled={!editedText.trim() || isSubmitting}
-              >
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditing(false)}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        ) : (
-          <>
-            <div className="flex items-baseline justify-between mb-1">
-              <span className="font-semibold text-card-foreground">{authorName}</span>
-              <span className="text-xs text-muted-foreground ml-2">
-                {new Date(comment.created_at).toLocaleString()}
-                {comment.updated_at && comment.updated_at !== comment.created_at &&
-                  ' (edited)'}
-              </span>
-            </div>
-            <p className="text-sm text-card-foreground/90">{comment.content}</p>
-          </>
-        )}
-
-        <div className="mt-2 flex justify-end gap-2">
-          {!isEditing && (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowReplyInput(!showReplyInput)}
-              >
-                <MessageSquare className="mr-1 h-3.5 w-3.5" />
-                {showReplyInput ? 'Cancel' : 'Reply'}
-              </Button>
-              {isOwnComment && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsEditing(true)}
-                  >
-                    <Edit3 className="mr-1 h-3.5 w-3.5" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                    className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                  >
-                    {isDeleting ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Trash2 className="mr-1 h-3.5 w-3.5" />}
-                    Delete
-                  </Button>
-                </>
-              )}
-            </>
-          )}
-        </div>
-
-        {showReplyInput && (
-          <form onSubmit={handleReplySubmit} className="mt-3 flex flex-col gap-2">
-            <Textarea
-              placeholder={`Reply to ${authorName}...`}
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              rows={2}
-              required
-            />
-            <div className="flex justify-end">
-              <Button
-                type="submit"
-                size="sm"
-                disabled={!replyText.trim() || isSubmitting}
-              >
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Submit Reply
-              </Button>
-            </div>
-          </form>
-        )}
-
-        {comment.replies && comment.replies.length > 0 && (
-          <div className="ml-6 mt-3 border-l-2 border-border pl-4">
-            {comment.replies.map(reply => (
-              <ForumCommentDisplay // Recursive call
-                key={reply.id}
-                comment={reply}
-                onReply={onReply}
-                onDelete={onDelete}
-                onEdit={onEdit}
-                currentUserId={currentUserId}
-              />
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+// Helper to count all comments including nested replies
+const countAllComments = (comments: ForumCommentType[]): number => {
+  return comments.reduce((count, comment) => {
+    return count + 1 + (comment.replies ? countAllComments(comment.replies) : 0);
+  }, 0);
 };
 
-// --- Main ForumPage Component ---
+// Helper to get all comment IDs including nested
+const getAllCommentIds = (comments: ForumCommentType[]): string[] => {
+  return comments.flatMap(c => [c.id, ...getAllCommentIds(c.replies || [])]);
+};
+
 export default function ForumPage() {
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [newTitle, setNewTitle] = useState('');
@@ -267,11 +85,14 @@ export default function ForumPage() {
   const [topLevelCommentText, setTopLevelCommentText] = useState('');
   const [postComments, setPostComments] = useState<Record<string, ForumCommentType[]>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmittingPost, setIsSubmittingPost] = useState(false); // For posts
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false); // For comments
-
+  const [isSubmittingPost, setIsSubmittingPost] = useState(false);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [showCreateFormModal, setShowCreateFormModal] = useState(false);
   const [editingPost, setEditingPost] = useState<ForumPost | null>(null);
+  const [commentLikes, setCommentLikes] = useState<Record<string, { count: number; userLiked: boolean }>>({});
+  const [pendingFiles, setPendingFiles] = useState<{ file: File; preview: string; isImage: boolean }[]>([]);
+  const [selectedImage, setSelectedImage] = useState<{ src: string; alt: string } | null>(null);
+  
   const { currentUser } = useAuth();
   const router = useRouter();
 
@@ -291,6 +112,7 @@ export default function ForumPage() {
 
     loadPosts();
   }, []);
+
   // Set up form values when editing a post
   useEffect(() => {
     if (editingPost) {
@@ -313,6 +135,22 @@ export default function ForumPage() {
               ...prev,
               [selectedPostIdForComment]: fetchedComments
             }));
+
+            // Load likes for all comments (including nested)
+            const commentIds = getAllCommentIds(fetchedComments);
+            
+            if (commentIds.length > 0) {
+              try {
+                const likesMap = await ForumService.getCommentLikesBatch(commentIds);
+                const likesObj: Record<string, { count: number; userLiked: boolean }> = {};
+                likesMap.forEach((value, key) => {
+                  likesObj[key] = value;
+                });
+                setCommentLikes(prev => ({ ...prev, ...likesObj }));
+              } catch (likeError) {
+                console.error('Error loading comment likes:', likeError);
+              }
+            }
           }
         } catch (error) {
           console.error(`Error loading comments for post ${selectedPostIdForComment}:`, error);
@@ -323,17 +161,14 @@ export default function ForumPage() {
       loadComments();
     }
   }, [selectedPostIdForComment, postComments]);
-  /**
-   * Handles the creation of a new forum post.
-   * @param e The form submission event.
-   */
+
   const handlePostSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || !newContent.trim() || isSubmittingPost) return;
 
     setIsSubmittingPost(true);
     try {
-      if (editingPost) { // Update existing post
+      if (editingPost) {
         const updatedPost = await ForumService.updatePost(editingPost.id, {
           title: newTitle,
           content: newContent
@@ -342,16 +177,30 @@ export default function ForumPage() {
           prevPosts.map(post => post.id === updatedPost.id ? updatedPost : post)
         );
         toast.success('Post updated successfully!');
-      } else { // Create new post
+      } else {
         const newPost = await ForumService.createPost({
           title: newTitle,
           content: newContent
         });
+        
+        // Upload pending files now that we have the post ID
+        if (pendingFiles.length > 0) {
+          for (const { file } of pendingFiles) {
+            try {
+              await ForumService.uploadAttachment(file, newPost.id);
+            } catch (uploadError) {
+              console.error('Error uploading attachment:', uploadError);
+              toast.error(`Failed to upload ${file.name}`);
+            }
+          }
+        }
+        
         setPosts(prevPosts => [newPost, ...prevPosts]);
         toast.success('Post created successfully!');
       }
       setNewTitle('');
       setNewContent('');
+      setPendingFiles([]);
       setEditingPost(null);
       setShowCreateFormModal(false);
     } catch (error) {
@@ -362,22 +211,12 @@ export default function ForumPage() {
     }
   };
 
-  /**
-   * Handles initiating the edit process for a post.
-   * @param postToEdit The post object to be edited.
-   */
   const handleEditPostClick = (postToEdit: ForumPost) => {
     setEditingPost(postToEdit);
     setShowCreateFormModal(true);
   };
-  /**
-   * Handles deleting a forum post.
-   * @param postIdToDelete The ID of the post to delete.
-   */
+
   const handleDeletePost = async (postIdToDelete: string) => {
-    // Consider adding a confirmation dialog here using <AlertDialog>
-    // For now, direct delete:
-    // setIsDeletingPost(true); // if you add a specific loading state for delete
     try {
       await ForumService.deletePost(postIdToDelete);
       setPosts(prevPosts => prevPosts.filter(post => post.id !== postIdToDelete));
@@ -385,18 +224,16 @@ export default function ForumPage() {
     } catch (error) {
       console.error('Error deleting post:', error);
       toast.error('Failed to delete post. Please try again.');
-    } finally {
-      // setIsDeletingPost(false);
     }
   };
 
-  /**
-   * Handles adding a new comment (either top-level or a reply).
-   * This function is passed down to ForumComment for nested replies.
-   * @param postId The ID of the post the comment belongs to.
-   * @param commentText The text of the comment.
-   * @param parentCommentId Optional: The ID of the parent comment if it's a reply.
-   */
+  const handleViewComments = (postId: string) => {
+    setSelectedPostIdForComment(selectedPostIdForComment === postId ? null : postId);
+    if (selectedPostIdForComment !== postId) {
+      setTopLevelCommentText('');
+    }
+  };
+
   const handleAddComment = async (
     postId: string,
     commentText: string,
@@ -422,11 +259,10 @@ export default function ForumPage() {
 
       const commentWithProfile: ForumCommentType = {
         ...newCommentData,
-        user_profile: { // Assuming createComment returns the full comment with user_id
+        user_profile: {
           username: currentUser.name || currentUser.email || 'Anonymous',
-          // avatar_url: undefined, // Removed as avatars are not used
         },
-        replies: [] // New comments don't have replies initially
+        replies: []
       };
 
       setPostComments(prevComments => {
@@ -445,7 +281,7 @@ export default function ForumPage() {
       });
 
       if (!parentCommentId) {
-        setTopLevelCommentText(''); // Reset only for top-level comments
+        setTopLevelCommentText('');
       }
       toast.success('Comment added successfully');
     } catch (error) {
@@ -456,14 +292,7 @@ export default function ForumPage() {
     }
   };
 
-  /**
-   * Handles deleting a comment (top-level or nested reply).
-   * @param postId The ID of the post the comment belongs to.
-   * @param commentIdToDelete The ID of the comment to delete.
-   */
   const handleDeleteComment = async (postId: string, commentIdToDelete: string) => {
-    // Consider adding a confirmation dialog
-    // setIsDeletingComment(true);
     try {
       await ForumService.deleteComment(commentIdToDelete);
       setPostComments(prevComments => {
@@ -477,19 +306,10 @@ export default function ForumPage() {
     } catch (error) {
       console.error('Error deleting comment:', error);
       toast.error('Failed to delete comment. Please try again.');
-    } finally {
-      // setIsDeletingComment(false);
     }
   };
 
-  /**
-   * Handles editing a comment (top-level or nested reply).
-   * @param postId The ID of the post the comment belongs to.
-   * @param commentIdToEdit The ID of the comment to edit.
-   * @param newText The new text for the comment.
-   */
   const handleEditComment = async (postId: string, commentIdToEdit: string, newText: string) => {
-    // setIsEditingComment(true);
     try {
       await ForumService.updateComment(commentIdToEdit, newText);
       setPostComments(prevComments => {
@@ -503,10 +323,19 @@ export default function ForumPage() {
     } catch (error) {
       console.error('Error updating comment:', error);
       toast.error('Failed to update comment. Please try again.');
-    } finally {
-      // setIsEditingComment(false);
     }
   };
+
+  const handleLikeToggle = async (commentId: string): Promise<{ count: number; userLiked: boolean }> => {
+    const result = await ForumService.toggleCommentLike(commentId);
+    setCommentLikes(prev => ({
+      ...prev,
+      [commentId]: result
+    }));
+    return result;
+  };
+
+  const getLikeData = (commentId: string) => commentLikes[commentId];
 
   if (isLoading) {
     return (
@@ -531,8 +360,8 @@ export default function ForumPage() {
               router.push('/auth/signin');
               return;
             }
-            setEditingPost(null); // Clear any editing state
-            setNewTitle('');      // Clear form fields
+            setEditingPost(null);
+            setNewTitle('');
             setNewContent('');
             setShowCreateFormModal(true);
           }}
@@ -544,91 +373,96 @@ export default function ForumPage() {
       {/* Display Forum Posts */}
       {posts.length > 0 ? (
         <div className="space-y-6">
-          {posts.map(post => (
-            <Card key={post.id}>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                  <CardTitle className="text-2xl">{post.title}</CardTitle>
-                  {currentUser && post.user_id === currentUser.id && (
-                    <div className="flex gap-2 flex-shrink-0">
-                      <Button variant="outline" size="sm" onClick={() => handleEditPostClick(post)}>
-                        <Edit3 className="mr-1 h-4 w-4" /> Edit
-                      </Button>
-                      <Button variant="destructive" size="sm" onClick={() => handleDeletePost(post.id)}>
-                        <Trash2 className="mr-1 h-4 w-4" /> Delete
-                      </Button>
-                    </div>
-                  )}
-                </div>
-                <CardDescription className="text-xs pt-1">
-                  Posted by: {post.user_profile?.username || 'Anonymous'} on {new Date(post.created_at).toLocaleDateString()}
-                  {post.updated_at && post.updated_at !== post.created_at && ` (edited ${new Date(post.updated_at).toLocaleDateString()})`}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground whitespace-pre-wrap">{post.content}</p>
-              </CardContent>
-              <CardFooter className="flex-col items-start gap-4">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSelectedPostIdForComment(selectedPostIdForComment === post.id ? null : post.id);
-                    if (selectedPostIdForComment !== post.id) setTopLevelCommentText(''); // Clear comment text when opening new section
-                  }}
-                >
-                  {selectedPostIdForComment === post.id ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
-                  {selectedPostIdForComment === post.id ? 'Hide Comments' : `View Comments (${postComments[post.id]?.length || 0})`}
-                </Button>
+          {posts.map(post => {
+            const comments = postComments[post.id] || [];
+            // Use local count if comments have been loaded, otherwise use count from API
+            const commentCount = postComments[post.id] !== undefined 
+              ? countAllComments(comments) 
+              : (post.comment_count || 0);
+            const isExpanded = selectedPostIdForComment === post.id;
 
-                {selectedPostIdForComment === post.id && (
-                  <div className="w-full mt-4 border-t pt-4">
-                    {currentUser ? (
-                      <form onSubmit={(e) => {
-                        e.preventDefault();
-                        handleAddComment(post.id, topLevelCommentText);
-                      }} className="flex flex-col sm:flex-row gap-2 items-start">
-                        <Textarea
-                          placeholder="Write a comment..."
-                          value={topLevelCommentText}
-                          onChange={e => setTopLevelCommentText(e.target.value)}
-                          rows={2}
-                          required
-                          className="flex-grow"
-                        />
-                        <Button type="submit" disabled={!topLevelCommentText.trim() || isSubmittingComment} className="w-full sm:w-auto">
-                          {isSubmittingComment ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                          Comment
-                        </Button>
-                      </form>
-                    ) : (
-                      <Alert variant="default" className="mt-2">
-                        <AlertDescription>
-                          Please <a href="/auth/signin" className={buttonVariants({ variant: "link", className: "p-0 h-auto"})}>sign in</a> to comment.
-                        </AlertDescription>
-                      </Alert>
-                    )}
+            return (
+              <div key={post.id} className="space-y-4">
+                <ForumPostCard
+                  post={post}
+                  currentUserId={currentUser?.id}
+                  commentCount={commentCount}
+                  onEdit={handleEditPostClick}
+                  onDelete={handleDeletePost}
+                  onViewComments={handleViewComments}
+                  isCommentsExpanded={isExpanded}
+                />
 
-                    <div className="mt-6 space-y-4">
-                      {postComments[post.id]?.length > 0 ? (
-                        postComments[post.id].map(c => (
-                          <ForumCommentDisplay
-                            key={c.id}
-                            comment={c}
-                            onReply={(parentId, text) => handleAddComment(post.id, text, parentId)}
-                            onDelete={(commentId) => handleDeleteComment(post.id, commentId)}
-                            onEdit={(commentId, newText) => handleEditComment(post.id, commentId, newText)}
-                            currentUserId={currentUser?.id}
+                {/* Comments Section */}
+                {isExpanded && (
+                  <Card className="ml-4 border-l-4 border-l-primary/20">
+                    <CardContent className="pt-4">
+                      {/* New comment input */}
+                      {currentUser ? (
+                        <form 
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            handleAddComment(post.id, topLevelCommentText);
+                          }} 
+                          className="flex flex-col sm:flex-row gap-2 items-start mb-6"
+                        >
+                          <Textarea
+                            placeholder="Write a comment..."
+                            value={topLevelCommentText}
+                            onChange={e => setTopLevelCommentText(e.target.value)}
+                            rows={2}
+                            required
+                            className="flex-grow"
                           />
-                        ))
+                          <Button 
+                            type="submit" 
+                            disabled={!topLevelCommentText.trim() || isSubmittingComment} 
+                            className="w-full sm:w-auto"
+                          >
+                            {isSubmittingComment ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Send className="mr-2 h-4 w-4" />
+                            )}
+                            Comment
+                          </Button>
+                        </form>
                       ) : (
-                        <p className="text-muted-foreground text-center py-4">No comments yet. Be the first to reply!</p>
+                        <Alert variant="default" className="mb-6">
+                          <AlertDescription>
+                            Please <a href="/auth/signin" className={buttonVariants({ variant: "link", className: "p-0 h-auto"})}>sign in</a> to comment.
+                          </AlertDescription>
+                        </Alert>
                       )}
-                    </div>
-                  </div>
+
+                      {/* Comments list with threading */}
+                      <div className="space-y-1">
+                        {comments.length > 0 ? (
+                          comments.map(comment => (
+                            <CommentThread
+                              key={comment.id}
+                              comment={comment}
+                              currentUserId={currentUser?.id}
+                              likeData={getLikeData(comment.id)}
+                              onReply={(parentId, text) => handleAddComment(post.id, text, parentId)}
+                              onEdit={(commentId, newText) => handleEditComment(post.id, commentId, newText)}
+                              onDelete={(commentId) => handleDeleteComment(post.id, commentId)}
+                              onLikeToggle={handleLikeToggle}
+                              getLikeData={getLikeData}
+                            />
+                          ))
+                        ) : (
+                          <p className="text-muted-foreground text-center py-4">
+                            No comments yet. Be the first to reply!
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
-              </CardFooter>
-            </Card>
-          ))}
+              </div>
+            );
+          })}
         </div>
       ) : (
         <Card className="text-center py-10">
@@ -643,15 +477,24 @@ export default function ForumPage() {
       {/* Create/Edit Post Modal */}
       <Dialog open={showCreateFormModal} onOpenChange={(open) => {
         setShowCreateFormModal(open);
-        if (!open) setEditingPost(null); // Reset editing post when dialog closes
+        if (!open) {
+          setEditingPost(null);
+          // Clean up preview URLs
+          pendingFiles.forEach(f => URL.revokeObjectURL(f.preview));
+          setPendingFiles([]);
+        }
       }}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl">{editingPost ? 'Edit Discussion Topic' : 'Create New Discussion Topic'}</DialogTitle>
+            <DialogTitle className="text-2xl">
+              {editingPost ? 'Edit Discussion Topic' : 'Create New Discussion Topic'}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={handlePostSubmit} className="space-y-4 py-4">
             <div>
-              <label htmlFor="postTitle" className="block text-sm font-medium text-foreground mb-1">Title</label>
+              <label htmlFor="postTitle" className="block text-sm font-medium text-foreground mb-1">
+                Title
+              </label>
               <Input
                 id="postTitle"
                 placeholder="Enter topic title"
@@ -662,7 +505,9 @@ export default function ForumPage() {
               />
             </div>
             <div>
-              <label htmlFor="postContent" className="block text-sm font-medium text-foreground mb-1">Content</label>
+              <label htmlFor="postContent" className="block text-sm font-medium text-foreground mb-1">
+                Content
+              </label>
               <Textarea
                 id="postContent"
                 placeholder="What's on your mind? Share details here..."
@@ -673,6 +518,94 @@ export default function ForumPage() {
                 rows={6}
               />
             </div>
+            
+            {/* Image Attachments Section */}
+            {!editingPost && (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Attach Images (Optional)
+                </label>
+                
+                {/* Show pending files */}
+                {pendingFiles.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {pendingFiles.map((item, index) => (
+                      <div key={index} className="relative group">
+                        {item.isImage ? (
+                          <img
+                            src={item.preview}
+                            alt={item.file.name}
+                            className="w-20 h-20 object-cover rounded-lg cursor-pointer"
+                            onClick={() => setSelectedImage({ src: item.preview, alt: item.file.name })}
+                          />
+                        ) : (
+                          <div className="w-20 h-20 bg-muted rounded-lg flex flex-col items-center justify-center p-1">
+                            <span className="text-xs font-medium text-center truncate w-full">
+                              {ForumService.getFileTypeLabel(item.file.type)}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground text-center truncate w-full" title={item.file.name}>
+                              {item.file.name.length > 10 ? item.file.name.slice(0, 8) + '...' : item.file.name}
+                            </span>
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (item.preview) URL.revokeObjectURL(item.preview);
+                            setPendingFiles(prev => prev.filter((_, i) => i !== index));
+                          }}
+                          className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* File input for selecting files */}
+                <div className="border-2 border-dashed rounded-lg p-4 text-center">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain"
+                    multiple
+                    onChange={(e) => {
+                      const files = e.target.files;
+                      if (files) {
+                        const newFiles = Array.from(files).map(file => {
+                          const validation = ForumService.validateFile(file);
+                          if (!validation.valid) {
+                            toast.error(`${file.name}: ${validation.error}`);
+                            return null;
+                          }
+                          // Create preview for images, use placeholder for documents
+                          const isImage = ForumService.isImageFile(file.type);
+                          return {
+                            file,
+                            preview: isImage ? URL.createObjectURL(file) : '',
+                            isImage
+                          };
+                        }).filter((f): f is { file: File; preview: string; isImage: boolean } => f !== null);
+                        
+                        setPendingFiles(prev => [...prev, ...newFiles]);
+                      }
+                      e.target.value = '';
+                    }}
+                    className="hidden"
+                    id="file-upload"
+                    disabled={isSubmittingPost}
+                  />
+                  <label
+                    htmlFor="file-upload"
+                    className="cursor-pointer text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    <span className="block">Click to select files</span>
+                    <span className="text-xs">Images, PDF, Word, Excel, Text (max 10MB each)</span>
+                  </label>
+                </div>
+              </div>
+            )}
+            
             <DialogFooter>
               <Button
                 type="button"
@@ -680,6 +613,8 @@ export default function ForumPage() {
                 onClick={() => {
                   setShowCreateFormModal(false);
                   setEditingPost(null);
+                  pendingFiles.forEach(f => URL.revokeObjectURL(f.preview));
+                  setPendingFiles([]);
                 }}
                 disabled={isSubmittingPost}
               >
@@ -696,6 +631,16 @@ export default function ForumPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Image Modal for full-size view */}
+      {selectedImage && (
+        <ImageModal
+          src={selectedImage.src}
+          alt={selectedImage.alt}
+          isOpen={!!selectedImage}
+          onClose={() => setSelectedImage(null)}
+        />
+      )}
     </div>
   );
 }
