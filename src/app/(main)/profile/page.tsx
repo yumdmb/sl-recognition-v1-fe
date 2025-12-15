@@ -43,9 +43,9 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">My Profile</h1>
+      <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">My Profile</h1>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* User Information Card */}
         <div className="lg:col-span-2">
           <Card>
@@ -96,12 +96,13 @@ export default function ProfilePage() {
                     <p className="text-sm font-medium text-gray-500 mb-2">Proficiency Level</p>
                     {currentUser.proficiency_level ? (
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                           <p className="text-lg font-semibold capitalize">{currentUser.proficiency_level}</p>
-                          <div className="flex gap-2">
+                          <div className="flex flex-col sm:flex-row gap-2">
                             <Button 
                               size="sm" 
                               variant="outline"
+                              className="w-full sm:w-auto"
                               onClick={() => router.push('/proficiency-test/history')}
                             >
                               View History
@@ -109,6 +110,7 @@ export default function ProfilePage() {
                             <Button 
                               size="sm" 
                               variant="outline"
+                              className="w-full sm:w-auto"
                               onClick={() => router.push('/proficiency-test/select')}
                             >
                               Retake Test

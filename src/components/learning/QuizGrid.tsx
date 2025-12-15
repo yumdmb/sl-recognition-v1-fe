@@ -22,7 +22,7 @@ const QuizGrid: React.FC<QuizGridProps> = ({
   onDeleteQuizSet
 }) => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {quizSets.map((set) => (
         <QuizCard
           key={set.id}

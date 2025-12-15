@@ -45,7 +45,8 @@ const TutorialCard: React.FC<TutorialCardProps> = ({
 
   return (
     <Card className="overflow-hidden">
-      <div className="relative h-48">        <YouTubeVideoPreview
+      <div className="relative aspect-video md:h-48">
+        <YouTubeVideoPreview
           videoUrl={tutorial.video_url}
           title={tutorial.title}
           thumbnailUrl={tutorial.thumbnail_url}
@@ -64,24 +65,24 @@ const TutorialCard: React.FC<TutorialCardProps> = ({
         )}
       </div>
       
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg flex items-center justify-between">
-          <div className="flex items-center">
-            <BookOpen className="h-4 w-4 mr-2" /> {tutorial.title}
+      <CardHeader className="pb-2 px-4 md:px-6">
+        <CardTitle className="text-base md:text-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center min-w-0">
+            <BookOpen className="h-4 w-4 mr-2 flex-shrink-0" /> 
+            <span className="truncate">{tutorial.title}</span>
           </div>
           {getStatusBadge()}
         </CardTitle>
-        <CardDescription>{tutorial.description}</CardDescription>
+        <CardDescription className="line-clamp-2">{tutorial.description}</CardDescription>
       </CardHeader>
-        {/* Card content removed - no duration display */}
       
-      <CardFooter className="flex justify-between pt-0">
+      <CardFooter className="flex justify-between pt-0 px-4 md:px-6">
         {isAdmin ? (
-          <div className="flex justify-end space-x-2 w-full">
-            <Button variant="outline" size="sm" onClick={() => onEdit(tutorial)}>
+          <div className="flex flex-col sm:flex-row justify-end gap-2 w-full">
+            <Button variant="outline" size="sm" onClick={() => onEdit(tutorial)} className="w-full sm:w-auto">
               <Edit className="h-4 w-4 mr-2" /> Edit
             </Button>
-            <Button variant="destructive" size="sm" onClick={() => onDelete(tutorial.id)}>
+            <Button variant="destructive" size="sm" onClick={() => onDelete(tutorial.id)} className="w-full sm:w-auto">
               <Trash className="h-4 w-4 mr-2" /> Delete
             </Button>
           </div>

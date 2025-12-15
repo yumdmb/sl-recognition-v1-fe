@@ -347,9 +347,9 @@ export default function ForumPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 md:px-6">
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-        <h1 className="text-3xl md:text-4xl font-bold text-center sm:text-left">
+    <div className="container mx-auto py-4 md:py-8 px-0 md:px-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4 px-4 md:px-0">
+        <h1 className="text-2xl md:text-4xl font-bold">
           Community Forum
         </h1>
         <Button
@@ -372,7 +372,7 @@ export default function ForumPage() {
 
       {/* Display Forum Posts */}
       {posts.length > 0 ? (
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6 px-4 md:px-0">
           {posts.map(post => {
             const comments = postComments[post.id] || [];
             // Use local count if comments have been loaded, otherwise use count from API
@@ -395,7 +395,7 @@ export default function ForumPage() {
 
                 {/* Comments Section */}
                 {isExpanded && (
-                  <Card className="ml-4 border-l-4 border-l-primary/20">
+                  <Card className="ml-0 md:ml-4 border-l-4 border-l-primary/20">
                     <CardContent className="pt-4">
                       {/* New comment input */}
                       {currentUser ? (

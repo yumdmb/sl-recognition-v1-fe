@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { Chat, Message, ChatService, UnreadCount } from "@/lib/services/chatService";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { AuthContext } from "@/context/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import ChatList from "./ChatList";
 import MessageList from "./MessageList";
@@ -15,6 +16,7 @@ export default function ChatLayout() {
   const authContext = useContext(AuthContext);
   const user = authContext?.user;
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -338,8 +340,8 @@ export default function ChatLayout() {
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">
-      {/* Chat List Sidebar */}
-      <div className={`border-r w-80 flex-shrink-0 h-full ${selectedChat ? 'hidden md:flex' : 'flex'} flex-col p-4`}>
+      {/* Chat List Sidebar - Hidden on mobile when chat is selected */}
+      <div className={`border-r w-80 flex-shrink-0 h-full ${isMobile && selectedChat ? 'hidden' : 'flex'} ${!isMobile ? 'md:flex' : ''} flex-col p-4`}>
         <h1 className="font-semibold text-xl mb-4">Messages</h1>
         <ChatList
           chats={chats}
@@ -352,20 +354,21 @@ export default function ChatLayout() {
         />
       </div>
       
-      {/* Chat Area */}
-      <div className="flex-grow flex flex-col h-full">
+      {/* Chat Area - Full screen on mobile when chat is selected */}
+      <div className={`flex-grow flex flex-col h-full ${isMobile && !selectedChat ? 'hidden' : 'flex'}`}>
         {selectedChat ? (
           <>
-            {/* Chat Header */}
+            {/* Chat Header with back button on mobile */}
             <div className="border-b p-4 flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden"
-                onClick={() => setSelectedChat(null)}
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
+              {isMobile && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSelectedChat(null)}
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+              )}
               
               <Avatar className="h-10 w-10">
                 {selectedChat && (

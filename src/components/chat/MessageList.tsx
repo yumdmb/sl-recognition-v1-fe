@@ -90,7 +90,7 @@ export default function MessageList({
                   key={message.id}
                   className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
                 >
-                  <div className="flex gap-2 max-w-[80%]">                    {!isCurrentUser && (
+                  <div className="flex gap-2 max-w-[85%] md:max-w-[80%]">                    {!isCurrentUser && (
                       <Avatar className="h-8 w-8">
                         <AvatarImage 
                           src={message.sender?.profile_picture_url || undefined} 

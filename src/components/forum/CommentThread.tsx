@@ -33,8 +33,6 @@ interface CommentThreadProps {
 
 // Maximum nesting depth for visual indentation
 const MAX_VISUAL_DEPTH = 5;
-// Indentation per level in pixels
-const INDENT_PER_LEVEL = 24;
 
 export function CommentThread({
   comment,
@@ -72,9 +70,6 @@ export function CommentThread({
   const isOwnComment = currentUserId === comment.user_id;
   const hasReplies = comment.replies && comment.replies.length > 0;
   const authorName = comment.user_profile?.username || 'Anonymous';
-  
-  // Calculate visual depth (cap at maxDepth for indentation)
-  const visualDepth = Math.min(depth, maxDepth);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '';
@@ -178,11 +173,8 @@ export function CommentThread({
     <div 
       className={cn(
         'relative',
-        depth > 0 && 'border-l-2 border-border'
+        depth > 0 && 'border-l-2 border-border ml-4 md:ml-6'
       )}
-      style={{ 
-        marginLeft: depth > 0 ? INDENT_PER_LEVEL : 0 
-      }}
     >
       <div className={cn(
         'py-3',

@@ -41,14 +41,14 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ userRole }) => {
       animate="visible"
     >
       <motion.h2
-        className="text-3xl font-bold"
+        className="text-2xl md:text-3xl font-bold"
         variants={itemVariants}
       >
         {userRole === 'deaf' ? 'Deaf Person Dashboard' : 'Non-Deaf Person Dashboard'}
       </motion.h2>
       
       <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6"
         variants={itemVariants}
       >
         <LearningProgress />

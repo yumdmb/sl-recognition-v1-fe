@@ -25,11 +25,11 @@ const QuizCard: React.FC<QuizCardProps> = ({
 }) => {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{quizSet.title}</CardTitle>
+      <CardHeader className="px-4 md:px-6">
+        <CardTitle className="text-lg md:text-xl">{quizSet.title}</CardTitle>
         <CardDescription>{quizSet.description}</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 md:px-6">
         <div className="text-sm text-gray-500">
           <p>{quizSet.questionCount} questions · {quizSet.language}</p>
           {quizSet.progress && (
@@ -39,24 +39,24 @@ const QuizCard: React.FC<QuizCardProps> = ({
           )}
         </div>
       </CardContent>
-      <CardFooter className="flex justify-end gap-2">
+      <CardFooter className="flex flex-col sm:flex-row justify-end gap-2 px-4 md:px-6">
         {isAdmin && (
           <>
-            <Button size="sm" variant="outline" onClick={() => onEditQuizSet(quizSet)}>
+            <Button size="sm" variant="outline" onClick={() => onEditQuizSet(quizSet)} className="w-full sm:w-auto">
               <Edit className="mr-2 h-4 w-4" />
               Edit Set
             </Button>
-            <Button size="sm" variant="outline" onClick={() => onEditQuestions(quizSet.id)}>
+            <Button size="sm" variant="outline" onClick={() => onEditQuestions(quizSet.id)} className="w-full sm:w-auto">
               <Edit className="mr-2 h-4 w-4" />
               Edit Questions
             </Button>
-            <Button size="sm" variant="destructive" onClick={() => onDeleteQuizSet(quizSet.id)}>
+            <Button size="sm" variant="destructive" onClick={() => onDeleteQuizSet(quizSet.id)} className="w-full sm:w-auto">
               <Trash className="mr-2 h-4 w-4" />
               Delete
             </Button>
           </>
         )}
-        <Button size="sm" onClick={() => onStartQuiz(quizSet.id)}>Start Quiz</Button>
+        <Button size="sm" onClick={() => onStartQuiz(quizSet.id)} className="w-full sm:w-auto">Start Quiz</Button>
       </CardFooter>
     </Card>
   );

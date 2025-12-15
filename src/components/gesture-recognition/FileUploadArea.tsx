@@ -24,7 +24,7 @@ export const FileUploadArea: React.FC<FileUploadAreaProps> = ({
 
   return (
     <div 
-      className={`border-2 border-dashed rounded-lg p-6 text-center ${
+      className={`border-2 border-dashed rounded-lg p-4 md:p-6 text-center ${
         previewUrl ? 'border-gray-300' : 'border-primary'
       }`}
     >
@@ -33,22 +33,22 @@ export const FileUploadArea: React.FC<FileUploadAreaProps> = ({
           <img 
             src={previewUrl} 
             alt="Selected gesture" 
-            className="max-h-40 max-w-full mb-4 rounded" 
+            className="max-h-48 md:max-h-40 max-w-full mb-4 rounded" 
           />
           <button 
             onClick={onRemoveFile}
-            className="text-sm text-red-500 hover:underline"
+            className="text-sm text-red-500 hover:underline min-h-[44px] flex items-center"
           >
             <X className="h-4 w-4 inline mr-1" /> Remove image
           </button>
         </div>
       ) : (
         <div 
-          className="flex flex-col items-center cursor-pointer" 
+          className="flex flex-col items-center cursor-pointer py-4 md:py-2" 
           onClick={handleClickFileInput}
         >
-          <ImageIcon className="h-12 w-12 text-gray-400 mb-2" />
-          <p className="text-sm text-gray-500 mb-2">Click to upload or drag and drop</p>
+          <ImageIcon className="h-10 w-10 md:h-12 md:w-12 text-gray-400 mb-2" />
+          <p className="text-sm text-gray-500 mb-2">Tap to upload or drag and drop</p>
           <p className="text-xs text-gray-400">PNG, JPG or GIF (max. 5MB)</p>
         </div>
       )}

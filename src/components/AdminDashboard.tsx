@@ -66,7 +66,7 @@ const AdminDashboard: React.FC = () => {
       animate="visible"
     >
       <motion.h2
-        className="text-3xl font-bold"
+        className="text-2xl md:text-3xl font-bold"
         variants={itemVariants}
       >
         Admin Dashboard

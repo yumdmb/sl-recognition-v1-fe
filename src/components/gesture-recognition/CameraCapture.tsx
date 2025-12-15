@@ -96,7 +96,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ isActive, language
 
   return (
     <div className="space-y-4">
-      <div className="relative">
+      <div className="relative w-full aspect-video md:aspect-auto">
         <video
           ref={videoRef}
           autoPlay
@@ -106,7 +106,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ isActive, language
         <canvas ref={canvasRef} className="hidden" />
       </div>
       {prediction && (
-        <div className="text-xl text-green-600 font-bold text-center">
+        <div className="text-lg md:text-xl text-green-600 font-bold text-center p-3 bg-green-50 rounded-lg">
           Prediction: {prediction}
         </div>
       )}

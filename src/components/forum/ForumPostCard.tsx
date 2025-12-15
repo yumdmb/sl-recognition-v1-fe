@@ -126,14 +126,14 @@ export function ForumPostCard({
   return (
     <>
       <Card className="hover:shadow-md transition-shadow duration-200">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-3 px-4 md:px-6">
           {/* Title */}
-          <h2 className="text-xl font-semibold text-foreground leading-tight hover:text-primary transition-colors">
+          <h2 className="text-lg md:text-xl font-semibold text-foreground leading-tight hover:text-primary transition-colors break-words">
             {post.title}
           </h2>
           
           {/* Author and timestamp */}
-          <div className="flex items-center gap-3 text-sm text-muted-foreground mt-2">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3 text-sm text-muted-foreground mt-2">
             <div className="flex items-center gap-1.5">
               <Avatar className="h-6 w-6">
                 <AvatarImage 
@@ -144,11 +144,11 @@ export function ForumPostCard({
                   {(post.user_profile?.username || 'A').slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span>{post.user_profile?.username || 'Anonymous'}</span>
+              <span className="truncate max-w-[120px] md:max-w-none">{post.user_profile?.username || 'Anonymous'}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <Clock className="h-4 w-4" />
-              <span>{formatDate(post.created_at)}</span>
+              <Clock className="h-4 w-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">{formatDate(post.created_at)}</span>
               {post.updated_at && post.updated_at !== post.created_at && (
                 <Badge variant="outline" className="text-xs ml-1">edited</Badge>
               )}
@@ -156,9 +156,9 @@ export function ForumPostCard({
           </div>
         </CardHeader>
 
-        <CardContent className="pt-0">
+        <CardContent className="pt-0 px-4 md:px-6">
           {/* Content preview */}
-          <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+          <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed break-words text-sm md:text-base">
             {displayContent}
           </p>
           
@@ -222,9 +222,9 @@ export function ForumPostCard({
           )}
         </CardContent>
 
-        <CardFooter className="pt-3 border-t flex items-center justify-between">
+        <CardFooter className="pt-3 border-t flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 md:px-6">
           {/* Like and Comment buttons */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-wrap">
             {/* Like button */}
             <Button
               variant="ghost"
@@ -263,7 +263,7 @@ export function ForumPostCard({
 
           {/* Edit/Delete buttons for post owner */}
           {isOwnPost && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto">
               <Button 
                 variant="ghost" 
                 size="sm" 
