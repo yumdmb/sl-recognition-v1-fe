@@ -15,6 +15,7 @@ export interface User {
   email: string;
   role: 'non-deaf' | 'admin' | 'deaf';
   proficiency_level: 'Beginner' | 'Intermediate' | 'Advanced' | null;
+  profile_picture_url?: string | null;
   isVerified?: boolean;
   email_confirmed_at?: string;
 }
@@ -77,6 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: profile.email,
           role: profile.role,
           proficiency_level: profile.proficiency_level,
+          profile_picture_url: profile.profile_picture_url,
           isVerified: !!supabaseUser.email_confirmed_at,
           email_confirmed_at: supabaseUser.email_confirmed_at
         };
