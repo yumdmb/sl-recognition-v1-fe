@@ -126,10 +126,6 @@ export default function Login() {
             </p>
           </CardFooter>
         </Card>
-        
-        <div className="mt-6 text-center text-xs text-gray-500">
-          <p>Admin login: elvissawing.muran@gmail.com / sign123</p>
-        </div>
       </div>
     </div>
   );

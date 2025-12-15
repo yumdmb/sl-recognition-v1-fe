@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { GestureContribution } from '@/types/gestureContributions';
-import { Check, X, Trash2, Eye, Edit3 } from 'lucide-react';
+import { Check, X, Trash2, Eye, Edit3, Copy, AlertTriangle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -96,6 +96,42 @@ export default function GestureContributionRow({
           )}
         </div>
       </TableCell>
+      {!isMySubmissionsView && (
+        <TableCell>
+          {contribution.is_duplicate ? (
+            <div className="flex items-center gap-1">
+              <Badge variant="destructive" className="flex items-center gap-1">
+                <Copy className="h-3 w-3" />
+                Duplicate
+              </Badge>
+              {contribution.duplicate_of && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                      <AlertTriangle className="h-4 w-4 text-amber-500" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Duplicate Details</DialogTitle>
+                      <DialogDescription>
+                        This contribution appears to be a duplicate of existing content.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="mt-2 p-3 bg-muted rounded-md text-sm">
+                      {contribution.duplicate_of}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
+          ) : (
+            <Badge variant="outline" className="text-green-600 border-green-600">
+              Unique
+            </Badge>
+          )}
+        </TableCell>
+      )}
       <TableCell>
         <Dialog>
           <DialogTrigger asChild>

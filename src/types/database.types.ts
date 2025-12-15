@@ -254,7 +254,9 @@ export type Database = {
         Row: {
           created_at: string
           description: string
+          duplicate_of: string | null
           id: string
+          is_duplicate: boolean | null
           language: string
           media_type: string
           media_url: string
@@ -270,7 +272,9 @@ export type Database = {
         Insert: {
           created_at?: string
           description: string
+          duplicate_of?: string | null
           id?: string
+          is_duplicate?: boolean | null
           language: string
           media_type: string
           media_url: string
@@ -286,7 +290,9 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string
+          duplicate_of?: string | null
           id?: string
+          is_duplicate?: boolean | null
           language?: string
           media_type?: string
           media_url?: string
@@ -504,6 +510,35 @@ export type Database = {
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "forum_posts"
             referencedColumns: ["id"]
           },
         ]
@@ -938,6 +973,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_gesture_contribution_duplicates: {
+        Args: { contribution_id: string }
+        Returns: Json
+      }
       create_chat_with_participants: {
         Args: { is_group: boolean; user_ids: string[] }
         Returns: Json
@@ -956,6 +995,10 @@ export type Database = {
       is_chat_participant: {
         Args: { chat_id_param: string; user_id_param: string }
         Returns: boolean
+      }
+      refresh_all_gesture_contribution_duplicates: {
+        Args: never
+        Returns: number
       }
     }
     Enums: {

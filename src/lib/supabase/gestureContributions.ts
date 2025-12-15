@@ -232,4 +232,30 @@ export class GestureContributionService {
       return { error };
     }
   }
+
+  // Refresh duplicate detection for all contributions (admin only)
+  static async refreshAllDuplicates(): Promise<{ data: number | null; error: any }> {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase.rpc('refresh_all_gesture_contribution_duplicates');
+      return { data, error };
+    } catch (error) {
+      console.error('Error refreshing duplicates:', error);
+      return { data: null, error };
+    }
+  }
+
+  // Check duplicates for a specific contribution
+  static async checkDuplicates(id: string): Promise<{ data: { is_duplicate: boolean; duplicate_sources: string[] } | null; error: any }> {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase.rpc('check_gesture_contribution_duplicates', {
+        contribution_id: id
+      });
+      return { data, error };
+    } catch (error) {
+      console.error('Error checking duplicates:', error);
+      return { data: null, error };
+    }
+  }
 }

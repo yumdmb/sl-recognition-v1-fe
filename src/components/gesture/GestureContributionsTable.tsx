@@ -35,6 +35,7 @@ export default function GestureContributionsTable({
               <TableHead>Language</TableHead>
               {!isMySubmissionsView && <TableHead>Submitted By</TableHead>}
               <TableHead>Status</TableHead>
+              {!isMySubmissionsView && <TableHead>Duplicate</TableHead>}
               <TableHead>Media</TableHead>
               <TableHead>Submitted At</TableHead>
               <TableHead>Actions</TableHead>
@@ -54,7 +55,7 @@ export default function GestureContributionsTable({
             ))}
             {contributions.length === 0 && (
               <TableRow>
-                <TableCell colSpan={isMySubmissionsView ? 6 : 7} className="text-center">
+                <TableCell colSpan={isMySubmissionsView ? 6 : 8} className="text-center">
                   No contributions found.
                 </TableCell>
               </TableRow>
