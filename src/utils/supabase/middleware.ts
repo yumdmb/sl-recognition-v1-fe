@@ -76,9 +76,28 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Get user role from JWT claims (set by custom_access_token_hook)
+  // Falls back to user_metadata.role if custom claim not available yet
+  const { data: { session } } = await supabase.auth.getSession()
+  const getUserRole = (): string | undefined => {
+    // Try to get from JWT custom claim first (most reliable after hook is enabled)
+    // The custom hook injects 'user_role' into the JWT claims
+    if (session?.access_token) {
+      try {
+        const payload = JSON.parse(atob(session.access_token.split('.')[1]))
+        if (payload.user_role) return payload.user_role
+      } catch {
+        // Ignore parse errors
+      }
+    }
+    // Fallback to user_metadata
+    return user?.user_metadata?.role
+  }
+  
+  const userRole = getUserRole()
+
   // Role-based protection for admin routes
   if (user && isAdminRoute) {
-    const userRole = user.user_metadata?.role
     if (userRole !== 'admin') {
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard'
@@ -87,17 +106,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Role-based redirects for gesture contribution routes
-  // Need to fetch role from database since user_metadata may not be up to date
   if (user && (pathname === '/gesture/view' || pathname === '/gesture/manage-contributions')) {
-    // Fetch user role from database
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-    
-    const userRole = profile?.role || user.user_metadata?.role
-    
     // Admin trying to access /gesture/view -> redirect to /gesture/manage-contributions
     if (userRole === 'admin' && pathname === '/gesture/view') {
       const url = request.nextUrl.clone()
