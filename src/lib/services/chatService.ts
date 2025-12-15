@@ -101,7 +101,19 @@ export class ChatService {
       `)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      // Enhance error message based on error code
+      if (error.code === '23503') {
+        throw new Error('Invalid chat or user. Please refresh and try again.');
+      }
+      if (error.code === '42501') {
+        throw new Error('You do not have permission to send messages in this chat.');
+      }
+      if (error.message.includes('network')) {
+        throw new Error('Network error. Please check your connection.');
+      }
+      throw new Error(error.message || 'Failed to send message');
+    }
     return data;
   }
 
@@ -131,6 +143,13 @@ export class ChatService {
 
   static async uploadFile(file: File, userId: string): Promise<string> {
     const supabase = createClient();
+    
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    if (file.size > maxSize) {
+      throw new Error('File is too large. Maximum size is 10MB.');
+    }
+    
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId}/${Date.now()}.${fileExt}`;
 
@@ -138,7 +157,16 @@ export class ChatService {
       .from('chat_attachments')
       .upload(fileName, file);
 
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+      // Enhance error message based on error type
+      if (uploadError.message.includes('storage')) {
+        throw new Error('Storage error. The file might be too large or the storage is full.');
+      }
+      if (uploadError.message.includes('network')) {
+        throw new Error('Network error. Please check your connection and try again.');
+      }
+      throw new Error(uploadError.message || 'Failed to upload file');
+    }
 
     const { data } = supabase.storage
       .from('chat_attachments')
