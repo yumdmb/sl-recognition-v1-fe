@@ -86,6 +86,33 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  // Role-based redirects for gesture contribution routes
+  // Need to fetch role from database since user_metadata may not be up to date
+  if (user && (pathname === '/gesture/view' || pathname === '/gesture/manage-contributions')) {
+    // Fetch user role from database
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    
+    const userRole = profile?.role || user.user_metadata?.role
+    
+    // Admin trying to access /gesture/view -> redirect to /gesture/manage-contributions
+    if (userRole === 'admin' && pathname === '/gesture/view') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/gesture/manage-contributions'
+      return NextResponse.redirect(url)
+    }
+    
+    // Non-admin trying to access /gesture/manage-contributions -> redirect to /gesture/view
+    if (userRole !== 'admin' && pathname === '/gesture/manage-contributions') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/gesture/view'
+      return NextResponse.redirect(url)
+    }
+  }
+
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
   // If you're creating a new response object with NextResponse.next() make sure to:
   // 1. Pass the request in it, like so:

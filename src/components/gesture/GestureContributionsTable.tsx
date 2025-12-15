@@ -9,8 +9,8 @@ import GestureContributionRow from './GestureContributionRow';
 interface GestureContributionsTableProps {
   contributions: GestureContribution[];
   userRole?: string;
-  onApprove: (id: string) => void;
-  onReject: (id: string, reason?: string) => void;
+  onApprove?: (id: string) => void;
+  onReject?: (id: string, reason?: string) => void;
   onDelete: (id: string) => void;
   onRefresh: () => void;
   isMySubmissionsView?: boolean; // To tailor row actions/display if needed

@@ -19,8 +19,8 @@ import Link from 'next/link'; // For edit button
 interface GestureContributionRowProps {
   contribution: GestureContribution;
   userRole?: string;
-  onApprove: (id: string) => void;
-  onReject: (id: string, reason?: string) => void; // Allow passing reason for rejection
+  onApprove?: (id: string) => void;
+  onReject?: (id: string, reason?: string) => void;
   onDelete: (id: string) => void;
   isMySubmissionsView?: boolean;
 }
@@ -58,11 +58,11 @@ export default function GestureContributionRow({
   const canEdit = isOwner && contribution.status === 'pending';
 
   const handleRejectClick = () => {
+    if (!onReject) return;
     if (isAdmin) {
       const reason = prompt("Enter reason for rejection (optional):");
       onReject(contribution.id, reason || undefined);
     } else {
-      // Non-admins should not be able to trigger this directly if UI is correct
       onReject(contribution.id);
     }
   };
@@ -171,7 +171,7 @@ export default function GestureContributionRow({
       <TableCell>
         <div className="flex gap-1 items-center">
           {/* Admin actions for pending contributions */}
-          {isAdmin && isPending && (
+          {isAdmin && isPending && onApprove && onReject && (
             <>
               <Button
                 size="icon"
@@ -185,7 +185,7 @@ export default function GestureContributionRow({
               <Button
                 size="icon"
                 variant="ghost"
-                onClick={handleRejectClick} // Use new handler
+                onClick={handleRejectClick}
                 className="text-red-600 hover:text-red-700"
                 title="Reject"
               >

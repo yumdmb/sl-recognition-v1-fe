@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { Toaster } from "@/components/ui/sonner";
 import GestureViewHeader from '@/components/gesture/GestureViewHeader';
 import GestureViewLoadingState from '@/components/gesture/GestureViewLoadingState';
@@ -11,33 +11,26 @@ import { useGestureContributions } from '@/hooks/useGestureContributions';
 import { useAuth } from '@/context/AuthContext';
 import { GestureContributionFilters } from '@/types/gestureContributions';
 
-// Note: Admin users are redirected to /gesture/manage-contributions via middleware
+// Note: Non-admin users are redirected to /gesture/view via middleware
 
-export default function GestureView() {
+export default function ManageContributions() {
   const { currentUser, isLoading: authLoading } = useAuth();
   
   const {
     contributions,
     isLoading,
     userRole,
+    handleApprove,
+    handleReject,
     handleDelete,
     refreshContributions,
     updateFilters,
     filters
-  } = useGestureContributions({});
-
-  // Set filter to current user's submissions only
-  useEffect(() => {
-    if (currentUser) {
-      updateFilters({ submitted_by: currentUser.id, status: 'all' });
-    }
-  }, [currentUser, updateFilters]);
+  } = useGestureContributions({ status: 'all' });
 
   const handleFilterChange = useCallback((newFilters: GestureContributionFilters) => {
-    if (currentUser) {
-      updateFilters({ ...newFilters, submitted_by: currentUser.id });
-    }
-  }, [currentUser, updateFilters]);
+    updateFilters(newFilters);
+  }, [updateFilters]);
 
   if (authLoading) {
     return (
@@ -50,7 +43,7 @@ export default function GestureView() {
   if (!currentUser) {
     return (
       <div className="container py-6 text-center">
-        <p>Please log in to view your contributions.</p>
+        <p>Please log in to manage contributions.</p>
       </div>
     );
   }
@@ -58,11 +51,11 @@ export default function GestureView() {
   return (
     <div className="container py-6">
       <Toaster />
-      <GestureViewHeader userRole={userRole} />
+      <GestureViewHeader userRole={userRole} isManageView />
 
       <div className="space-y-6">
         <GestureFilters 
-          filters={filters || { submitted_by: currentUser.id, status: 'all' }}
+          filters={filters || { status: 'all' }}
           onFiltersChange={handleFilterChange}
           userRole={userRole}
           showStatusFilter={true}
@@ -74,12 +67,14 @@ export default function GestureView() {
           <GestureContributionsTable
             contributions={contributions}
             userRole={userRole}
+            onApprove={handleApprove}
+            onReject={handleReject}
             onDelete={handleDelete}
             onRefresh={refreshContributions}
-            isMySubmissionsView={true}
+            isMySubmissionsView={false}
           />
         ) : (
-          <GestureViewEmptyState isMySubmissions={true} />
+          <GestureViewEmptyState isMySubmissions={false} />
         )}
       </div>
     </div>
