@@ -176,11 +176,10 @@ class ChatService {
 
 **New Types and Methods:**
 ```typescript
-interface ForumVote {
+interface CommentLike {
   id: string;
-  post_id: string;
+  comment_id: string;
   user_id: string;
-  vote_type: 'upvote' | 'downvote';
   created_at: string;
 }
 
@@ -194,13 +193,20 @@ interface ForumAttachment {
   created_at: string;
 }
 
+// Image display configuration
+const IMAGE_THUMBNAIL_CONFIG = {
+  maxWidth: 300,  // Fixed width for thumbnails in posts
+  maxHeight: 200, // Fixed height for thumbnails in posts
+  objectFit: 'cover' as const
+};
+
 class ForumService {
   // Existing methods...
   
-  // New: Voting
-  static async votePost(postId: string, voteType: 'upvote' | 'downvote'): Promise<void>;
-  static async removeVote(postId: string): Promise<void>;
-  static async getPostVotes(postId: string): Promise<{ upvotes: number; downvotes: number; userVote?: string }>;
+  // New: Comment Likes
+  static async likeComment(commentId: string): Promise<void>;
+  static async unlikeComment(commentId: string): Promise<void>;
+  static async getCommentLikes(commentId: string): Promise<{ count: number; userLiked: boolean }>;
   
   // New: Attachments
   static async uploadAttachment(file: File, postId?: string, commentId?: string): Promise<ForumAttachment>;
@@ -229,14 +235,13 @@ class UserService {
 ### Database Schema Updates
 
 ```sql
--- Forum votes table (new)
-CREATE TABLE IF NOT EXISTS public.forum_votes (
+-- Comment likes table (new)
+CREATE TABLE IF NOT EXISTS public.comment_likes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  post_id UUID NOT NULL REFERENCES public.forum_posts(id) ON DELETE CASCADE,
+  comment_id UUID NOT NULL REFERENCES public.forum_comments(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  vote_type VARCHAR(10) NOT NULL CHECK (vote_type IN ('upvote', 'downvote')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(post_id, user_id)
+  UNIQUE(comment_id, user_id)
 );
 
 -- Forum attachments table (new)
@@ -289,11 +294,27 @@ interface ChatWithUnread extends Chat {
 }
 
 // Forum types
-interface ForumPostWithVotes extends ForumPost {
-  upvotes: number;
-  downvotes: number;
-  user_vote?: 'upvote' | 'downvote';
+interface ForumPostWithAttachments extends ForumPost {
   attachments?: ForumAttachment[];
+}
+
+interface ForumCommentWithLikes extends ForumComment {
+  like_count: number;
+  user_liked: boolean;
+}
+
+// Image attachment display
+interface ImageThumbnailProps {
+  src: string;
+  alt: string;
+  onClick: () => void;  // Opens full-size modal
+}
+
+interface ImageModalProps {
+  src: string;
+  alt: string;
+  isOpen: boolean;
+  onClose: () => void;
 }
 ```
 
@@ -376,15 +397,24 @@ Based on the prework analysis, the following correctness properties have been id
 
 **Validates: Requirements 5.2, 5.3**
 
-### Property 10: Vote Persistence and Consistency
+### Property 10: Comment Like Persistence and Consistency
 
-*For any* vote action (upvote/downvote) on a forum post:
-- The vote should be persisted to the database
-- The vote count should be updated immediately in the UI
-- A user can only have one vote per post (voting again changes the vote)
-- Removing a vote should decrement the appropriate count
+*For any* like action on a forum comment:
+- The like should be persisted to the database
+- The like count should be updated immediately in the UI
+- A user can only have one like per comment (liking again removes the like)
+- Unliking should decrement the like count by 1
 
-**Validates: Requirements 6.4**
+**Validates: Requirements 6.6**
+
+### Property 13: Image Thumbnail Consistency
+
+*For any* attached image in a forum post:
+- The thumbnail should be rendered with fixed dimensions (max 300x200px)
+- The aspect ratio should be maintained using object-fit: cover
+- Clicking the thumbnail should open a modal with the full-size image
+
+**Validates: Requirements 6.4, 6.5**
 
 ### Property 11: Comment Threading Structure
 
@@ -537,12 +567,15 @@ const PBT_CONFIG = { numRuns: 100 };
 
 **Unit Tests:**
 - Test post creation with attachments
-- Test voting functionality
+- Test comment like functionality
 - Test comment threading
+- Test image thumbnail rendering
+- Test image modal open/close
 
 **Property Tests:**
-- Property 10: Vote persistence and consistency
+- Property 10: Comment like persistence and consistency
 - Property 11: Comment threading structure
+- Property 13: Image thumbnail consistency
 
 #### 5. Error Handling Tests
 

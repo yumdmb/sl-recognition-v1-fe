@@ -190,73 +190,96 @@
 - [ ] 11. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 12. Create Forum Database Migration
-  - [ ] 12.1 Create migration for forum_votes table
-    - Create forum_votes table with post_id, user_id, vote_type
-    - Add unique constraint on (post_id, user_id)
-    - Add RLS policies for vote access
-    - _Requirements: 6.4_
-  - [ ] 12.2 Create migration for forum_attachments table
+- [x] 12. Create Forum Database Migration
+
+
+
+
+
+  - [x] 12.1 Create migration for comment_likes table
+
+
+    - Create comment_likes table with comment_id, user_id
+    - Add unique constraint on (comment_id, user_id)
+    - Add RLS policies for like access
+    - _Requirements: 6.6_
+
+  - [x] 12.2 Create migration for forum_attachments table
+
+
     - Create forum_attachments table with file_url, file_type, file_name
     - Add foreign keys to forum_posts and forum_comments
     - Add RLS policies for attachment access
     - _Requirements: 6.3_
 
-- [ ] 13. Fix Forum Data Fetching Bug
-  - [ ] 13.1 Debug and fix forum posts fetching
+- [x] 13. Fix Forum Data Fetching Bug
+
+
+
+
+  - [x] 13.1 Debug and fix forum posts fetching
+
     - Review ForumService.getPosts implementation
     - Fix any issues with Supabase query or error handling
     - Ensure posts load correctly on page navigation
     - _Requirements: 6.1_
 
-- [ ] 14. Implement Forum Voting System
-  - [ ] 14.1 Add voting methods to ForumService
-    - Implement `votePost` method for upvote/downvote
-    - Implement `removeVote` method to remove existing vote
-    - Implement `getPostVotes` to fetch vote counts and user's vote
-    - _Requirements: 6.4_
-  - [ ] 14.2 Create vote button components
-    - Create `VoteButtons` component with upvote/downvote icons
-    - Display current vote counts
-    - Highlight user's current vote
-    - Handle vote toggle (clicking same vote removes it)
-    - _Requirements: 6.4_
-  - [ ]* 14.3 Write property test for vote persistence
-    - **Property 10: Vote Persistence and Consistency**
-    - **Validates: Requirements 6.4**
+- [ ] 14. Implement Comment Like System
+  - [ ] 14.1 Add like methods to ForumService
+    - Implement `likeComment` method to add a like
+    - Implement `unlikeComment` method to remove a like
+    - Implement `getCommentLikes` to fetch like count and user's like status
+    - _Requirements: 6.6_
+  - [ ] 14.2 Create like button component for comments
+    - Create `LikeButton` component with heart icon
+    - Display current like count
+    - Highlight when user has liked
+    - Handle like toggle (clicking again removes the like)
+    - _Requirements: 6.6_
+  - [ ]* 14.3 Write property test for like persistence
+    - **Property 10: Comment Like Persistence and Consistency**
+    - **Validates: Requirements 6.6**
 
-- [ ] 15. Implement Forum File Attachments
+- [ ] 15. Implement Forum Image Attachments
   - [ ] 15.1 Add attachment methods to ForumService
-    - Implement `uploadAttachment` method for file upload
+    - Implement `uploadAttachment` method for image upload
     - Implement `getAttachments` to fetch attachments for a post
-    - Support both post and comment attachments
+    - Support image attachments only (jpg, png, gif, webp)
     - _Requirements: 6.3_
-  - [ ] 15.2 Create attachment upload component
-    - Create `AttachmentUpload` component with drag-and-drop
-    - Support image and document file types
+  - [ ] 15.2 Create image upload component
+    - Create `ImageAttachmentUpload` component with drag-and-drop
+    - Support image file types only
     - Show upload progress and preview
     - _Requirements: 6.3_
-  - [ ] 15.3 Display attachments in posts and comments
-    - Render image attachments inline
-    - Render document attachments as download links
-    - Add attachment preview modal for images
-    - _Requirements: 6.3_
+  - [ ] 15.3 Display image attachments with fixed thumbnail size
+    - Render image thumbnails with fixed dimensions (max 300x200px)
+    - Use object-fit: cover to maintain aspect ratio
+    - Create `ImageThumbnail` component with consistent sizing
+    - _Requirements: 6.4_
+  - [ ] 15.4 Create image modal for full-size view
+    - Create `ImageModal` component for viewing full-size images
+    - Open modal when user clicks on thumbnail
+    - Include close button and click-outside-to-close functionality
+    - _Requirements: 6.5_
+  - [ ]* 15.5 Write property test for image thumbnail consistency
+    - **Property 13: Image Thumbnail Consistency**
+    - **Validates: Requirements 6.4, 6.5**
 
-- [ ] 16. Redesign Forum to Reddit-Style Layout
+- [ ] 16. Redesign Forum Card Layout
   - [ ] 16.1 Update forum post card design
-    - Add vote buttons on left side of card
     - Show post title prominently
     - Add content preview with "Read more" expansion
     - Display author, timestamp, and comment count
+    - Display image thumbnails with fixed sizing
     - _Requirements: 6.2_
   - [ ] 16.2 Improve comment threading display
     - Add proper indentation for nested replies
     - Add collapse/expand functionality for threads
-    - Style similar to Reddit's comment structure
-    - _Requirements: 6.5_
+    - Add like button with count for each comment
+    - _Requirements: 6.7_
   - [ ]* 16.3 Write property test for comment threading structure
     - **Property 11: Comment Threading Structure**
-    - **Validates: Requirements 6.5**
+    - **Validates: Requirements 6.7**
 
 - [ ] 17. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.

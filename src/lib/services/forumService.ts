@@ -1,13 +1,12 @@
 import { createClient } from '@/utils/supabase/client';
-import type { Database } from '@/types/database';
 
 export type ForumPost = {
   id: string;
   title: string;
   content: string;
-  user_id: string;
-  created_at: string;
-  updated_at: string;
+  user_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
   user_profile?: {
     username: string;
     avatar_url?: string;
@@ -16,12 +15,12 @@ export type ForumPost = {
 
 export type ForumComment = {
   id: string;
-  post_id: string;
+  post_id: string | null;
   content: string;
-  user_id: string;
+  user_id: string | null;
   parent_comment_id: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at: string | null;
+  updated_at: string | null;
   user_profile?: {
     username: string;
     avatar_url?: string;
@@ -34,50 +33,62 @@ export class ForumService {
   static async getPosts(): Promise<ForumPost[]> {
     const supabase = createClient();
     try {
-      // First, let's try without the join to see if basic query works
       const { data, error } = await supabase
         .from('forum_posts')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Supabase error details:', error);
-        throw error;
+        console.error('Error fetching forum posts:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+        throw new Error(`Failed to fetch forum posts: ${error.message}`);
       }
       
-      // If we have posts, get the user profiles separately
-      if (data && data.length > 0) {
-        const userIds = [...new Set(data.map(post => post.user_id))];
-        
-        const { data: profiles, error: profileError } = await supabase
-          .from('user_profiles')
-          .select('id, name')
-          .in('id', userIds);
+      if (!data || data.length === 0) {
+        return [];
+      }
 
-        if (profileError) {
-          console.error('Error fetching user profiles:', profileError);
-          // Continue without profiles if there's an error
-          return data.map(post => ({
-            ...post,
-            user_profile: { username: 'Anonymous', avatar_url: undefined }
-          }));
-        }
-
-        // Create a map of user profiles
-        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
-        
+      // Get unique user IDs, filtering out null values
+      const userIds = [...new Set(data.map(post => post.user_id).filter((id): id is string => id !== null))];
+      
+      // If no valid user IDs, return posts with anonymous profiles
+      if (userIds.length === 0) {
         return data.map(post => ({
           ...post,
-          user_profile: {
-            username: profileMap.get(post.user_id)?.name || 'Anonymous',
-            avatar_url: undefined
-          }
+          user_profile: { username: 'Anonymous', avatar_url: undefined }
         }));
       }
+
+      const { data: profiles, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('id, name')
+        .in('id', userIds);
+
+      if (profileError) {
+        console.error('Error fetching user profiles:', profileError);
+        // Continue without profiles if there's an error
+        return data.map(post => ({
+          ...post,
+          user_profile: { username: 'Anonymous', avatar_url: undefined }
+        }));
+      }
+
+      // Create a map of user profiles
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
       
-      return [];
+      return data.map(post => ({
+        ...post,
+        user_profile: {
+          username: post.user_id ? (profileMap.get(post.user_id)?.name || 'Anonymous') : 'Anonymous',
+          avatar_url: undefined
+        }
+      }));
     } catch (error) {
-      console.error('Error fetching forum posts:', error);
+      console.error('Error in getPosts:', error);
       throw error;
     }
   }
@@ -92,28 +103,43 @@ export class ForumService {
         .single();
 
       if (error) {
-        console.error('Supabase error details:', error);
-        throw error;
+        // PGRST116 means no rows returned, which is not an error for single queries
+        if (error.code === 'PGRST116') {
+          return null;
+        }
+        console.error('Error fetching post:', {
+          message: error.message,
+          code: error.code,
+          details: error.details
+        });
+        throw new Error(`Failed to fetch post: ${error.message}`);
       }
       
       if (!data) return null;
       
-      // Get user profile separately
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('name')
-        .eq('id', data.user_id)
-        .single();
+      // Get user profile separately if user_id exists
+      let profileName = 'Anonymous';
+      if (data.user_id) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('name')
+          .eq('id', data.user_id)
+          .single();
+        
+        if (profile?.name) {
+          profileName = profile.name;
+        }
+      }
       
       return {
         ...data,
         user_profile: {
-          username: profile?.name || 'Anonymous',
+          username: profileName,
           avatar_url: undefined
         }
       };
     } catch (error) {
-      console.error(`Error fetching post with id ${id}:`, error);
+      console.error(`Error in getPostById(${id}):`, error);
       throw error;
     }
   }
@@ -203,25 +229,42 @@ export class ForumService {
         .order('created_at', { ascending: true });
 
       if (error) {
-        console.error('Supabase error details:', error);
-        throw error;
+        console.error('Error fetching comments:', {
+          message: error.message,
+          code: error.code,
+          details: error.details
+        });
+        throw new Error(`Failed to fetch comments: ${error.message}`);
       }
       
-      // Process the data with user profiles
-      const processedData = await Promise.all((data || []).map(async (comment) => {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('name')
-          .eq('id', comment.user_id)
-          .single();
+      if (!data || data.length === 0) {
+        return [];
+      }
 
-        return {
-          ...comment,
-          user_profile: {
-            username: profile?.name || 'Anonymous',
-            avatar_url: undefined
-          }
-        };
+      // Get unique user IDs, filtering out null values
+      const userIds = [...new Set(data.map(c => c.user_id).filter((id): id is string => id !== null))];
+      
+      // Fetch all user profiles in a single query for efficiency
+      let profileMap = new Map<string, string>();
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('user_profiles')
+          .select('id, name')
+          .in('id', userIds);
+        
+        if (profiles) {
+          profileMap = new Map(profiles.map(p => [p.id, p.name]));
+        }
+      }
+
+      // Process comments with user profiles
+      const processedData: ForumComment[] = data.map(comment => ({
+        ...comment,
+        user_profile: {
+          username: comment.user_id ? (profileMap.get(comment.user_id) || 'Anonymous') : 'Anonymous',
+          avatar_url: undefined
+        },
+        replies: []
       }));
       
       // Organize comments into a hierarchical structure
@@ -230,7 +273,7 @@ export class ForumService {
       
       // First, add all comments to the map
       processedData.forEach(comment => {
-        commentMap.set(comment.id, { ...comment, replies: [] });
+        commentMap.set(comment.id, comment);
       });
       
       // Then, organize them into a tree structure
@@ -249,7 +292,7 @@ export class ForumService {
       
       return rootComments;
     } catch (error) {
-      console.error(`Error fetching comments for post ${postId}:`, error);
+      console.error(`Error in getCommentsByPostId(${postId}):`, error);
       throw error;
     }
   }
