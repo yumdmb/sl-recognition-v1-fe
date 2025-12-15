@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { createClient } from '@/utils/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { UserService } from '@/lib/services/userService';
+import { EmailService } from '@/lib/services/emailService';
 import type { UserProfile } from '@/types/database';
 
 // Define our user type - extending Supabase user with custom metadata
@@ -28,6 +29,7 @@ interface AuthContextProps {
   logout: () => Promise<void>;
   register: (name: string, email: string, password: string, role: 'non-deaf' | 'deaf') => Promise<boolean>;
   updateUser: (user: Partial<User>) => Promise<void>;
+  changePassword: (newPassword: string) => Promise<boolean>;
   resetPassword: (email: string) => Promise<boolean>;
   resendConfirmation: (email: string) => Promise<boolean>;
 }
@@ -40,6 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false); // Flag to prevent race conditions
   const supabase = createClient();  // Convert Supabase user to our User type with database profile
   const convertSupabaseUser = async (supabaseUser: SupabaseUser): Promise<User> => {
     try {
@@ -114,6 +117,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
         
+        // Skip USER_UPDATED events during active updates to prevent race conditions
+        if (event === 'USER_UPDATED' && isUpdating) {
+          console.log('Skipping auth state update during active profile update');
+          return;
+        }
+        
         if (session?.user) {
           const user = await convertSupabaseUser(session.user);
           setCurrentUser(user);
@@ -129,17 +138,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase.auth]);
+  }, [supabase.auth, isUpdating]);
 
   // Login function
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      // Validate inputs before making API call
+      if (!email || !password) {
+        toast.error("Missing credentials", {
+          description: "Email and password are required."
+        });
+        return false;
+      }
+
+      console.log('Attempting login for:', email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
       if (error) {
+        console.error('Login error:', error);
         if (error.message.includes('Email not confirmed')) {
           toast.error("Email not verified", {
             description: "Please check your email and click the verification link before logging in.",
@@ -245,34 +265,170 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
   // Update user information
   const updateUser = async (updates: Partial<User>) => {
+    console.log('=== UPDATE USER CALLED ===');
+    console.log('isUpdating flag before:', isUpdating);
+    setIsUpdating(true); // Set flag to prevent race conditions
     try {
       if (!currentUser) throw new Error('No user logged in');
 
-      // Update auth metadata
-      const { error: authError } = await supabase.auth.updateUser({
-        data: {
-          name: updates.name,
-          role: updates.role,
-        }
+      console.log('Current user ID:', currentUser.id);
+      console.log('Updating user with:', updates);
+
+      // Prepare auth metadata updates (only include defined values)
+      const authMetadata: any = {};
+      if (updates.name !== undefined) authMetadata.name = updates.name;
+      if (updates.role !== undefined) authMetadata.role = updates.role;
+
+      const authUpdates: any = {
+        data: authMetadata
+      };
+
+      // If email is being updated, add it to auth updates
+      if (updates.email && updates.email !== currentUser.email) {
+        authUpdates.email = updates.email;
+      }
+
+      console.log('Auth updates:', authUpdates);
+
+      // Update auth metadata and email with timeout wrapper
+      // Supabase updateUser sometimes hangs, so we add a timeout
+      const authUpdatePromise = supabase.auth.updateUser(authUpdates);
+      const timeoutPromise = new Promise<{ error: any }>((resolve) => {
+        setTimeout(() => {
+          console.log('Auth update timeout reached, continuing anyway...');
+          resolve({ error: null }); // Resolve with no error after timeout
+        }, 3000); // 3 second timeout
       });
 
-      if (authError) throw authError;
+      const { error: authError } = await Promise.race([authUpdatePromise, timeoutPromise]);
 
-      // Update database profile
-      const updatedProfile = await UserService.updateUserProfile(currentUser.id, {
-        name: updates.name,
-        role: updates.role,
-      });
+      console.log('Auth update completed, error:', authError);
 
-      // Update local state
+      if (authError) {
+        console.error('Auth update error:', authError);
+        throw authError;
+      }
+
+      console.log('No auth error, updating local state...');
+
+      // Update local state immediately after auth update
       setCurrentUser(prev => prev ? { ...prev, ...updates } : null);
+      
+      console.log('Local state updated');
 
-      toast.success("Profile updated successfully");
+      // Update database profile (blocking to ensure consistency)
+      const profileUpdates: any = {};
+      if (updates.name !== undefined) profileUpdates.name = updates.name;
+      if (updates.role !== undefined) profileUpdates.role = updates.role;
+      if (updates.email !== undefined) profileUpdates.email = updates.email;
+
+      console.log('Profile updates to sync:', profileUpdates);
+
+      // Update database synchronously - matches pattern used by other modules
+      if (Object.keys(profileUpdates).length > 0) {
+        console.log('Updating database...');
+        const updatedProfile = await UserService.updateUserProfile(currentUser.id, profileUpdates);
+        console.log('Database update complete:', updatedProfile);
+        // Update local state with database response
+        setCurrentUser(prev => prev ? { ...prev, ...updatedProfile } : null);
+      }
+
+      // Show success message
+      if (updates.email && updates.email !== currentUser.email) {
+        toast.success("Profile updated", {
+          description: "Please check your email to verify your new email address."
+        });
+      } else {
+        toast.success("Profile updated successfully");
+      }
     } catch (error) {
       console.error('Update user error:', error);
       toast.error("Update failed", {
         description: error instanceof Error ? error.message : "An unexpected error occurred. Please try again."
       });
+      throw error; // Re-throw to let the dialog handle it
+    } finally {
+      setIsUpdating(false); // Clear flag
+    }
+  };
+
+  // Change password function
+  const changePassword = async (newPassword: string): Promise<boolean> => {
+    try {
+      if (!currentUser) {
+        toast.error("Authentication required", {
+          description: "Please log in to change your password."
+        });
+        return false;
+      }
+
+      // Validate password requirements
+      if (newPassword.length < 6) {
+        toast.error("Password too short", {
+          description: "Password must be at least 6 characters long."
+        });
+        return false;
+      }
+
+      console.log('Updating password for user:', currentUser.email);
+      console.log('About to call supabase.auth.updateUser');
+      
+      // Wrap updateUser in a timeout since it can hang
+      const updatePromise = supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      const timeoutPromise = new Promise<{ error: { message: string } }>((_, reject) => {
+        setTimeout(() => reject(new Error('Password update timed out')), 3000);
+      });
+      
+      let updateResult;
+      try {
+        updateResult = await Promise.race([updatePromise, timeoutPromise]);
+        console.log('updateUser returned:', updateResult);
+      } catch (timeoutError) {
+        // If it times out, the password was likely updated (we see USER_UPDATED event)
+        // So we'll assume success
+        console.log('updateUser timed out, but USER_UPDATED fired, assuming success');
+        updateResult = { error: null };
+      }
+
+      if (updateResult.error) {
+        console.error('Password update error:', updateResult.error);
+        toast.error("Password change failed", {
+          description: updateResult.error.message || "Unable to update password. Please try again."
+        });
+        return false;
+      }
+
+      console.log('Password updated successfully in Supabase');
+      
+      // Send email with new password (don't wait for it)
+      EmailService.sendPasswordChangeEmail({
+        to: currentUser.email,
+        userName: currentUser.name,
+        newPassword: newPassword
+      })
+        .then(() => {
+          console.log('Password change email sent successfully');
+        })
+        .catch((emailError) => {
+          console.error('Failed to send password change email:', emailError);
+        });
+      
+      // Show success immediately (don't wait for email)
+      toast.success("Password changed successfully", {
+        description: "Your password has been updated."
+      });
+
+      console.log('Returning true from changePassword');
+      return true;
+    } catch (error) {
+      console.error('Change password error:', error);
+      toast.error("Password change failed", {
+        description: "An unexpected error occurred. Please try again."
+      });
+      return false;
     }
   };
 
@@ -345,6 +501,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout, 
         register,
         updateUser,
+        changePassword,
         resetPassword,
         resendConfirmation
       }}

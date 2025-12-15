@@ -19,10 +19,31 @@ export default function Login() {
   const router = useRouter();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent double submission
+    if (isLoading) {
+      return;
+    }
+    
+    // Validate inputs
+    if (!email || !password) {
+      toast.error("Missing credentials", {
+        description: "Please enter both email and password."
+      });
+      return;
+    }
+    
+    if (!email.includes('@')) {
+      toast.error("Invalid email", {
+        description: "Please enter a valid email address."
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
-      const success = await login(email, password);
+      const success = await login(email.trim(), password);
       if (success) {
         router.push('/dashboard');
       }
@@ -47,7 +68,9 @@ export default function Login() {
                 <Label htmlFor="email">Email</Label>
                 <Input 
                   id="email" 
+                  name="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="your.email@example.com" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -63,7 +86,9 @@ export default function Login() {
                 </div>
                 <Input 
                   id="password" 
+                  name="password"
                   type="password" 
+                  autoComplete="current-password"
                   placeholder="••••••••" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
