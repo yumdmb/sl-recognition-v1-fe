@@ -1,14 +1,27 @@
 'use client'
 
+import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Mail, Calendar, Edit, Award } from "lucide-react";
+import { User, Mail, Calendar, Edit, Award, KeyRound } from "lucide-react";
+import { EditProfileDialog } from '@/components/user/EditProfileDialog';
+import { ChangePasswordDialog } from '@/components/user/ChangePasswordDialog';
 
 export default function ProfilePage() {
-  const { currentUser } = useAuth();
+  const { currentUser, updateUser, changePassword } = useAuth();
   const router = useRouter();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isChangePasswordDialogOpen, setIsChangePasswordDialogOpen] = useState(false);
+
+  const handleSaveProfile = async (updates: { name: string; email: string }) => {
+    await updateUser(updates);
+  };
+
+  const handleChangePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
+    return await changePassword(newPassword);
+  };
 
   if (!currentUser) {
     return null;
@@ -120,16 +133,42 @@ export default function ProfilePage() {
             <div className="bg-gray-50 p-6 rounded-lg">
               <h3 className="text-lg font-medium mb-4">Account Actions</h3>
               <div className="space-y-3">
-                <Button variant="outline" className="w-full flex items-center">
+                <Button 
+                  variant="outline" 
+                  className="w-full flex items-center"
+                  onClick={() => setIsEditDialogOpen(true)}
+                >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Profile
                 </Button>
-                <Button variant="outline" className="w-full">Change Password</Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full flex items-center"
+                  onClick={() => setIsChangePasswordDialogOpen(true)}
+                >
+                  <KeyRound className="h-4 w-4 mr-2" />
+                  Change Password
+                </Button>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Profile Dialog */}
+      <EditProfileDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        currentUser={currentUser}
+        onSave={handleSaveProfile}
+      />
+
+      {/* Change Password Dialog */}
+      <ChangePasswordDialog
+        open={isChangePasswordDialogOpen}
+        onOpenChange={setIsChangePasswordDialogOpen}
+        onSave={handleChangePassword}
+      />
     </div>
   );
 } 

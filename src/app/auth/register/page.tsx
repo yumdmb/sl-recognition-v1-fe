@@ -76,7 +76,9 @@ export default function Register() {
                 <Label htmlFor="name">Full Name</Label>
                 <Input 
                   id="name" 
+                  name="name"
                   type="text"
+                  autoComplete="name"
                   placeholder="John Doe" 
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -88,7 +90,9 @@ export default function Register() {
                 <Label htmlFor="email">Email</Label>
                 <Input 
                   id="email" 
+                  name="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="your.email@example.com" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -100,7 +104,9 @@ export default function Register() {
                 <Label htmlFor="password">Password</Label>
                 <Input 
                   id="password" 
+                  name="new-password"
                   type="password" 
+                  autoComplete="new-password"
                   placeholder="••••••••" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -112,7 +118,9 @@ export default function Register() {
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
                 <Input 
                   id="confirmPassword" 
+                  name="confirm-password"
                   type="password" 
+                  autoComplete="new-password"
                   placeholder="••••••••" 
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
