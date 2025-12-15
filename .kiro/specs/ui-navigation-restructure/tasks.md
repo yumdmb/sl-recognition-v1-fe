@@ -72,18 +72,18 @@
 - [ ] 4. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. Implement Profile Edit Functionality
-  - [ ] 5.1 Create Edit Profile dialog component
+- [ ]* 5. Implement Profile Edit Functionality
+  - [ ]* 5.1 Create Edit Profile dialog component
     - Create `EditProfileDialog` component with form fields for name
     - Add form validation using zod schema
     - Implement save functionality calling UserService
     - _Requirements: 4.1_
-  - [ ] 5.2 Add profile picture upload functionality
+  - [ ]* 5.2 Add profile picture upload functionality
     - Create `ProfilePictureUpload` component with image preview
     - Implement file type validation (jpg, png, gif, webp only)
     - Upload to Supabase storage and update user profile
     - _Requirements: 4.3_
-  - [ ] 5.3 Update UserService with profile management methods
+  - [ ]* 5.3 Update UserService with profile management methods
     - Add `updateProfile` method to update user name and avatar
     - Add `uploadAvatar` method to handle file upload to storage
     - Implement proper error handling and validation
@@ -95,13 +95,13 @@
     - **Property 7: File Upload Type Validation**
     - **Validates: Requirements 4.3**
 
-- [ ] 6. Implement Change Password Functionality
-  - [ ] 6.1 Create Change Password dialog component
+- [ ]* 6. Implement Change Password Functionality
+  - [ ]* 6.1 Create Change Password dialog component
     - Create `ChangePasswordDialog` component with current password, new password, and confirm fields
     - Add form validation for password requirements
     - Implement password change using Supabase Auth
     - _Requirements: 4.2_
-  - [ ] 6.2 Add password validation schema
+  - [ ]* 6.2 Add password validation schema
     - Implement zod schema for password validation
     - Require minimum 8 characters, uppercase, and number
     - Validate password confirmation matches
