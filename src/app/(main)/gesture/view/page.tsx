@@ -29,16 +29,25 @@ export default function GestureView() {
 
   useEffect(() => {
     if (currentUser) {
-      // Set filter to current user's submissions
-      // No specific status filter here, so user sees all their own (pending, approved, rejected)
-      updateFilters({ submitted_by: currentUser.id, status: 'all' }); 
+      // For admin users, show all contributions (no user filter)
+      // For regular users, filter by their own submissions
+      if (currentUser.role === 'admin') {
+        updateFilters({ status: 'all' }); 
+      } else {
+        updateFilters({ submitted_by: currentUser.id, status: 'all' }); 
+      }
     }
   }, [currentUser, updateFilters]);
 
   const handleFilterChange = useCallback((newFilters: GestureContributionFilters) => {
-    // Ensure submitted_by filter is maintained if current user is set
+    // For admin users, don't filter by submitted_by
+    // For regular users, ensure submitted_by filter is maintained
     if (currentUser) {
-      updateFilters({ ...newFilters, submitted_by: currentUser.id });
+      if (currentUser.role === 'admin') {
+        updateFilters(newFilters);
+      } else {
+        updateFilters({ ...newFilters, submitted_by: currentUser.id });
+      }
     } else {
       updateFilters(newFilters);
     }
@@ -77,10 +86,10 @@ export default function GestureView() {
             onReject={handleReject}
             onDelete={handleDelete} // Users can delete their own (pending/rejected), Admins can delete any
             onRefresh={refreshContributions}
-            isMySubmissionsView={true} // Indicate this is the "My Submissions" context
+            isMySubmissionsView={currentUser?.role !== 'admin'} // For admin, this is "All Contributions", not "My Submissions"
           />
         ) : (
-          <GestureViewEmptyState isMySubmissions={true} />
+          <GestureViewEmptyState isMySubmissions={currentUser?.role !== 'admin'} />
         )}
       </div>
     </div>

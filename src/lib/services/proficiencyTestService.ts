@@ -1,13 +1,7 @@
-import { createBrowserClient } from '@supabase/ssr';
+import { createClient } from '@/utils/supabase/client';
 import { Database } from '@/types/database';
 import { analyzeCategoryPerformance, identifyKnowledgeGaps } from './evaluationService';
 import { generateRecommendations } from './recommendationEngine';
-
-// Initialize Supabase client
-const supabase = createBrowserClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 export type ProficiencyTest = Database['public']['Tables']['proficiency_tests']['Row'] & {
   questions: (Database['public']['Tables']['proficiency_test_questions']['Row'] & {
@@ -21,6 +15,7 @@ export type ProficiencyTest = Database['public']['Tables']['proficiency_tests'][
  * @returns The proficiency test data.
  */
 export const getProficiencyTest = async (testId: string): Promise<ProficiencyTest | null> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('proficiency_tests')
     .select(`
@@ -46,6 +41,7 @@ export const getProficiencyTest = async (testId: string): Promise<ProficiencyTes
  * @returns A list of proficiency tests.
  */
 export const getAllProficiencyTests = async (): Promise<Database['public']['Tables']['proficiency_tests']['Row'][]> => {
+  const supabase = createClient();
   const { data, error } = await supabase.from('proficiency_tests').select('*');
 
   if (error) {
@@ -63,6 +59,7 @@ export const getAllProficiencyTests = async (): Promise<Database['public']['Tabl
  * @returns The newly created test attempt.
  */
 export const createTestAttempt = async (userId: string, testId: string) => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('proficiency_test_attempts')
     .insert({ user_id: userId, test_id: testId })
@@ -86,6 +83,7 @@ export const createTestAttempt = async (userId: string, testId: string) => {
  * @returns The newly created answer record.
  */
 export const submitAnswer = async (attemptId: string, questionId: string, choiceId: string) => {
+  const supabase = createClient();
   // First, determine if the choice is correct
   const { data: choice, error: choiceError } = await supabase
     .from('proficiency_test_question_choices')
@@ -124,6 +122,7 @@ export const submitAnswer = async (attemptId: string, questionId: string, choice
  * @param userId - The ID of the user to update.
  */
 export const calculateResultAndAssignProficiency = async (attemptId: string, userId: string) => {
+  const supabase = createClient();
   // 1. Get the test_id from the attempt
   const { data: attempt, error: attemptError } = await supabase
     .from('proficiency_test_attempts')
@@ -207,6 +206,7 @@ export const getTestResultsWithAnalysis = async (
   userId: string,
   recentQuizScore?: number
 ) => {
+  const supabase = createClient();
   // Get basic attempt data
   const { data: attempt, error: attemptError } = await supabase
     .from('proficiency_test_attempts')
@@ -262,6 +262,7 @@ export const getTestResultsWithAnalysis = async (
  * @returns A list of test attempts with test information.
  */
 export const getUserTestHistory = async (userId: string) => {
+  const supabase = createClient();
   // First, get all attempts
   const { data: attempts, error: attemptsError } = await supabase
     .from('proficiency_test_attempts')

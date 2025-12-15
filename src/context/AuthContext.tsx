@@ -45,9 +45,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isUpdating, setIsUpdating] = useState(false); // Flag to prevent race conditions
   const supabase = createClient();  // Convert Supabase user to our User type with database profile
   const convertSupabaseUser = async (supabaseUser: SupabaseUser): Promise<User> => {
+    // Fallback user data from metadata (always available)
+    const metadata = supabaseUser.user_metadata || {};
+    const fallbackUser: User = {
+      id: supabaseUser.id,
+      name: metadata.name || metadata.full_name || supabaseUser.email?.split('@')[0] || 'User',
+      email: supabaseUser.email || '',
+      role: (metadata.role as 'non-deaf' | 'admin' | 'deaf') || 'non-deaf',
+      proficiency_level: null,
+      isVerified: !!supabaseUser.email_confirmed_at,
+      email_confirmed_at: supabaseUser.email_confirmed_at
+    };
+
     try {
-      // Try to get user profile from database
-      const profile = await UserService.getUserProfile(supabaseUser.id);
+      // Try to get user profile from database with timeout
+      const profilePromise = UserService.getUserProfile(supabaseUser.id);
+      const timeoutPromise = new Promise<null>((resolve) => 
+        setTimeout(() => {
+          console.warn('Profile fetch timeout, using fallback');
+          resolve(null);
+        }, 5000)
+      );
+      
+      const profile = await Promise.race([profilePromise, timeoutPromise]);
       
       if (profile) {
         console.info('Successfully loaded user profile from database');
@@ -64,21 +84,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.info('No profile found in database, using metadata fallback');
       }
     } catch (error) {
-      console.info('Failed to fetch user profile from database, using fallback. This is normal during RLS policy issues.');
-      // Continue to fallback without throwing
+      console.info('Failed to fetch user profile from database, using fallback.');
     }
-
-    // Fallback to metadata if profile doesn't exist or RLS blocks access
-    const metadata = supabaseUser.user_metadata || {};
-    const fallbackUser = {
-      id: supabaseUser.id,
-      name: metadata.name || metadata.full_name || supabaseUser.email?.split('@')[0] || 'User',
-      email: supabaseUser.email || '',
-      role: (metadata.role as 'non-deaf' | 'admin' | 'deaf') || 'non-deaf',
-      proficiency_level: null, // Fallback doesn't have proficiency level
-      isVerified: !!supabaseUser.email_confirmed_at,
-      email_confirmed_at: supabaseUser.email_confirmed_at
-    };
     
     console.info('Using fallback user data:', {
       id: fallbackUser.id,
@@ -93,8 +100,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Get initial session
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Add timeout to prevent infinite loading
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Auth initialization timeout')), 10000)
+        );
+        
+        // Get initial session with timeout
+        const sessionPromise = supabase.auth.getSession();
+        
+        const { data: { session }, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as Awaited<typeof sessionPromise>;
         
         if (error) {
           console.error('Error getting session:', error);
@@ -105,6 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
+        // On timeout or error, still allow the app to proceed (user will be redirected to login)
       } finally {
         setIsLoading(false);
       }

@@ -1,12 +1,7 @@
-import { createBrowserClient } from '@supabase/ssr';
+import { createClient } from '@/utils/supabase/client';
 import { Database } from '@/types/database';
 import { PerformanceAnalysis } from './evaluationService';
 import { LearningRecommendation, generateRecommendations, filterByRole, prioritizeContent } from './recommendationEngine';
-
-const supabase = createBrowserClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 export interface LearningPathItem {
   id: string;
@@ -41,6 +36,7 @@ export const generateLearningPath = async (
   proficiencyLevel: 'Beginner' | 'Intermediate' | 'Advanced',
   performanceAnalysis?: PerformanceAnalysis
 ): Promise<LearningPath> => {
+  const supabase = createClient();
   // Fetch user profile to get role
   const { data: userProfile, error: profileError } = await supabase
     .from('user_profiles')
@@ -101,6 +97,7 @@ export const fetchContentByLevel = async (
   level: 'Beginner' | 'Intermediate' | 'Advanced',
   language: string
 ): Promise<LearningRecommendation[]> => {
+  const supabase = createClient();
   const content: LearningRecommendation[] = [];
 
   // Fetch tutorials
@@ -265,6 +262,7 @@ export const updateLearningPath = async (
   completedItemId: string,
   completedItemType: 'tutorial' | 'quiz' | 'material'
 ): Promise<LearningPath> => {
+  const supabase = createClient();
   // Fetch user's current proficiency level
   const { data: userProfile, error: profileError } = await supabase
     .from('user_profiles')
@@ -312,6 +310,7 @@ export const recalculateRecommendations = async (
   proficiencyLevel: 'Beginner' | 'Intermediate' | 'Advanced',
   completedItemId?: string
 ): Promise<LearningPath> => {
+  const supabase = createClient();
   // Fetch user profile
   const { data: userProfile, error: profileError } = await supabase
     .from('user_profiles')
@@ -380,6 +379,7 @@ export const adjustDifficulty = async (
   quizId: string,
   currentLevel: 'Beginner' | 'Intermediate' | 'Advanced'
 ): Promise<'Beginner' | 'Intermediate' | 'Advanced'> => {
+  const supabase = createClient();
   // Fetch the user's recent quiz progress for this quiz
   const { data: quizProgress, error: progressError } = await supabase
     .from('quiz_progress')
@@ -444,6 +444,7 @@ export const adjustDifficulty = async (
 export const getCurrentLearningPath = async (
   userId: string
 ): Promise<LearningPath | null> => {
+  const supabase = createClient();
   // Fetch user's proficiency level
   const { data: userProfile, error: profileError } = await supabase
     .from('user_profiles')

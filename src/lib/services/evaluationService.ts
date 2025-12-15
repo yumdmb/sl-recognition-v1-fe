@@ -1,10 +1,5 @@
-import { createBrowserClient } from '@supabase/ssr';
+import { createClient } from '@/utils/supabase/client';
 import { Database } from '@/types/database';
-
-const supabase = createBrowserClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 export interface PerformanceAnalysis {
   strengths: string[];
@@ -34,6 +29,7 @@ export interface KnowledgeGap {
 export const analyzeCategoryPerformance = async (
   attemptId: string
 ): Promise<PerformanceAnalysis> => {
+  const supabase = createClient();
   // Fetch all answers for the attempt with question details
   const { data: answers, error } = await supabase
     .from('proficiency_test_attempt_answers')
@@ -108,6 +104,7 @@ export const analyzeCategoryPerformance = async (
 export const identifyKnowledgeGaps = async (
   attemptId: string
 ): Promise<KnowledgeGap[]> => {
+  const supabase = createClient();
   // Fetch incorrect answers with full question and choice details
   const { data: incorrectAnswers, error } = await supabase
     .from('proficiency_test_attempt_answers')

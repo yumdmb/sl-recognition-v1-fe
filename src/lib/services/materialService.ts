@@ -1,14 +1,13 @@
 import { createClient } from '@/utils/supabase/client';
 import type { Material } from '@/types/database';
 
-const supabase = createClient();
-
 /**
  * Fetches materials for a given language.
  * @param language - The language to filter materials by ('ASL' or 'MSL').
  * @returns A promise that resolves to an array of materials.
  */
 export const getMaterials = async (language: 'ASL' | 'MSL'): Promise<Material[]> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('materials')
     .select('*')
@@ -29,6 +28,7 @@ export const getMaterials = async (language: 'ASL' | 'MSL'): Promise<Material[]>
  * @returns A promise that resolves to the created material.
  */
 export const createMaterial = async (material: Omit<Material, 'id' | 'created_at' | 'updated_at'>): Promise<Material> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('materials')
     .insert([material])
@@ -50,6 +50,7 @@ export const createMaterial = async (material: Omit<Material, 'id' | 'created_at
  * @returns A promise that resolves to the updated material.
  */
 export const updateMaterial = async (id: string, updates: Partial<Omit<Material, 'id'>>): Promise<Material> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('materials')
     .update(updates)
@@ -70,6 +71,7 @@ export const updateMaterial = async (id: string, updates: Partial<Omit<Material,
  * @param id - The ID of the material to delete.
  */
 export const deleteMaterial = async (id: string): Promise<void> => {
+  const supabase = createClient();
   // First, get the material to find its file path
   const { data: material, error: fetchError } = await supabase
     .from('materials')
@@ -106,6 +108,7 @@ export const deleteMaterial = async (id: string): Promise<void> => {
  * @returns A promise that resolves to the path of the uploaded file.
  */
 export const uploadMaterialFile = async (file: File, fileName: string): Promise<string> => {
+  const supabase = createClient();
   const { data, error } = await supabase.storage
     .from('materials')
     .upload(fileName, file);
@@ -124,6 +127,7 @@ export const uploadMaterialFile = async (file: File, fileName: string): Promise<
  * @returns The public URL of the file.
  */
 export const getMaterialPublicUrl = (filePath: string): string => {
+  const supabase = createClient();
   const { data } = supabase.storage
     .from('materials')
     .getPublicUrl(filePath);
@@ -136,6 +140,7 @@ export const getMaterialPublicUrl = (filePath: string): string => {
  * @param filePath - The path of the file to delete.
  */
 export const deleteMaterialFile = async (filePath: string): Promise<void> => {
+  const supabase = createClient();
   const { error } = await supabase.storage
     .from('materials')
     .remove([filePath]);

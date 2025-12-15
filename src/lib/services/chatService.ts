@@ -1,8 +1,6 @@
 import { createClient } from '@/utils/supabase/client';
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
-const supabase = createClient();
-
 export interface Chat {
   id: string;
   is_group: boolean;
@@ -35,6 +33,7 @@ interface UserProfile {
 
 export class ChatService {
   static async getUserProfile(userId: string): Promise<{ data: UserProfile | null, error: any }> {
+    const supabase = createClient();
     return supabase
       .from('user_profiles')
       .select('id, name')
@@ -43,6 +42,7 @@ export class ChatService {
   }
 
   static async getChats(): Promise<Chat[]> {
+    const supabase = createClient();
     const { data: chats, error } = await supabase
       .from('chats')
       .select(`
@@ -61,6 +61,7 @@ export class ChatService {
   }
 
   static async getMessages(chatId: string): Promise<Message[]> {
+    const supabase = createClient();
     const { data: messages, error } = await supabase
       .from('messages')
       .select(`
@@ -82,6 +83,7 @@ export class ChatService {
     content: string;
     file_url?: string;
   }): Promise<Message> {
+    const supabase = createClient();
     const { data, error } = await supabase
       .from('messages')
       .insert(params)
@@ -101,6 +103,7 @@ export class ChatService {
     messages: Message[];
     userId: string;
   }): Promise<void> {
+    const supabase = createClient();
     const { messages, userId } = params;
     const messagesToMark = messages
       .filter((msg) => msg.sender_id !== userId)
@@ -121,6 +124,7 @@ export class ChatService {
   }
 
   static async uploadFile(file: File, userId: string): Promise<string> {
+    const supabase = createClient();
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId}/${Date.now()}.${fileExt}`;
 
@@ -141,6 +145,7 @@ export class ChatService {
     chatId: string,
     callback: (payload: RealtimePostgresChangesPayload<{ [key: string]: any }>) => void
   ): RealtimeChannel {
+    const supabase = createClient();
     return supabase
       .channel(`chat:${chatId}`)
       .on(
@@ -161,6 +166,7 @@ export class ChatService {
     user_ids: string[];
     is_group: boolean;
   }): Promise<Chat> {
+    const supabase = createClient();
     const { data, error } = await supabase.rpc('create_chat_with_participants', {
       user_ids: params.user_ids,
       is_group: params.is_group,
@@ -175,6 +181,7 @@ export class ChatService {
   }
 
   static async updateLastMessageTime(chatId: string): Promise<void> {
+    const supabase = createClient();
     const { error } = await supabase
       .from('chats')
       .update({ last_message_at: new Date().toISOString() })

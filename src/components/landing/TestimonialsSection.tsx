@@ -1,27 +1,24 @@
 'use client'
 
 import { Card, CardContent } from "@/components/ui/card";
-import Image from "next/image";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { motion, useScroll, useTransform } from "framer-motion";
 
 const testimonials = [
   {
     name: "Sarah Johnson",
     role: "ASL Student",
-    content: "SignBridge has transformed my learning experience. The AI recognition feature helps me practice with confidence!",
-    avatar: "/avatars/avatar1.png"
+    content: "SignBridge has transformed my learning experience. The AI recognition feature helps me practice with confidence!"
   },
   {
     name: "David Chen",
     role: "Sign Language Interpreter",
-    content: "As a professional interpreter, I'm impressed by the accuracy and comprehensive nature of the platform.",
-    avatar: "/avatars/avatar2.png"
+    content: "As a professional interpreter, I'm impressed by the accuracy and comprehensive nature of the platform."
   },
   {
     name: "Maria Rodriguez",
     role: "Parent",
-    content: "My child and I are learning ASL together through SignBridge. It's intuitive and engaging!",
-    avatar: "/avatars/avatar3.png"
+    content: "My child and I are learning ASL together through SignBridge. It's intuitive and engaging!"
   }
 ];
 
@@ -78,17 +75,15 @@ export default function TestimonialsSection() {
             >
               <Card className="border-none shadow-lg hover:shadow-xl transition-shadow duration-300">
                 <CardContent className="pt-6">
-                  <motion.div 
+                  <motion.div
                     className="flex items-center mb-4"
                     whileHover={{ scale: 1.02 }}
                   >
-                    <Image
-                      src={testimonial.avatar}
-                      alt={testimonial.name}
-                      width={48}
-                      height={48}
-                      className="rounded-full"
-                    />
+                    <Avatar className="h-12 w-12">
+                      <AvatarFallback className="bg-signlang-primary/20 text-signlang-primary font-semibold">
+                        {testimonial.name.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="ml-4">
                       <h3 className="font-semibold">{testimonial.name}</h3>
                       <p className="text-sm text-gray-600">{testimonial.role}</p>

@@ -1,11 +1,6 @@
-import { createBrowserClient } from '@supabase/ssr';
+import { createClient } from '@/utils/supabase/client';
 import { Database } from '@/types/database';
 import { PerformanceAnalysis } from './evaluationService';
-
-const supabase = createBrowserClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 export interface LearningRecommendation {
   id: string;
@@ -34,6 +29,7 @@ export const generateRecommendations = async (
   performanceAnalysis: PerformanceAnalysis,
   recentQuizScore?: number
 ): Promise<LearningRecommendation[]> => {
+  const supabase = createClient();
   // Fetch user profile to get role
   const { data: userProfile, error: profileError } = await supabase
     .from('user_profiles')
@@ -120,6 +116,7 @@ export const generateRecommendations = async (
  * @returns Array of tutorials.
  */
 const fetchTutorials = async (level: string) => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('tutorials')
     .select('*')
@@ -139,6 +136,7 @@ const fetchTutorials = async (level: string) => {
  * @returns Array of quiz sets.
  */
 const fetchQuizzes = async (level: string) => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('quiz_sets')
     .select('*');
@@ -159,6 +157,7 @@ const fetchQuizzes = async (level: string) => {
  * @returns Array of materials.
  */
 const fetchMaterials = async (level: string) => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('materials')
     .select('*')

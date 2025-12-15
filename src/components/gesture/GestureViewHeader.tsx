@@ -30,12 +30,14 @@ export default function GestureViewHeader({ userRole }: GestureViewHeaderProps) 
           </Link>
         </Button>
         
-        <Button asChild>
-          <Link href="/gesture/submit">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Gesture
-          </Link>
-        </Button>
+        {userRole !== 'admin' && (
+          <Button asChild>
+            <Link href="/gesture/submit">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Gesture
+            </Link>
+          </Button>
+        )}
       </div>
     </div>
   );

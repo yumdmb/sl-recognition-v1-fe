@@ -23,7 +23,7 @@ export default function GestureBrowse() {
   return (
     <div className="container py-6">
       <Toaster />
-      <GestureBrowseHeader />
+      <GestureBrowseHeader userRole={userRole} />
 
       <div className="space-y-6">
         <GestureFilters 

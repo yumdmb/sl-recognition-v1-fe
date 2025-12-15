@@ -6,10 +6,10 @@ import type {
   Database 
 } from '@/types/database';
 
-const supabase = createClient();
-
-export class TutorialService {  // Get all tutorials with optional status for a user
+export class TutorialService {
+  // Get all tutorials with optional status for a user
   static async getTutorials(userId?: string, language?: 'ASL' | 'MSL'): Promise<TutorialWithProgress[]> {
+    const supabase = createClient();
     try {
       let query = supabase
         .from('tutorials')
@@ -61,6 +61,7 @@ export class TutorialService {  // Get all tutorials with optional status for a 
   }
   // Get single tutorial by ID
   static async getTutorial(id: string, userId?: string): Promise<TutorialWithProgress | null> {
+    const supabase = createClient();
     try {
       const { data: tutorial, error } = await supabase
         .from('tutorials')
@@ -97,6 +98,7 @@ export class TutorialService {  // Get all tutorials with optional status for a 
   static async createTutorial(
     tutorial: Database['public']['Tables']['tutorials']['Insert']
   ): Promise<Tutorial> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('tutorials')
@@ -117,6 +119,7 @@ export class TutorialService {  // Get all tutorials with optional status for a 
     id: string, 
     updates: Database['public']['Tables']['tutorials']['Update']
   ): Promise<Tutorial> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('tutorials')
@@ -135,6 +138,7 @@ export class TutorialService {  // Get all tutorials with optional status for a 
 
   // Delete tutorial (admin only)
   static async deleteTutorial(id: string): Promise<void> {
+    const supabase = createClient();
     try {
       const { error } = await supabase
         .from('tutorials')
@@ -151,6 +155,7 @@ export class TutorialService {  // Get all tutorials with optional status for a 
     userId: string, 
     tutorialId: string
   ): Promise<TutorialProgress> {
+    const supabase = createClient();
     try {
       console.log('Starting tutorial with:', { userId, tutorialId });
       
@@ -186,6 +191,7 @@ export class TutorialService {  // Get all tutorials with optional status for a 
     userId: string, 
     tutorialId: string
   ): Promise<TutorialProgress> {
+    const supabase = createClient();
     try {
       console.log('Marking tutorial as done with:', { userId, tutorialId });
       
@@ -245,6 +251,7 @@ export class TutorialService {  // Get all tutorials with optional status for a 
     totalCompleted: number;
     completionPercentage: number;
   }> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('tutorial_progress')
@@ -270,6 +277,7 @@ export class TutorialService {  // Get all tutorials with optional status for a 
 
   // Get user's tutorial progress
   static async getUserProgress(userId: string): Promise<TutorialProgress[]> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('tutorial_progress')

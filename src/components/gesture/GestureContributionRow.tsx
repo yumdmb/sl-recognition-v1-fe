@@ -57,7 +57,6 @@ export default function GestureContributionRow({
   // Users can edit their own pending submissions.
   const canEdit = isOwner && contribution.status === 'pending';
 
-  // TODO: Implement a modal for admin to provide rejection reason
   const handleRejectClick = () => {
     if (isAdmin) {
       const reason = prompt("Enter reason for rejection (optional):");
@@ -158,16 +157,6 @@ export default function GestureContributionRow({
               </Button>
             </>
           )}
-          
-          {/* Edit action for owners of pending submissions */}
-          {/* TODO: Link to an edit page, e.g., /gesture/edit/[id] */}
-          {/* {canEdit && (
-            <Button asChild size="icon" variant="ghost" title="Edit">
-              <Link href={`/gesture/edit/${contribution.id}`}> 
-                <Edit3 className="h-4 w-4" />
-              </Link>
-            </Button>
-          )} */} 
 
           {/* Delete action */}
           {canDelete && (

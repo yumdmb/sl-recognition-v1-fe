@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { useLearning } from '@/context/LearningContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { AlertCircle, Trophy, TrendingUp, BookOpen, RotateCcw } from 'lucide-rea
 import Link from 'next/link';
 
 const ProficiencyTestResultsPage = () => {
+  const { currentUser, isLoading: authLoading } = useAuth();
   const { getTestResults, proficiencyTestLoading } = useLearning();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -22,6 +24,15 @@ const ProficiencyTestResultsPage = () => {
 
   useEffect(() => {
     const fetchResults = async () => {
+      // Wait for auth to be loaded
+      if (authLoading) return;
+      
+      // Redirect to login if not authenticated
+      if (!currentUser) {
+        router.push('/login');
+        return;
+      }
+      
       if (!attemptId) {
         setError('No test attempt ID provided. Please complete a test first.');
         return;
@@ -37,9 +48,9 @@ const ProficiencyTestResultsPage = () => {
     };
 
     fetchResults();
-  }, [attemptId, getTestResults]);
+  }, [attemptId, getTestResults, authLoading, currentUser, router]);
 
-  if (proficiencyTestLoading || (!results && !error)) {
+  if (authLoading || proficiencyTestLoading || (!results && !error)) {
     return (
       <div className="container mx-auto py-8 max-w-4xl">
         <Card>
