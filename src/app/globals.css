@@ -191,4 +191,10 @@
   .mobile-full-button {
     @apply w-full sm:w-auto;
   }
+
+  /* Word breaking utilities for long text */
+  .overflow-wrap-anywhere {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
 }

@@ -126,9 +126,12 @@ export function ForumPostCard({
   return (
     <>
       <Card className="hover:shadow-md transition-shadow duration-200">
-        <CardHeader className="pb-3 px-4 md:px-6">
+        <CardHeader className="pb-3 px-4 md:px-6 overflow-hidden">
           {/* Title */}
-          <h2 className="text-lg md:text-xl font-semibold text-foreground leading-tight hover:text-primary transition-colors break-words">
+          <h2 
+            className="text-lg md:text-xl font-semibold text-foreground leading-tight hover:text-primary transition-colors"
+            style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+          >
             {post.title}
           </h2>
           
@@ -156,9 +159,12 @@ export function ForumPostCard({
           </div>
         </CardHeader>
 
-        <CardContent className="pt-0 px-4 md:px-6">
+        <CardContent className="pt-0 px-4 md:px-6 overflow-hidden">
           {/* Content preview */}
-          <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed break-words text-sm md:text-base">
+          <p 
+            className="text-muted-foreground whitespace-pre-wrap leading-relaxed text-sm md:text-base"
+            style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+          >
             {displayContent}
           </p>
           

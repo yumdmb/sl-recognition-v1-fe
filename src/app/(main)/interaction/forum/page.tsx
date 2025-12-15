@@ -347,7 +347,7 @@ export default function ForumPage() {
   }
 
   return (
-    <div className="container mx-auto py-4 md:py-8 px-0 md:px-6">
+    <div className="container mx-auto py-4 md:py-8 px-0 md:px-6 overflow-x-hidden">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4 px-4 md:px-0">
         <h1 className="text-2xl md:text-4xl font-bold">
           Community Forum

@@ -173,12 +173,12 @@ export function CommentThread({
     <div 
       className={cn(
         'relative',
-        depth > 0 && 'border-l-2 border-border ml-4 md:ml-6'
+        depth > 0 && 'border-l-2 border-border ml-2 md:ml-6'
       )}
     >
       <div className={cn(
         'py-3',
-        depth > 0 && 'pl-4'
+        depth > 0 && 'pl-2 md:pl-4'
       )}>
         {/* Comment header with collapse toggle */}
         <div className="flex items-start gap-2">
@@ -197,7 +197,7 @@ export function CommentThread({
             </Button>
           )}
           
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 overflow-hidden">
             {/* Author and timestamp */}
             <div className="flex items-center gap-2 text-sm">
               <Avatar className="h-5 w-5">
@@ -254,7 +254,10 @@ export function CommentThread({
                 </div>
               </form>
             ) : (
-              <p className="text-sm text-foreground/90 mt-1 whitespace-pre-wrap">
+              <p 
+                className="text-sm text-foreground/90 mt-1 whitespace-pre-wrap"
+                style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+              >
                 {comment.content}
               </p>
             )}

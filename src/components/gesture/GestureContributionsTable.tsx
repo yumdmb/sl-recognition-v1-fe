@@ -5,6 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { GestureContribution } from '@/types/gestureContributions';
 import GestureContributionRow from './GestureContributionRow';
+import GestureContributionCard from './GestureContributionCard';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface GestureContributionsTableProps {
   contributions: GestureContribution[];
@@ -25,6 +27,36 @@ export default function GestureContributionsTable({
   onRefresh,
   isMySubmissionsView = false
 }: GestureContributionsTableProps) {
+  const isMobile = useIsMobile();
+
+  // Mobile view: Card-based layout
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        {contributions.length === 0 ? (
+          <Card>
+            <CardContent className="p-6 text-center text-muted-foreground">
+              No contributions found.
+            </CardContent>
+          </Card>
+        ) : (
+          contributions.map((contribution) => (
+            <GestureContributionCard
+              key={contribution.id}
+              contribution={contribution}
+              userRole={userRole}
+              onApprove={onApprove}
+              onReject={onReject}
+              onDelete={onDelete}
+              isMySubmissionsView={isMySubmissionsView}
+            />
+          ))
+        )}
+      </div>
+    );
+  }
+
+  // Desktop view: Table layout
   return (
     <Card>
       <CardContent className="p-0">

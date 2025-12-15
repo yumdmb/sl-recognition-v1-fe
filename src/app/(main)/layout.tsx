@@ -66,9 +66,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <AppSidebar userRole={currentUser?.role || 'non-deaf'} />
 
           {/* Main Content */}
-          <div className="flex-1 transition-all duration-300">
+          <div className="flex-1 transition-all duration-300 overflow-x-hidden">
             {/* Page Content with mobile padding for fixed header */}
-            <div className={`container mx-auto px-4 py-4 md:p-6 ${state.isMobile ? 'pt-14' : ''}`}>
+            <div className={`container mx-auto px-4 py-4 md:p-6 overflow-x-hidden ${state.isMobile ? 'pt-14' : ''}`}>
               {children}
             </div>
           </div>
