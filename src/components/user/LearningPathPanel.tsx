@@ -19,9 +19,13 @@ const LearningPathPanel: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Use stable values for dependencies to prevent infinite re-fetching
+  const userId = currentUser?.id;
+  const proficiencyLevel = currentUser?.proficiency_level;
+
   useEffect(() => {
     const fetchRecommendations = async () => {
-      if (!currentUser?.id || !currentUser?.proficiency_level) {
+      if (!userId || !proficiencyLevel) {
         setLoading(false);
         return;
       }
@@ -39,7 +43,7 @@ const LearningPathPanel: React.FC = () => {
         const { data: latestAttempt, error: attemptError } = await supabase
           .from('proficiency_test_attempts')
           .select('id')
-          .eq('user_id', currentUser.id)
+          .eq('user_id', userId)
           .not('completed_at', 'is', null)
           .order('completed_at', { ascending: false })
           .limit(1)
@@ -52,7 +56,7 @@ const LearningPathPanel: React.FC = () => {
         }
 
         // Get comprehensive results with recommendations
-        const results = await getTestResultsWithAnalysis(latestAttempt.id, currentUser.id);
+        const results = await getTestResultsWithAnalysis(latestAttempt.id, userId);
         setRecommendations(results.recommendations);
         setError(null);
       } catch (err) {
@@ -64,7 +68,7 @@ const LearningPathPanel: React.FC = () => {
     };
 
     fetchRecommendations();
-  }, [currentUser]);
+  }, [userId, proficiencyLevel]);
 
   const getIcon = (type: string) => {
     switch (type) {

@@ -43,6 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false); // Flag to prevent race conditions
+  const [isInitialized, setIsInitialized] = useState(false); // Track if initial auth is done
   const supabase = createClient();  // Convert Supabase user to our User type with database profile
   const convertSupabaseUser = async (supabaseUser: SupabaseUser): Promise<User> => {
     // Fallback user data from metadata (always available)
@@ -96,8 +97,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     return fallbackUser;
   };
+  // Use ref to track current user ID without causing re-renders
+  const currentUserIdRef = React.useRef<string | null>(null);
+  
+  // Keep ref in sync with state
+  React.useEffect(() => {
+    currentUserIdRef.current = currentUser?.id || null;
+  }, [currentUser?.id]);
+
   // Initialize auth state
   useEffect(() => {
+    let isMounted = true;
+    
     const initializeAuth = async () => {
       try {
         // Add timeout to prevent infinite loading
@@ -113,18 +124,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           timeoutPromise
         ]) as Awaited<typeof sessionPromise>;
         
+        if (!isMounted) return;
+        
         if (error) {
           console.error('Error getting session:', error);
         } else if (session?.user) {
           const user = await convertSupabaseUser(session.user);
-          setCurrentUser(user);
-          setIsAuthenticated(true);
+          if (isMounted) {
+            setCurrentUser(user);
+            setIsAuthenticated(true);
+          }
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
         // On timeout or error, still allow the app to proceed (user will be redirected to login)
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+          setIsInitialized(true);
+        }
       }
     };
 
@@ -133,6 +151,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!isMounted) return;
+        
         console.log('Auth state changed:', event, session?.user?.email);
         
         // Skip USER_UPDATED events during active updates to prevent race conditions
@@ -141,19 +161,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
         
-        if (session?.user) {
-          const user = await convertSupabaseUser(session.user);
-          setCurrentUser(user);
-          setIsAuthenticated(true);
-        } else {
-          setCurrentUser(null);
-          setIsAuthenticated(false);
+        // Skip TOKEN_REFRESHED and INITIAL_SESSION if we already have a user loaded with same ID
+        // This prevents unnecessary re-fetching that causes UI flicker
+        if ((event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && 
+            currentUserIdRef.current && 
+            session?.user?.id === currentUserIdRef.current) {
+          console.log('Skipping redundant auth state update, user already loaded');
+          return;
         }
-        setIsLoading(false);
+        
+        if (session?.user) {
+          // Only re-fetch profile if user ID changed (different user) or we don't have a user yet
+          if (!currentUserIdRef.current || currentUserIdRef.current !== session.user.id) {
+            const user = await convertSupabaseUser(session.user);
+            if (isMounted) {
+              setCurrentUser(user);
+            }
+          }
+          if (isMounted) {
+            setIsAuthenticated(true);
+          }
+        } else {
+          if (isMounted) {
+            setCurrentUser(null);
+            setIsAuthenticated(false);
+          }
+        }
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     );
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, [supabase.auth, isUpdating]);
