@@ -111,7 +111,7 @@ const ProficiencyTestResultsPage = () => {
   };
 
   return (
-    <div className="container mx-auto py-8 max-w-4xl space-y-6">
+    <div className="container mx-auto py-8 max-w-4xl space-y-4 md:space-y-6">
       {/* Score and Level Card */}
       <Card>
         <CardHeader>

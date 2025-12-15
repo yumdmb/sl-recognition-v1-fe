@@ -151,7 +151,7 @@ export default function AdminPage() {
     <div className="max-w-6xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
       
-      <Tabs defaultValue="user-verification" className="space-y-6">
+      <Tabs defaultValue="user-verification" className="space-y-4 md:space-y-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="user-verification" className="flex items-center justify-center">
             <Users className="h-4 w-4 mr-2" /> User Verification

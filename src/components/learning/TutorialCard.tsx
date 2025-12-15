@@ -45,12 +45,12 @@ const TutorialCard: React.FC<TutorialCardProps> = ({
 
   return (
     <Card className="overflow-hidden">
-      <div className="relative aspect-video md:h-48">
+      <div className="relative aspect-video w-full">
         <YouTubeVideoPreview
           videoUrl={tutorial.video_url}
           title={tutorial.title}
           thumbnailUrl={tutorial.thumbnail_url}
-          className="h-full"
+          className="w-full h-full"
         />
         
         <div className="absolute top-0 left-0 bg-primary text-white text-xs px-2 py-1 m-2 rounded capitalize">

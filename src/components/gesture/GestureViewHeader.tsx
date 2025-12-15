@@ -16,7 +16,7 @@ export default function GestureViewHeader({ userRole, isManageView = false }: Ge
   return (
     <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center mb-6">
       <div>
-        <h1 className="text-3xl font-bold">
+        <h1 className="text-2xl md:text-3xl font-bold">
           {isManageView ? 'Manage Contributions' : 'My Contributions'}
         </h1>
         <p className="text-muted-foreground mt-1">

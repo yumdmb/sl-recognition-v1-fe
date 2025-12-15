@@ -78,7 +78,7 @@ const QuizDialog: React.FC<QuizDialogProps> = ({
             </Select>
           </div>
         </div>
-        <DialogFooter className="flex-col sm:flex-row gap-2">
+        <DialogFooter className="flex-col sm:flex-row gap-3">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Cancel</Button>
           <Button onClick={() => onSave(quizSet)} className="w-full sm:w-auto">Save</Button>
         </DialogFooter>

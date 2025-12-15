@@ -204,11 +204,11 @@ const ProficiencyTestHistoryPage = () => {
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-6xl space-y-6">
+    <div className="container mx-auto py-8 max-w-6xl space-y-4 md:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
             <History className="h-8 w-8" />
             Test History
           </h1>

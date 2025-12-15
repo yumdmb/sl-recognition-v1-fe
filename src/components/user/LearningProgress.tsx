@@ -66,22 +66,22 @@ const LearningProgress: React.FC = () => {
       </CardHeader>      <CardContent>
         <div className="space-y-4">
           <div className="text-center mb-4">
-            <div className="text-3xl font-bold text-signlang-primary">{totalProgress}%</div>
-            <p className="text-sm text-gray-500 mt-1">Overall Completion</p>
-            <Progress value={totalProgress} className="h-3 mt-2" />
+            <div className="text-3xl md:text-4xl font-bold text-signlang-primary">{totalProgress}%</div>
+            <p className="text-sm md:text-base text-gray-500 mt-1">Overall Completion</p>
+            <Progress value={totalProgress} className="h-3 md:h-4 mt-2" />
           </div>
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div className="bg-gray-50 p-3 rounded-md">
-              <div className="text-lg font-bold">{startedTutorials.length}</div>
-              <p className="text-xs text-gray-500">Started</p>
+          <div className="grid grid-cols-3 gap-3 md:gap-4 text-center">
+            <div className="bg-gray-50 p-3 md:p-4 rounded-md">
+              <div className="text-lg md:text-xl font-bold">{startedTutorials.length}</div>
+              <p className="text-xs md:text-sm text-gray-500">Started</p>
             </div>
-            <div className="bg-gray-50 p-3 rounded-md">
-              <div className="text-lg font-bold">{inProgressTutorials.length}</div>
-              <p className="text-xs text-gray-500">In Progress</p>
+            <div className="bg-gray-50 p-3 md:p-4 rounded-md">
+              <div className="text-lg md:text-xl font-bold">{inProgressTutorials.length}</div>
+              <p className="text-xs md:text-sm text-gray-500">In Progress</p>
             </div>
-            <div className="bg-gray-50 p-3 rounded-md">
-              <div className="text-lg font-bold">{completedTutorials.length}</div>
-              <p className="text-xs text-gray-500">Completed</p>
+            <div className="bg-gray-50 p-3 md:p-4 rounded-md">
+              <div className="text-lg md:text-xl font-bold">{completedTutorials.length}</div>
+              <p className="text-xs md:text-sm text-gray-500">Completed</p>
             </div>
           </div>
         </div>

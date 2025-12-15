@@ -47,9 +47,9 @@ const QuizProgress = () => {
       <CardContent>
         <div className="space-y-4">
           <div className="text-center">
-            <div className="text-3xl font-bold text-signlang-primary">{overallCompletion}%</div>
-            <p className="text-sm text-gray-500 mt-1">Overall Completion</p>
-            <Progress value={overallCompletion} className="h-3 mt-2" />
+            <div className="text-3xl md:text-4xl font-bold text-signlang-primary">{overallCompletion}%</div>
+            <p className="text-sm md:text-base text-gray-500 mt-1">Overall Completion</p>
+            <Progress value={overallCompletion} className="h-3 md:h-4 mt-2" />
           </div>
 
           <div className="max-h-64 overflow-y-auto pr-2 space-y-4">
@@ -60,12 +60,12 @@ const QuizProgress = () => {
               return (
                 <div key={quizSet.id}>
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm">{quizSet.title}</span>
-                    <span className="text-sm font-medium">{Math.round(progressPercentage)}%</span>
+                    <span className="text-sm md:text-base truncate pr-2">{quizSet.title}</span>
+                    <span className="text-sm md:text-base font-medium flex-shrink-0">{Math.round(progressPercentage)}%</span>
                   </div>
-                  <Progress value={progressPercentage} className="h-2" />
+                  <Progress value={progressPercentage} className="h-2 md:h-3" />
                   {progress && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs md:text-sm text-gray-500 mt-1">
                       Score: {progress.score}/{progress.total_questions}
                     </p>
                   )}

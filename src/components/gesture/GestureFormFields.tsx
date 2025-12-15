@@ -57,14 +57,14 @@ export default function GestureFormFields({
       {/* Language */}
       <div className="space-y-2">
         <Label>Sign Language *</Label>
-        <RadioGroup value={language} onValueChange={setLanguage} className="flex gap-6">
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="ASL" id="asl" />
-            <Label htmlFor="asl">ASL (American Sign Language)</Label>
+        <RadioGroup value={language} onValueChange={setLanguage} className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+          <div className="flex items-center space-x-3 min-h-[44px] p-2 rounded-md hover:bg-gray-50 cursor-pointer">
+            <RadioGroupItem value="ASL" id="asl" className="min-h-[24px] min-w-[24px]" />
+            <Label htmlFor="asl" className="cursor-pointer text-base">ASL (American Sign Language)</Label>
           </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="MSL" id="msl" />
-            <Label htmlFor="msl">MSL (Malaysian Sign Language)</Label>
+          <div className="flex items-center space-x-3 min-h-[44px] p-2 rounded-md hover:bg-gray-50 cursor-pointer">
+            <RadioGroupItem value="MSL" id="msl" className="min-h-[24px] min-w-[24px]" />
+            <Label htmlFor="msl" className="cursor-pointer text-base">MSL (Malaysian Sign Language)</Label>
           </div>
         </RadioGroup>
       </div>
@@ -72,14 +72,14 @@ export default function GestureFormFields({
       {/* Media Type */}
       <div className="space-y-2">
         <Label>Media Type *</Label>
-        <RadioGroup value={mediaType} onValueChange={setMediaType} className="flex gap-6">
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="image" id="image" />
-            <Label htmlFor="image">Image</Label>
+        <RadioGroup value={mediaType} onValueChange={setMediaType} className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+          <div className="flex items-center space-x-3 min-h-[44px] p-2 rounded-md hover:bg-gray-50 cursor-pointer">
+            <RadioGroupItem value="image" id="image" className="min-h-[24px] min-w-[24px]" />
+            <Label htmlFor="image" className="cursor-pointer text-base">Image</Label>
           </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="video" id="video" />
-            <Label htmlFor="video">Video</Label>
+          <div className="flex items-center space-x-3 min-h-[44px] p-2 rounded-md hover:bg-gray-50 cursor-pointer">
+            <RadioGroupItem value="video" id="video" className="min-h-[24px] min-w-[24px]" />
+            <Label htmlFor="video" className="cursor-pointer text-base">Video</Label>
           </div>
         </RadioGroup>
       </div>

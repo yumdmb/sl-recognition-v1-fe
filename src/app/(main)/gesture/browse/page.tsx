@@ -25,7 +25,7 @@ export default function GestureBrowse() {
       <Toaster />
       <GestureBrowseHeader userRole={userRole} />
 
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <GestureFilters 
           filters={filters || { status: 'approved' }}
           onFiltersChange={updateFilters}

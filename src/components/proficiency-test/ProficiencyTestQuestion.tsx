@@ -22,11 +22,11 @@ const ProficiencyTestQuestion: React.FC<ProficiencyTestQuestionProps> = ({ quest
       </CardHeader>
       <CardContent>
         <RadioGroup onValueChange={onSelectChoice} value={selectedChoice || undefined}>
-          <div className="space-y-2">
+          <div className="space-y-3 md:space-y-2">
             {question.choices.map((choice) => (
-              <div key={choice.id} className="flex items-center space-x-2">
-                <RadioGroupItem value={choice.id} id={choice.id} />
-                <Label htmlFor={choice.id}>{choice.choice_text}</Label>
+              <div key={choice.id} className="flex items-center space-x-3 min-h-[44px] p-2 rounded-md hover:bg-gray-50 cursor-pointer">
+                <RadioGroupItem value={choice.id} id={choice.id} className="min-h-[24px] min-w-[24px]" />
+                <Label htmlFor={choice.id} className="cursor-pointer flex-1 text-base">{choice.choice_text}</Label>
               </div>
             ))}
           </div>

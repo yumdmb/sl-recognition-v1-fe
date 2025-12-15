@@ -263,7 +263,7 @@ export function ForumPostCard({
 
           {/* Edit/Delete buttons for post owner */}
           {isOwnPost && (
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex gap-3 w-full sm:w-auto">
               <Button 
                 variant="ghost" 
                 size="sm" 

@@ -15,7 +15,7 @@ export default function GestureBrowseHeader({ userRole }: GestureBrowseHeaderPro
   return (
     <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center mb-6">
       <div>
-        <h1 className="text-3xl font-bold">Browse Gestures</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Browse Gestures</h1>
         <p className="text-muted-foreground mt-1">
           Explore community-contributed sign language gestures and learn new signs
         </p>

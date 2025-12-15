@@ -235,9 +235,9 @@ export const GestureForm: React.FC<GestureFormProps> = ({ gesture, onSuccess, on
           </div>
         )}
 
-        <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-          <Button type="submit" disabled={isSubmitting}>
+        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto min-h-[44px]">Cancel</Button>
+          <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto min-h-[44px]">
             {isSubmitting ? 'Saving...' : 'Save Gesture'}
           </Button>
         </div>

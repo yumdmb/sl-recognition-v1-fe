@@ -48,7 +48,7 @@ const YouTubeVideoPreview: React.FC<YouTubeVideoPreviewProps> = ({
 
   if (showVideo) {
     return (
-      <div className={`relative w-full ${className}`}>
+      <div className={`relative w-full aspect-video ${className}`}>
         {isLoading && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10 rounded-lg">
             <Loader2 className="h-8 w-8 animate-spin text-white" />
@@ -62,12 +62,12 @@ const YouTubeVideoPreview: React.FC<YouTubeVideoPreviewProps> = ({
           frameBorder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
-          className="rounded-lg"
+          className="rounded-lg absolute inset-0"
           onLoad={() => setIsLoading(false)}
         />
         <button
           onClick={() => setShowVideo(false)}
-          className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-xs hover:bg-black/70"
+          className="absolute top-2 right-2 bg-black/50 text-white px-3 py-2 rounded text-xs hover:bg-black/70 min-h-[44px] flex items-center z-20"
         >
           Close
         </button>
@@ -92,17 +92,17 @@ const YouTubeVideoPreview: React.FC<YouTubeVideoPreviewProps> = ({
         <div className="flex gap-3">
           <button
             onClick={handlePlayVideo}
-            className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-full transition-colors"
+            className="bg-red-600 hover:bg-red-700 text-white p-3 md:p-4 rounded-full transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             title="Play video"
           >
-            <Play className="h-6 w-6 fill-current" />
+            <Play className="h-5 w-5 md:h-6 md:w-6 fill-current" />
           </button>
           <button
             onClick={openInYouTube}
-            className="bg-gray-800 hover:bg-gray-900 text-white p-3 rounded-full transition-colors"
+            className="bg-gray-800 hover:bg-gray-900 text-white p-3 md:p-4 rounded-full transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             title="Open in YouTube"
           >
-            <ExternalLink className="h-6 w-6" />
+            <ExternalLink className="h-5 w-5 md:h-6 md:w-6" />
           </button>
         </div>
       </div>      {/* Duration badge removed */}

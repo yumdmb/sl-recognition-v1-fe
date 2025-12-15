@@ -163,11 +163,11 @@ const AppSidebar: React.FC<Props> = ({ userRole }) => {
       </div>
 
       {/* Navigation Menu */}
-      <div className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <div className="flex-1 px-3 py-4 space-y-2 overflow-y-auto">
         {menuItems.map((item) => (
           <div
             key={item.href}
-            className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer min-h-[44px] ${
+            className={`touch-target flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
               pathname === item.href
                 ? 'bg-gray-100 text-gray-900'
                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'

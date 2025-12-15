@@ -52,7 +52,7 @@ export default function GestureView() {
       <Toaster />
       <GestureViewHeader userRole={userRole} />
 
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <GestureFilters 
           filters={filters || { submitted_by: currentUser.id, status: 'all' }}
           onFiltersChange={handleFilterChange}

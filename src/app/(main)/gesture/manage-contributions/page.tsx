@@ -53,7 +53,7 @@ export default function ManageContributions() {
       <Toaster />
       <GestureViewHeader userRole={userRole} isManageView />
 
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <GestureFilters 
           filters={filters || { status: 'all' }}
           onFiltersChange={handleFilterChange}

@@ -96,17 +96,17 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ isActive, language
 
   return (
     <div className="space-y-4">
-      <div className="relative w-full aspect-video md:aspect-auto">
+      <div className="relative w-full aspect-video">
         <video
           ref={videoRef}
           autoPlay
           playsInline
-          className="w-full rounded-lg border border-gray-200"
+          className="w-full h-full object-cover rounded-lg border border-gray-200"
         />
         <canvas ref={canvasRef} className="hidden" />
       </div>
       {prediction && (
-        <div className="text-lg md:text-xl text-green-600 font-bold text-center p-3 bg-green-50 rounded-lg">
+        <div className="text-base md:text-lg lg:text-xl text-green-600 font-bold text-center p-3 md:p-4 bg-green-50 rounded-lg">
           Prediction: {prediction}
         </div>
       )}

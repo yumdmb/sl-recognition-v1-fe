@@ -35,7 +35,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ userRole }) => {
 
   return (
     <motion.div
-      className="space-y-6"
+      className="space-y-4 md:space-y-6"
       variants={containerVariants}
       initial="hidden"
       animate="visible"

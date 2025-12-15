@@ -74,7 +74,7 @@ const MaterialCard: React.FC<MaterialCardProps> = ({ material, isAdmin, onEdit, 
         </div>
       </CardContent>
       {isAdmin && (
-        <CardFooter className="flex flex-col sm:flex-row justify-end gap-2 pt-0 px-4 md:px-6">
+        <CardFooter className="flex flex-col sm:flex-row justify-end gap-3 pt-0 px-4 md:px-6">
           <Button variant="outline" size="sm" onClick={() => onEdit(material)} className="w-full sm:w-auto">
             <Edit className="h-4 w-4 mr-2" /> Edit
           </Button>
