@@ -1,13 +1,13 @@
 'use client'
 
-import React, { useEffect, useCallback } from 'react';
+import React from 'react';
 import { Toaster } from "@/components/ui/sonner";
 import GestureViewHeader from '@/components/gesture/GestureViewHeader';
 import GestureViewLoadingState from '@/components/gesture/GestureViewLoadingState';
 import GestureViewEmptyState from '@/components/gesture/GestureViewEmptyState';
 import GestureContributionsTable from '@/components/gesture/GestureContributionsTable';
 import GestureFilters from '@/components/gesture/GestureFilters';
-import { useGestureContributions } from '@/hooks/useGestureContributions';
+import { useMyContributions } from '@/hooks/useMyContributions';
 import { useAuth } from '@/context/AuthContext';
 import { GestureContributionFilters } from '@/types/gestureContributions';
 
@@ -16,6 +16,7 @@ import { GestureContributionFilters } from '@/types/gestureContributions';
 export default function GestureView() {
   const { currentUser, isLoading: authLoading } = useAuth();
   
+  // Use dedicated hook that always filters by current user
   const {
     contributions,
     isLoading,
@@ -24,20 +25,11 @@ export default function GestureView() {
     refreshContributions,
     updateFilters,
     filters
-  } = useGestureContributions({});
+  } = useMyContributions();
 
-  // Set filter to current user's submissions only
-  useEffect(() => {
-    if (currentUser) {
-      updateFilters({ submitted_by: currentUser.id, status: 'all' });
-    }
-  }, [currentUser, updateFilters]);
-
-  const handleFilterChange = useCallback((newFilters: GestureContributionFilters) => {
-    if (currentUser) {
-      updateFilters({ ...newFilters, submitted_by: currentUser.id });
-    }
-  }, [currentUser, updateFilters]);
+  const handleFilterChange = (newFilters: GestureContributionFilters) => {
+    updateFilters(newFilters);
+  };
 
   if (authLoading) {
     return (

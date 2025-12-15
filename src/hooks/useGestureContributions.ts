@@ -17,6 +17,11 @@ export function useGestureContributions(initialFilters?: GestureContributionFilt
     setFilters(prevFilters => ({ ...prevFilters, ...newFilters }));
   }, []);
 
+  // Reset filters completely (replaces instead of merging)
+  const resetFilters = useCallback((newFilters: GestureContributionFilters) => {
+    setFilters(newFilters);
+  }, []);
+
   const loadContributions = useCallback(async () => {
     if (!currentUser && !filters?.status) {
       if (filters?.status !== 'approved') {
@@ -151,5 +156,6 @@ export function useGestureContributions(initialFilters?: GestureContributionFilt
     refreshContributions,
     filters,
     updateFilters,
+    resetFilters,
   };
 }
