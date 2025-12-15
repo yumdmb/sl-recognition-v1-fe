@@ -9,6 +9,7 @@ export interface Database {
           email: string;
           role: 'admin' | 'deaf' | 'non-deaf';
           proficiency_level: 'Beginner' | 'Intermediate' | 'Advanced' | null;
+          profile_picture_url: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -18,6 +19,7 @@ export interface Database {
           email: string;
           role?: 'admin' | 'deaf' | 'non-deaf';
           proficiency_level?: 'Beginner' | 'Intermediate' | 'Advanced' | null;
+          profile_picture_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -27,6 +29,7 @@ export interface Database {
           email?: string;
           role?: 'admin' | 'deaf' | 'non-deaf';
           proficiency_level?: 'Beginner' | 'Intermediate' | 'Advanced' | null;
+          profile_picture_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };

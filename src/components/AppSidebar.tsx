@@ -17,6 +17,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { useSidebar } from '@/context/SidebarContext';
 import { Toaster } from '@/components/ui/sonner';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { LucideIcon } from 'lucide-react';
 
 interface MenuItem {
@@ -148,6 +149,12 @@ const AppSidebar: React.FC<Props> = ({ userRole }) => {
           {isAuthenticated && currentUser && state.isOpen && (
             <div className="p-4 border-t mt-auto">
               <div className="flex items-center">
+                <Avatar className="h-10 w-10 mr-3">
+                  <AvatarImage src={currentUser.profile_picture_url || undefined} alt={currentUser.name} />
+                  <AvatarFallback>
+                    {currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
                     {currentUser.name}

@@ -76,24 +76,35 @@ const GestureRecognitionSearch: React.FC = () => {
   const fetchCategories = useCallback(async () => {
     const { data, error } = await supabase
       .from('gesture_categories')
-      .select('id, name, icon, gestures(count)');
+      .select('id, name, icon, gestures!inner(count)');
 
     if (error) {
       toast.error("Failed to load categories", { description: error.message });
     } else {
-      const categoriesWithCounts = data.map(c => ({
-        ...c,
-        count: (c.gestures as any)[0]?.count || 0
-      }));
+      // Fetch gesture counts per category filtered by language
+      const categoriesWithCounts = await Promise.all(
+        data.map(async (category) => {
+          const { count } = await supabase
+            .from('gestures')
+            .select('*', { count: 'exact', head: true })
+            .eq('category_id', category.id)
+            .eq('language', language);
+          
+          return {
+            ...category,
+            count: count || 0
+          };
+        })
+      );
       setCategories(categoriesWithCounts);
     }
-  }, [supabase]);
+  }, [supabase, language]);
 
   useEffect(() => {
     fetchCategories();
-  }, [fetchCategories]);
+  }, [fetchCategories, language]);
 
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     if (!searchTerm.trim()) {
       toast.error("Search term required", { description: "Please enter a word to search for" });
       return;
@@ -116,9 +127,9 @@ const GestureRecognitionSearch: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [supabase, searchTerm, language]);
 
-  const handleCategorySelect = async (category: GestureCategory) => {
+  const handleCategorySelect = useCallback(async (category: GestureCategory) => {
     setSelectedCategory(category);
     setIsLoading(true);
     setCategoryGestures([]);
@@ -138,7 +149,7 @@ const GestureRecognitionSearch: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [supabase, language]);
 
   const handleFormSuccess = () => {
     setIsFormOpen(false);
@@ -151,6 +162,25 @@ const GestureRecognitionSearch: React.FC = () => {
       handleCategorySelect(selectedCategory);
     }
   };
+
+  // Polling for automatic updates (refreshes every 5 seconds)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Refresh categories to update counts
+      fetchCategories();
+      
+      // Refresh current view if applicable
+      if (activeTab === 'text' && searchTerm) {
+        handleSearch();
+      } else if (activeTab === 'category' && selectedCategory) {
+        handleCategorySelect(selectedCategory);
+      }
+    }, 5000); // Poll every 5 seconds
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [activeTab, searchTerm, selectedCategory, fetchCategories, handleSearch, handleCategorySelect]);
 
   const openEditForm = (gesture: Gesture) => {
     setEditingGesture(gesture);
@@ -268,9 +298,9 @@ const GestureRecognitionSearch: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="language">Sign Language</Label>
+                  <Label htmlFor="text-language">Sign Language</Label>
                   <Select value={language} onValueChange={(val: "ASL" | "MSL") => setLanguage(val)}>
-                    <SelectTrigger><SelectValue placeholder="Select language" /></SelectTrigger>
+                    <SelectTrigger id="text-language"><SelectValue placeholder="Select language" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ASL">American (ASL)</SelectItem>
                       <SelectItem value="MSL">Malaysian (MSL)</SelectItem>
@@ -303,6 +333,18 @@ const GestureRecognitionSearch: React.FC = () => {
                 <CardDescription>Explore sign language gestures organized by categories</CardDescription>
               </CardHeader>
               <CardContent>
+                <div className="space-y-4 mb-6">
+                  <Label htmlFor="category-language">Select Sign Language</Label>
+                  <Select value={language} onValueChange={(val: "ASL" | "MSL") => setLanguage(val)}>
+                    <SelectTrigger id="category-language">
+                      <SelectValue placeholder="Select language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ASL">American Sign Language (ASL)</SelectItem>
+                      <SelectItem value="MSL">Malaysian Sign Language (MSL)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                   {categories.map(category => (
                     <Card key={category.id} className="hover:shadow-md hover:border-primary/50 transition-all cursor-pointer" onClick={() => handleCategorySelect(category)}>
