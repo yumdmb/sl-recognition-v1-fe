@@ -41,26 +41,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
           {/* Main Content */}
           <div className="flex-1 transition-all duration-300">
-            {/* Top Bar */}
-            <div className="bg-white border-b border-gray-200 p-4 sticky top-0 z-30 h-[65px] flex items-center">
-              <div className="container mx-auto">
-                <div className="flex items-center space-x-2">
-                  <img 
-                    src="/MyBIM-Logo-transparent-bg-300x227.png" 
-                    alt="MyBIM Logo" 
-                    className="h-10 w-auto"
-                  />
-                  <h1 className="text-2xl font-bold">SignBridge</h1>
-                  {currentUser && (
-                    <span className="ml-4 bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">
-                      {currentUser.role === 'admin' ? 'Admin' :
-                        currentUser.role === 'deaf' ? 'Deaf Person' : 'Non-Deaf Person'}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
             {/* Page Content */}
             <div className="container mx-auto p-6">
               {children}

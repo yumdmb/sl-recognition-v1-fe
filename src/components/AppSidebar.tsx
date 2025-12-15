@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   Home,
   Search,
@@ -116,19 +117,49 @@ const AppSidebar: React.FC<Props> = ({ userRole }) => {
         style={{ zIndex: 40 }}
       >
         <div className="flex flex-col h-full">
-          {/* Toggle Button */}
-          <div className="h-[65px] flex items-center justify-center border-b border-gray-200">
-            <button
-              onClick={toggleSidebar}
-              className="flex items-center justify-center w-full p-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors mx-4"
-              aria-label={state.isOpen ? "Collapse sidebar" : "Expand sidebar"}
-            >
-              {state.isOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
-            </button>
+          {/* Logo and Toggle Section */}
+          <div className="h-[80px] flex items-center justify-between px-4 border-b border-gray-200">
+            {state.isOpen ? (
+              <>
+                {/* Logo when sidebar is open */}
+                <div className="flex items-center gap-2">
+                  <Image
+                    src="/signbridge-logo-no-word.PNG"
+                    alt="SignBridge Logo"
+                    width={40}
+                    height={40}
+                    className="object-contain"
+                  />
+                  <span className="text-lg font-semibold text-gray-900">SignBridge</span>
+                </div>
+                {/* Toggle button on the right when open */}
+                <button
+                  onClick={toggleSidebar}
+                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                  aria-label="Collapse sidebar"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Centered logo when sidebar is collapsed */}
+                <button
+                  onClick={toggleSidebar}
+                  className="flex flex-col items-center justify-center w-full gap-1 p-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                  aria-label="Expand sidebar"
+                >
+                  <Image
+                    src="/signbridge-logo-no-word.PNG"
+                    alt="SignBridge Logo"
+                    width={32}
+                    height={32}
+                    className="object-contain"
+                  />
+                  <Menu className="h-4 w-4" />
+                </button>
+              </>
+            )}
           </div>
 
           <div className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
