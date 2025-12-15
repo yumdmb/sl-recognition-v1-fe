@@ -35,7 +35,7 @@ export default function Navigation({
           transition={{ duration: 0.2 }}
         >
           <Image
-            src="/MyBIM-Logo-transparent-bg-300x227.png"
+            src="/signbridge-logo-no-word.png"
             alt="MyBIM Logo"
             width={64}
             height={48}
