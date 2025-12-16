@@ -13,7 +13,6 @@ const PROTECTED_ROUTES = [
   '/interaction',
   '/proficiency-test'
 ]
-const PUBLIC_ROUTES = ['/', '/auth']
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -53,9 +52,9 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   // Check if route is public
-  const isPublicRoute = PUBLIC_ROUTES.some(
-    route => pathname === route || pathname.startsWith(`${route}/`)
-  )
+  // const isPublicRoute = PUBLIC_ROUTES.some(
+  //   route => pathname === route || pathname.startsWith(`${route}/`)
+  // )
 
   // Check if route requires authentication
   const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route))

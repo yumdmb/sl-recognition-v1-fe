@@ -138,8 +138,9 @@ export const GestureForm: React.FC<GestureFormProps> = ({ gesture, onSuccess, on
         toast.success("Gesture created successfully!");
       }
       onSuccess();
-    } catch (error: any) {
-      toast.error("Submission failed", { description: error.message });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error("Submission failed", { description: errorMessage });
     } finally {
       setIsSubmitting(false);
     }

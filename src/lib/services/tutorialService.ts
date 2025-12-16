@@ -48,11 +48,12 @@ export class TutorialService {
       
       // Provide more detailed error information
       if (error && typeof error === 'object') {
+        const err = error as { message?: string; code?: string; hint?: string; details?: string };
         console.error('Error details:', {
-          message: (error as any).message,
-          code: (error as any).code,
-          hint: (error as any).hint,
-          details: (error as any).details
+          message: err.message,
+          code: err.code,
+          hint: err.hint,
+          details: err.details
         });
       }
       
@@ -178,11 +179,12 @@ export class TutorialService {
       console.log('Tutorial started successfully:', data);
       return data;    } catch (error) {
       console.error('Error starting tutorial:', error);
+      const err = error as { message?: string; code?: string; details?: string; hint?: string };
       console.error('Error details:', {
-        message: (error as any)?.message,
-        code: (error as any)?.code,
-        details: (error as any)?.details,
-        hint: (error as any)?.hint
+        message: err?.message,
+        code: err?.code,
+        details: err?.details,
+        hint: err?.hint
       });
       throw error;
     }

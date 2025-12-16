@@ -1,7 +1,6 @@
 import { createClient } from '@/utils/supabase/client';
-import { Database } from '@/types/database';
 import { PerformanceAnalysis } from './evaluationService';
-import { LearningRecommendation, generateRecommendations, filterByRole, prioritizeContent } from './recommendationEngine';
+import { LearningRecommendation, filterByRole, prioritizeContent } from './recommendationEngine';
 
 export interface LearningPathItem {
   id: string;
@@ -72,7 +71,7 @@ export const generateLearningPath = async (
     language: item.language,
     priority: item.priority,
     completed: false, // Will be updated based on user progress
-    recommended_for_role: determineRoleRecommendation(item, userRole),
+    recommended_for_role: determineRoleRecommendation(item /*, userRole */),
     reason: item.reason,
   }));
 
@@ -240,11 +239,13 @@ export const sortByPriority = (
  */
 const determineRoleRecommendation = (
   item: LearningRecommendation,
-  userRole: string
+  // userRole: string
 ): 'deaf' | 'non-deaf' | 'all' => {
   // For now, mark all content as universal
   // In a full implementation, this would check database fields
   // or content metadata to determine role-specific recommendations
+  // Suppress unused parameter warning
+  void item;
   return 'all';
 };
 
@@ -350,7 +351,7 @@ export const recalculateRecommendations = async (
     language: item.language,
     priority: item.priority,
     completed: item.id === completedItemId,
-    recommended_for_role: determineRoleRecommendation(item, userProfile.role),
+    recommended_for_role: determineRoleRecommendation(item),
     reason: item.reason,
   }));
 

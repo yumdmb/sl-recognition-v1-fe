@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchYouTubeMetadataOEmbed, extractVideoId, getYouTubeThumbnail, formatDuration } from '@/lib/utils/youtube';
+import { fetchYouTubeMetadataOEmbed, extractVideoId, getYouTubeThumbnail } from '@/lib/utils/youtube';
 import { createClient } from '@/utils/supabase/server';
 
 export async function POST(request: NextRequest) {

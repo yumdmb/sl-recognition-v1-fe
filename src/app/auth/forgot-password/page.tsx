@@ -65,12 +65,12 @@ export default function ForgotPassword() {
               </div>
               <CardTitle className="text-2xl text-signlang-accent">Check Your Email</CardTitle>
               <CardDescription>
-                We've sent a password reset link to <strong>{email}</strong>
+                We&apos;ve sent a password reset link to <strong>{email}</strong>
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-center text-sm text-gray-600">
-                <p>Didn't receive the email? Check your spam folder or try again with a different email address.</p>
+                <p>Didn&apos;t receive the email? Check your spam folder or try again with a different email address.</p>
               </div>
               
               <div className="space-y-2">
@@ -108,7 +108,7 @@ export default function ForgotPassword() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl text-signlang-accent">Forgot Password</CardTitle>
             <CardDescription>
-              Enter your email address and we'll send you a link to reset your password
+              Enter your email address and we&apos;ll send you a link to reset your password
             </CardDescription>
           </CardHeader>
           <CardContent>

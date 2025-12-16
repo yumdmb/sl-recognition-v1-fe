@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { GestureContribution } from '@/types/gestureContributions';
-import { Check, X, Trash2, Eye, Edit3, Copy, AlertTriangle } from 'lucide-react';
+import { Check, X, Trash2, Eye, Copy, AlertTriangle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -14,7 +14,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import Link from 'next/link'; // For edit button
 
 interface GestureContributionRowProps {
   contribution: GestureContribution;
@@ -55,7 +54,7 @@ export default function GestureContributionRow({
   const canDelete = isAdmin || (isOwner && (contribution.status === 'pending' || contribution.status === 'rejected'));
   
   // Users can edit their own pending submissions.
-  const canEdit = isOwner && contribution.status === 'pending';
+  // const canEdit = isOwner && contribution.status === 'pending';
 
   const handleRejectClick = () => {
     if (!onReject) return;

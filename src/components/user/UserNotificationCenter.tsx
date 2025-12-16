@@ -4,11 +4,10 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Award, BookOpen } from "lucide-react";
 
-interface UserNotificationCenterProps {
-  userRole: 'non-deaf' | 'deaf';
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface UserNotificationCenterProps {}
 
-export const UserNotificationCenter: React.FC<UserNotificationCenterProps> = ({ userRole }) => (
+export const UserNotificationCenter: React.FC<UserNotificationCenterProps> = () => (
   <Card>
     <CardContent className="p-6">
       <h3 className="text-lg font-medium mb-4">Recent Notifications</h3>
@@ -19,7 +18,7 @@ export const UserNotificationCenter: React.FC<UserNotificationCenterProps> = ({ 
           </div>
           <div>
             <p className="font-medium">Achievement Unlocked!</p>
-            <p className="text-sm text-gray-500">You've completed your first tutorial</p>
+            <p className="text-sm text-gray-500">You&apos;ve completed your first tutorial</p>
           </div>
         </div>
         <div className="flex gap-4 p-3 bg-blue-50 border border-blue-100 rounded-md">

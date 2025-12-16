@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { User } from '@/context/AuthContext';
 import { createClient } from '@/utils/supabase/client';
 import { AdminStats } from '@/components/admin/AdminStats';
 import { AdminQuickAccessPanel } from '@/components/admin/AdminQuickAccessPanel';

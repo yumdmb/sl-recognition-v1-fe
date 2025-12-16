@@ -30,7 +30,7 @@ const TutorialDialog: React.FC<TutorialDialogProps> = ({
   onSave,
   isSaving = false
 }) => {const [videoUrlDebounce, setVideoUrlDebounce] = useState('');
-  const { isLoading: isLoadingMetadata, metadata, error, fetchMetadata } = useYouTubeMetadata();
+  const { isLoading: isLoadingMetadata, error, fetchMetadata } = useYouTubeMetadata();
 
   // Reset video URL debounce when dialog closes
   useEffect(() => {

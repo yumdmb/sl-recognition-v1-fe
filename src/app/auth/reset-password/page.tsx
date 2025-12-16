@@ -133,7 +133,7 @@ export default function ResetPassword() {
       return;
     }    try {
       console.log('Updating password...');
-      const { data, error } = await supabase.auth.updateUser({
+      const { error } = await supabase.auth.updateUser({
         password: password
       });
 

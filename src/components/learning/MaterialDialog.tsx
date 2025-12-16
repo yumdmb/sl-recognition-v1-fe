@@ -35,7 +35,7 @@ const MaterialDialog: React.FC<MaterialDialogProps> = ({
 
   if (!material) return null;
 
-  const handleFieldChange = (field: keyof Material, value: any) => {
+  const handleFieldChange = (field: keyof Material, value: string) => {
     onMaterialChange({
       ...material,
       [field]: value,

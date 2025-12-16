@@ -117,27 +117,27 @@ export default function ChatLayout() {
 
     const channel = ChatService.subscribeToMessages(
       selectedChat.id,
-      async (payload: RealtimePostgresChangesPayload<{ [key: string]: any }>) => {
+      async (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
         console.log("Real-time message received:", payload);
         
-        const newRecord = payload.new as any;
+        const newRecord = payload.new as Record<string, unknown>;
 
         // The payload from a subscription doesn't include relational data.
         // We need to fetch the sender's profile separately.
-        const { data: sender, error } = await ChatService.getUserProfile(newRecord.sender_id);
+        const { data: sender, error } = await ChatService.getUserProfile(newRecord.sender_id as string);
 
         if (error) {
           console.error("Failed to fetch sender profile for new message:", error);
           // Still add the message with a fallback name
           const fallbackMessage: Message = {
-            id: newRecord.id,
-            content: newRecord.content,
-            sender_id: newRecord.sender_id,
-            chat_id: newRecord.chat_id,
-            file_url: newRecord.file_url,
-            created_at: newRecord.created_at,
-            is_edited: newRecord.is_edited || false,
-            reply_to_id: newRecord.reply_to_id,
+            id: newRecord.id as string,
+            content: newRecord.content as string,
+            sender_id: newRecord.sender_id as string,
+            chat_id: newRecord.chat_id as string,
+            file_url: (newRecord.file_url as string | null) ?? undefined,
+            created_at: newRecord.created_at as string,
+            is_edited: (newRecord.is_edited as boolean) || false,
+            reply_to_id: (newRecord.reply_to_id as string | null) ?? undefined,
             sender: {
               name: "Unknown User",
               profile_picture_url: null,
@@ -155,14 +155,14 @@ export default function ChatLayout() {
         }
 
         const newMessage: Message = {
-          id: newRecord.id,
-          content: newRecord.content,
-          sender_id: newRecord.sender_id,
-          chat_id: newRecord.chat_id,
-          file_url: newRecord.file_url,
-          created_at: newRecord.created_at,
-          is_edited: newRecord.is_edited || false,
-          reply_to_id: newRecord.reply_to_id,
+          id: newRecord.id as string,
+          content: newRecord.content as string,
+          sender_id: newRecord.sender_id as string,
+          chat_id: newRecord.chat_id as string,
+          file_url: (newRecord.file_url as string | null) ?? undefined,
+          created_at: newRecord.created_at as string,
+          is_edited: (newRecord.is_edited as boolean) || false,
+          reply_to_id: (newRecord.reply_to_id as string | null) ?? undefined,
           sender: {
             name: sender?.name || "Unknown User",
             profile_picture_url: sender?.profile_picture_url || null,

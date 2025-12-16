@@ -1,7 +1,7 @@
 'use client'
 
 import Image from "next/image";
-import { MessageCircle, Building, Award } from "lucide-react";
+// import { MessageCircle, Building, Award } from "lucide-react";
 
 interface SignLanguageInfoSectionProps {
   sectionRef: React.RefObject<HTMLDivElement>;

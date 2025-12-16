@@ -140,7 +140,7 @@ export default function ProfilePage() {
                         )}
                         {currentUser.proficiency_level === 'Advanced' && (
                           <p className="text-sm text-green-600">
-                            🎉 You've reached the highest level!
+                            🎉 You&apos;ve reached the highest level!
                           </p>
                         )}
                       </div>

@@ -3,7 +3,6 @@
 import { useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 
 interface ImageModalProps {
   src: string;

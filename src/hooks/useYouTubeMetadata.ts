@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { isValidYouTubeUrl } from '@/lib/utils/youtube';
 
 export interface YouTubeMetadata {

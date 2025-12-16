@@ -14,7 +14,7 @@ interface GestureContributionsTableProps {
   onApprove?: (id: string) => void;
   onReject?: (id: string, reason?: string) => void;
   onDelete: (id: string) => void;
-  onRefresh: () => void;
+  onRefresh?: () => void;
   isMySubmissionsView?: boolean; // To tailor row actions/display if needed
 }
 
@@ -27,6 +27,8 @@ export default function GestureContributionsTable({
   onRefresh,
   isMySubmissionsView = false
 }: GestureContributionsTableProps) {
+  // Suppress unused variable warning
+  void onRefresh;
   const isMobile = useIsMobile();
 
   // Mobile view: Card-based layout

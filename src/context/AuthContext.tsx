@@ -6,7 +6,7 @@ import { createClient } from '@/utils/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { UserService } from '@/lib/services/userService';
 import { EmailService } from '@/lib/services/emailService';
-import type { UserProfile } from '@/types/database';
+// import type { UserProfile } from '@/types/database';
 
 // Define our user type - extending Supabase user with custom metadata
 export interface User {
@@ -44,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false); // Flag to prevent race conditions
-  const [isInitialized, setIsInitialized] = useState(false); // Track if initial auth is done
+  // const [isInitialized, setIsInitialized] = useState(false); // Track if initial auth is done
   const supabase = createClient();  // Convert Supabase user to our User type with database profile
   const convertSupabaseUser = async (supabaseUser: SupabaseUser): Promise<User> => {
     // Fallback user data from metadata (always available)
@@ -86,7 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         console.info('No profile found in database, using metadata fallback');
       }
-    } catch (error) {
+    } catch {
       console.info('Failed to fetch user profile from database, using fallback.');
     }
     
@@ -143,7 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } finally {
         if (isMounted) {
           setIsLoading(false);
-          setIsInitialized(true);
+          // setIsInitialized(true);
         }
       }
     };
@@ -338,11 +338,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Updating user with:', updates);
 
       // Prepare auth metadata updates (only include defined values)
-      const authMetadata: any = {};
+      const authMetadata: Record<string, unknown> = {};
       if (updates.name !== undefined) authMetadata.name = updates.name;
       if (updates.role !== undefined) authMetadata.role = updates.role;
 
-      const authUpdates: any = {
+      const authUpdates: Record<string, unknown> = {
         data: authMetadata
       };
 
@@ -356,7 +356,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Update auth metadata and email with timeout wrapper
       // Supabase updateUser sometimes hangs, so we add a timeout
       const authUpdatePromise = supabase.auth.updateUser(authUpdates);
-      const timeoutPromise = new Promise<{ error: any }>((resolve) => {
+      const timeoutPromise = new Promise<{ error: unknown }>((resolve) => {
         setTimeout(() => {
           console.log('Auth update timeout reached, continuing anyway...');
           resolve({ error: null }); // Resolve with no error after timeout
@@ -380,7 +380,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Local state updated');
 
       // Update database profile (blocking to ensure consistency)
-      const profileUpdates: any = {};
+      const profileUpdates: Record<string, unknown> = {};
       if (updates.name !== undefined) profileUpdates.name = updates.name;
       if (updates.role !== undefined) profileUpdates.role = updates.role;
       if (updates.email !== undefined) profileUpdates.email = updates.email;
@@ -449,7 +449,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         updateResult = await Promise.race([updatePromise, timeoutPromise]);
         console.log('updateUser returned:', updateResult);
-      } catch (timeoutError) {
+      } catch {
         // If it times out, the password was likely updated (we see USER_UPDATED event)
         // So we'll assume success
         console.log('updateUser timed out, but USER_UPDATED fired, assuming success');

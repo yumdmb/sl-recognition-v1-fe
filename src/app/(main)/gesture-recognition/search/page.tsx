@@ -122,8 +122,8 @@ const GestureRecognitionSearch: React.FC = () => {
 
       setSearchResults(data || []);
       toast.success(`Found ${data?.length || 0} gestures for "${searchTerm}"`);
-    } catch (error: any) {
-      toast.error("Search failed", { description: error.message });
+    } catch (error: unknown) {
+      toast.error("Search failed", { description: error instanceof Error ? error.message : 'Unknown error' });
     } finally {
       setIsLoading(false);
     }
@@ -144,8 +144,8 @@ const GestureRecognitionSearch: React.FC = () => {
 
       setCategoryGestures(data || []);
       setActiveTab('category'); // Switch tab to show results
-    } catch (error: any) {
-      toast.error(`Failed to load gestures for ${category.name}`, { description: error.message });
+    } catch (error: unknown) {
+      toast.error(`Failed to load gestures for ${category.name}`, { description: error instanceof Error ? error.message : 'Unknown error' });
     } finally {
       setIsLoading(false);
     }
@@ -212,8 +212,8 @@ const GestureRecognitionSearch: React.FC = () => {
 
       toast.success("Gesture deleted successfully!");
       handleFormSuccess(); // Re-use success logic to refresh data
-    } catch (error: any) {
-      toast.error("Failed to delete gesture", { description: error.message });
+    } catch (error: unknown) {
+      toast.error("Failed to delete gesture", { description: error instanceof Error ? error.message : 'Unknown error' });
     } finally {
       setIsDeleteAlertOpen(false);
       setDeletingGesture(null);
@@ -386,7 +386,7 @@ const GestureRecognitionSearch: React.FC = () => {
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the gesture
-              "{deletingGesture?.name}" and its media file.
+              &quot;{deletingGesture?.name}&quot; and its media file.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

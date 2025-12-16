@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Edit, Trash, Play, CheckCircle } from 'lucide-react';
 import { TutorialWithProgress } from '@/types/database';

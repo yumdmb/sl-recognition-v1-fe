@@ -37,7 +37,9 @@ interface TestAttempt {
   score: number | null;
   completed_at: string | null;
   created_at: string;
-  test: {
+  user_id?: string;
+  proficiency_level?: string;
+  test?: {
     id: string;
     title: string;
     description: string | null;
@@ -47,7 +49,7 @@ interface TestAttempt {
 
 const ProficiencyTestHistoryPage = () => {
   const { currentUser } = useAuth();
-  const { getTestHistory, proficiencyTestLoading } = useLearning();
+  const { getTestHistory } = useLearning();
   const router = useRouter();
   
   const [attempts, setAttempts] = useState<TestAttempt[]>([]);
@@ -184,7 +186,7 @@ const ProficiencyTestHistoryPage = () => {
             <History className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold mb-2">No Test History</h3>
             <p className="text-muted-foreground mb-6">
-              You haven't taken any proficiency tests yet. Take your first test to get started!
+              You haven&apos;t taken any proficiency tests yet. Take your first test to get started!
             </p>
             <div className="flex gap-4 justify-center">
               <Button asChild>
@@ -351,9 +353,9 @@ const ProficiencyTestHistoryPage = () => {
                     
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold">{attempt.test.title}</h3>
+                        <h3 className="font-semibold">{attempt.test?.title || 'Unknown Test'}</h3>
                       </div>
-                      {attempt.test.description && (
+                      {attempt.test?.description && (
                         <p className="text-sm text-muted-foreground mt-1">
                           {attempt.test.description}
                         </p>

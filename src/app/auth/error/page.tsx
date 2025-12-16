@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { Suspense } from 'react'
 
-export default function AuthErrorPage() {
+function AuthErrorContent() {
   const searchParams = useSearchParams()
   const message = searchParams.get('message') || 'An error occurred during authentication'
 
@@ -39,5 +40,17 @@ export default function AuthErrorPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function AuthErrorPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="w-full max-w-md p-4 text-center">Loading...</div>
+      </div>
+    }>
+      <AuthErrorContent />
+    </Suspense>
   )
 }

@@ -31,6 +31,7 @@ export class UserService {
 
   // LEGACY - kept for reference, remove after testing
   static async getUserProfile_OLD(userId: string): Promise<UserProfile | null> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('user_profiles')

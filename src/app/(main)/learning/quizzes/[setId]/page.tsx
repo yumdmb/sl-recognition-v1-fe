@@ -20,7 +20,7 @@ export default function QuizPage() {
   const { currentUser } = useAuth();
   const { getQuizSetWithQuestions, submitQuizAnswers } = useLearning();
   
-  const [quizSet, setQuizSet] = useState<any>(null);
+  const [quizSet, setQuizSet] = useState<{ title: string; language: string; questions: QuizQuestion[] } | null>(null);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedAnswers, setSelectedAnswers] = useState<{ [id: string]: string | null }>({});

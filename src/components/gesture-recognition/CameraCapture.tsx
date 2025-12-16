@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useRef, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Camera } from "lucide-react";
 import { toast } from "sonner";
 
 interface CameraCaptureProps {
@@ -23,7 +21,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ isActive, language
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
       }
-    } catch (err) {
+    } catch {
       toast.error("Camera Error", {
         description: "Unable to access camera. Please check permissions.",
       });

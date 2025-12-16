@@ -27,6 +27,14 @@ interface PersistedSidebarState {
 
 // Load sidebar state from localStorage with fallback defaults
 function loadFromLocalStorage(): PersistedSidebarState {
+  // Guard against SSR - localStorage is only available in browser
+  if (typeof window === 'undefined') {
+    return {
+      desktopExpanded: true,
+      lastUpdated: Date.now(),
+    };
+  }
+  
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
@@ -46,6 +54,11 @@ function loadFromLocalStorage(): PersistedSidebarState {
 
 // Save sidebar state to localStorage with error handling
 function saveToLocalStorage(state: PersistedSidebarState): void {
+  // Guard against SSR - localStorage is only available in browser
+  if (typeof window === 'undefined') {
+    return;
+  }
+  
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (error) {

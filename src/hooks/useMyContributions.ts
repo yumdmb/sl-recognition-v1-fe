@@ -81,7 +81,7 @@ export function useMyContributions() {
       
       if (deleteError) {
         toast.error("Failed to delete gesture", {
-          description: deleteError.message || "Please try again."
+          description: deleteError instanceof Error ? deleteError.message : "Please try again."
         });
         return;
       }
@@ -93,8 +93,8 @@ export function useMyContributions() {
       toast.success("Gesture Deleted", {
         description: "The gesture has been permanently deleted."
       });
-    } catch (err: any) {
-      toast.error("An error occurred while deleting the gesture", { description: err.message });
+    } catch (err: unknown) {
+      toast.error("An error occurred while deleting the gesture", { description: err instanceof Error ? err.message : 'Unknown error' });
     }
   };
 

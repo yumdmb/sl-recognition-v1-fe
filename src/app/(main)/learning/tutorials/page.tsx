@@ -11,7 +11,7 @@ import TutorialGrid from '@/components/learning/TutorialGrid';
 import TutorialEmptyState from '@/components/learning/TutorialEmptyState';
 import TutorialLoadingState from '@/components/learning/TutorialLoadingState';
 import TutorialDialog from '@/components/learning/TutorialDialog';
-import type { TutorialWithProgress, Database } from '@/types/database';
+import type { TutorialWithProgress } from '@/types/database';
 
 export default function TutorialsPage() {
   const [activeTab, setActiveTab] = useState<string>('all');
@@ -133,7 +133,6 @@ export default function TutorialsPage() {
   return (
     <>
       <TutorialHeader
-        activeTab={activeTab}
         onTabChange={setActiveTab}
         isAdmin={isAdmin}
         onAddTutorial={handleAddTutorial}

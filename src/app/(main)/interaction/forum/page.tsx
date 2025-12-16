@@ -469,7 +469,7 @@ export default function ForumPage() {
           <CardContent>
             <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <p className="text-xl text-muted-foreground">No forum topics posted yet.</p>
-            <p className="text-sm text-muted-foreground">Click "Add New Post" to start a discussion!</p>
+            <p className="text-sm text-muted-foreground">Click &quot;Add New Post&quot; to start a discussion!</p>
           </CardContent>
         </Card>
       )}

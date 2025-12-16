@@ -4,7 +4,7 @@ import { GestureContribution, GestureContributionFilters, GestureContributionFor
 export class GestureContributionService {
   
   // Submit a new gesture contribution
-  static async submitContribution(data: GestureContributionFormData): Promise<{ data: GestureContribution | null; error: { message: string; originalError?: any } | null }> {
+  static async submitContribution(data: GestureContributionFormData): Promise<{ data: GestureContribution | null; error: { message: string; originalError?: unknown } | null }> {
     const supabase = createClient();
     try {
       let mediaUrl = '';
@@ -83,17 +83,18 @@ export class GestureContributionService {
       }
         
       return { data: contribution, error: null };
-    } catch (error: any) { // Catch other errors (e.g., from storage upload, auth, or unexpected issues)
+    } catch (error: unknown) { // Catch other errors (e.g., from storage upload, auth, or unexpected issues)
       let errorMessage = "An unknown error occurred during submission.";
       if (typeof error === 'object' && error !== null) {
-        if (error.message) {
-          errorMessage = String(error.message);
-        } else if (error.details) { // Some Supabase errors might have details
-          errorMessage = String(error.details);
-        } else if (error.error_description) { // OAuth like errors
-          errorMessage = String(error.error_description);
-        } else if (error.error) { // Sometimes the actual error is nested
-          errorMessage = String(error.error);
+        const err = error as Record<string, unknown>;
+        if (err.message) {
+          errorMessage = String(err.message);
+        } else if (err.details) { // Some Supabase errors might have details
+          errorMessage = String(err.details);
+        } else if (err.error_description) { // OAuth like errors
+          errorMessage = String(err.error_description);
+        } else if (err.error) { // Sometimes the actual error is nested
+          errorMessage = String(err.error);
         }
       } else if (typeof error === 'string') {
         errorMessage = error;
@@ -106,7 +107,7 @@ export class GestureContributionService {
   }
   
   // Get gesture contributions with filters
-  static async getContributions(filters?: GestureContributionFilters): Promise<{ data: GestureContribution[] | null; error: any }> {
+  static async getContributions(filters?: GestureContributionFilters): Promise<{ data: GestureContribution[] | null; error: unknown }> {
     const supabase = createClient();
     try {
       let query = supabase
@@ -145,7 +146,7 @@ export class GestureContributionService {
   }
   
   // Get single contribution
-  static async getContribution(id: string): Promise<{ data: GestureContribution | null; error: any }> {
+  static async getContribution(id: string): Promise<{ data: GestureContribution | null; error: unknown }> {
     const supabase = createClient();
     try {
       const { data: contribution, error } = await supabase
@@ -168,7 +169,7 @@ export class GestureContributionService {
   }
   
   // Approve contribution (admin only - RLS should enforce this)
-  static async approveContribution(id: string): Promise<{ error: any }> {
+  static async approveContribution(id: string): Promise<{ error: unknown }> {
     const supabase = createClient();
     try {
       const { data: userSession } = await supabase.auth.getUser();
@@ -191,7 +192,7 @@ export class GestureContributionService {
   }
   
   // Reject contribution (admin only)
-  static async rejectContribution(id: string, reason?: string): Promise<{ error: any }> {
+  static async rejectContribution(id: string, reason?: string): Promise<{ error: unknown }> {
     const supabase = createClient();
     try {
       const { data: userSession } = await supabase.auth.getUser();
@@ -215,7 +216,7 @@ export class GestureContributionService {
   }
   
   // Delete contribution (admin or owner as per RLS)
-  static async deleteContribution(id: string): Promise<{ error: any }> {
+  static async deleteContribution(id: string): Promise<{ error: unknown }> {
     const supabase = createClient();
     try {
       const { data: userSession } = await supabase.auth.getUser();
@@ -234,7 +235,7 @@ export class GestureContributionService {
   }
 
   // Refresh duplicate detection for all contributions (admin only)
-  static async refreshAllDuplicates(): Promise<{ data: number | null; error: any }> {
+  static async refreshAllDuplicates(): Promise<{ data: number | null; error: unknown }> {
     const supabase = createClient();
     try {
       const { data, error } = await supabase.rpc('refresh_all_gesture_contribution_duplicates');
@@ -246,7 +247,7 @@ export class GestureContributionService {
   }
 
   // Check duplicates for a specific contribution
-  static async checkDuplicates(id: string): Promise<{ data: { is_duplicate: boolean; duplicate_sources: string[] } | null; error: any }> {
+  static async checkDuplicates(id: string): Promise<{ data: { is_duplicate: boolean; duplicate_sources: string[] } | null; error: unknown }> {
     const supabase = createClient();
     try {
       const { data, error } = await supabase.rpc('check_gesture_contribution_duplicates', {

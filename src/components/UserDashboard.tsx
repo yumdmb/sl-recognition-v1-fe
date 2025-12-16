@@ -60,7 +60,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ userRole }) => {
       </motion.div>
       
       <motion.div variants={itemVariants}>
-        <UserQuickAccessPanel userRole={userRole} />
+        <UserQuickAccessPanel />
       </motion.div>
     </motion.div>
   );

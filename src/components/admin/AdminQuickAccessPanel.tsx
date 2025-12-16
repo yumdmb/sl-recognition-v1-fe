@@ -9,9 +9,7 @@ interface QuickAccessPanelProps {
   userRole: string;
 }
 
-export const AdminQuickAccessPanel: React.FC<QuickAccessPanelProps> = ({
-  userRole,
-}) => (
+export const AdminQuickAccessPanel: React.FC<QuickAccessPanelProps> = () => (
   <Card>
     <CardContent className="p-6">
       <h3 className="text-lg font-medium mb-4">Quick Access</h3>

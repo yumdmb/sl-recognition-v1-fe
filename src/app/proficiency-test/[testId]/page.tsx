@@ -70,23 +70,22 @@ const ProficiencyTestPage = () => {
         setError(null);
         await startTest(testId);
         setRetryCount(0); // Reset retry count on success
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error loading test:', err);
         
         // Log error for administrative review
         const errorLog = {
           timestamp: new Date().toISOString(),
           testId,
-          error: err?.message || 'Unknown error',
-          stack: err?.stack,
+          error: err instanceof Error ? err.message : 'Unknown error',
+          stack: err instanceof Error ? err.stack : undefined,
           retryCount
         };
         console.error('Test loading error log:', errorLog);
         
         // Determine if this is a critical error
         const isCritical = retryCount >= 2 || 
-                          err?.message?.includes('not found') ||
-                          err?.message?.includes('unauthorized');
+                          (err instanceof Error && (err.message.includes('not found') || err.message.includes('unauthorized')));
         
         setIsCriticalError(isCritical);
         
@@ -146,7 +145,7 @@ const ProficiencyTestPage = () => {
       
       // Navigate to results page with attemptId
       router.push(`/proficiency-test/results?attemptId=${result.attemptId}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Test submission error:', err);
       
       // Log error for administrative review
@@ -154,7 +153,7 @@ const ProficiencyTestPage = () => {
         timestamp: new Date().toISOString(),
         testId,
         attemptId: testAttempt.id,
-        error: err?.message || 'Unknown error',
+        error: err instanceof Error ? err.message : 'Unknown error',
         submissionRetryCount,
         answersCount: Object.keys(userAnswers).length
       };

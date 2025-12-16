@@ -119,7 +119,7 @@ export default function Login() {
           </CardContent>
           <CardFooter className="justify-center">
             <p className="text-center text-sm">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link href="/auth/register" className="text-signlang-primary hover:underline font-medium">
                 Register
               </Link>

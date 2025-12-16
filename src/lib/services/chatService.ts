@@ -41,7 +41,7 @@ interface UserProfile {
 }
 
 export class ChatService {
-  static async getUserProfile(userId: string): Promise<{ data: UserProfile | null, error: any }> {
+  static async getUserProfile(userId: string): Promise<{ data: UserProfile | null, error: Error | null }> {
     const supabase = createClient();
     return supabase
       .from('user_profiles')
@@ -183,7 +183,7 @@ export class ChatService {
 
   static subscribeToMessages(
     chatId: string,
-    callback: (payload: RealtimePostgresChangesPayload<{ [key: string]: any }>) => void
+    callback: (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => void
   ): RealtimeChannel {
     const supabase = createClient();
     return supabase
@@ -266,8 +266,8 @@ export class ChatService {
         const chatId = message.chat_id;
         
         // Check if there's a message_status entry for this user
-        const statusArray = message.message_status as any[];
-        const userStatus = statusArray?.find((s: any) => s.user_id === userId);
+        const statusArray = message.message_status as Array<{ user_id: string; is_read: boolean }>;
+        const userStatus = statusArray?.find((s) => s.user_id === userId);
         
         // If no status entry or is_read is false, count as unread
         if (!userStatus || !userStatus.is_read) {
