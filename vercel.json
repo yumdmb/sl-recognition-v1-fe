@@ -1,7 +1,7 @@
 {
   "git": {
     "deploymentEnabled": {
-      "with-supbase-v2": true,
+      "with-supbase-v2": false,
       "Add-chat": false
     }
   }
