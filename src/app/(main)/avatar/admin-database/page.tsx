@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Eye, Plus, CheckCircle2, XCircle, User, Search } from 'lucide-react';
+import { Trash2, Eye, CheckCircle2, XCircle, User, Search } from 'lucide-react';
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
@@ -117,18 +117,9 @@ const AdminAvatarDatabasePage = () => {
       {/* Sticky Header */}
       <div className="sticky top-0 z-10 bg-background border-b px-6 py-4">
         <div className="container mx-auto">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Avatar Database</h1>
-              <p className="text-muted-foreground">View and manage all user-submitted avatars</p>
-            </div>
-            <Button 
-              onClick={() => router.push('/avatar/generate')}
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create New Avatar
-            </Button>
+          <div className="mb-4">
+            <h1 className="text-3xl font-bold tracking-tight">Avatar Database</h1>
+            <p className="text-muted-foreground">View and manage all user-submitted avatars</p>
           </div>
 
           {/* Search and Filter */}

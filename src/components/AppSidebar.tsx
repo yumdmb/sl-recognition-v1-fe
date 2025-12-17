@@ -71,8 +71,8 @@ const AppSidebar: React.FC<Props> = ({ userRole }) => {
         roles: undefined, // Show to all roles
       },
       {
-        title: '3D Avatar Generation',
-        href: '/avatar/generate',
+        title: userRole === 'admin' ? 'Manage 3D Avatar' : '3D Avatar Generation',
+        href: userRole === 'admin' ? '/avatar/admin-database' : '/avatar/generate',
         icon: Sparkles,
       },
       {
