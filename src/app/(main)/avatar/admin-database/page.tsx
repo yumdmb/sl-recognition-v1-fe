@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import Avatar3DPlayer from "@/components/avatar/Avatar3DPlayer";
 import AvatarViewDialog from "@/components/avatar/AvatarViewDialog";
-import { signAvatarService, SignAvatar } from "@/services/signAvatarService";
+import { signAvatarService, SignAvatar } from "@/lib/services/signAvatarService";
 
 const AdminAvatarDatabasePage = () => {
   const [avatars, setAvatars] = useState<SignAvatar[]>([]);

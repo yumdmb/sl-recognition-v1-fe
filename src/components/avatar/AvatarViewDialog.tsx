@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar3DRecording } from "@/types/hand";
 import Avatar3DPlayer from "./Avatar3DPlayer";
 import { User, Calendar, Languages, FileText } from "lucide-react";
-import { SignAvatar } from "@/services/signAvatarService";
+import { SignAvatar } from "@/lib/services/signAvatarService";
 
 interface AvatarViewDialogProps {
   avatar: SignAvatar | null;

@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Camera, CameraOff } from "lucide-react";
-import { signAvatarService } from "@/services/signAvatarService";
+import { signAvatarService } from "@/lib/services/signAvatarService";
 
 const AvatarGenerationPage = () => {
   const [signName, setSignName] = useState("");

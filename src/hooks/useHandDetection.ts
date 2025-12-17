@@ -1,67 +1,25 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { HandLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import { MultiHandLandmarks } from "@/types/hand";
+import { useHandDetectionContext } from "@/context/HandDetectionContext";
 
 export const useHandDetection = (videoRef: React.RefObject<HTMLVideoElement | null>) => {
   const [multiHandLandmarks, setMultiHandLandmarks] = useState<MultiHandLandmarks | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const handLandmarkerRef = useRef<HandLandmarker | null>(null);
+  const { handLandmarker, isLoading } = useHandDetectionContext();
   const animationFrameRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const initializeHandDetector = async () => {
-      try {
-        const vision = await FilesetResolver.forVisionTasks(
-          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-        );
-
-        const handLandmarker = await HandLandmarker.createFromOptions(vision, {
-          baseOptions: {
-            modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
-            delegate: "GPU",
-          },
-          numHands: 2,
-          runningMode: "VIDEO",
-          minHandDetectionConfidence: 0.5,
-          minHandPresenceConfidence: 0.5,
-          minTrackingConfidence: 0.5,
-        });
-
-        if (isMounted) {
-          handLandmarkerRef.current = handLandmarker;
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error("Error initializing hand detector:", error);
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    initializeHandDetector();
-
-    return () => {
-      isMounted = false;
-      if (animationFrameRef.current !== undefined) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!handLandmarkerRef.current || !videoRef.current || isLoading) return;
+    if (!handLandmarker || !videoRef.current || isLoading) return;
 
     const detectHands = () => {
-      if (!videoRef.current || !handLandmarkerRef.current) return;
+      if (!videoRef.current || !handLandmarker) return;
 
       const video = videoRef.current;
 
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
         const startTimeMs = performance.now();
-        const results = handLandmarkerRef.current.detectForVideo(video, startTimeMs);
+        const results = handLandmarker.detectForVideo(video, startTimeMs);
 
         if (results.landmarks && results.landmarks.length > 0) {
           const hands = results.landmarks.map((landmarks, index) => ({
@@ -88,7 +46,7 @@ export const useHandDetection = (videoRef: React.RefObject<HTMLVideoElement | nu
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [videoRef, isLoading]);
+  }, [videoRef, isLoading, handLandmarker]);
 
   return { multiHandLandmarks, isLoading };
 };
