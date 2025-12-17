@@ -5,6 +5,14 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { GestureCategory } from '@/types/gestureContributions';
 
 interface GestureFormFieldsProps {
   title: string;
@@ -15,6 +23,9 @@ interface GestureFormFieldsProps {
   setLanguage: (value: 'ASL' | 'MSL') => void;
   mediaType: 'image' | 'video';
   setMediaType: (value: 'image' | 'video') => void;
+  categoryId?: number | null;
+  setCategoryId?: (value: number | null) => void;
+  categories?: GestureCategory[];
 }
 
 export default function GestureFormFields({
@@ -25,7 +36,10 @@ export default function GestureFormFields({
   language,
   setLanguage,
   mediaType,
-  setMediaType
+  setMediaType,
+  categoryId,
+  setCategoryId,
+  categories = []
 }: GestureFormFieldsProps) {
   return (
     <>
@@ -83,6 +97,29 @@ export default function GestureFormFields({
           </div>
         </RadioGroup>
       </div>
+
+      {/* Category */}
+      {setCategoryId && categories.length > 0 && (
+        <div className="space-y-2">
+          <Label htmlFor="category">Category *</Label>
+          <Select 
+            value={categoryId?.toString() || ''} 
+            onValueChange={(val) => setCategoryId(val ? parseInt(val, 10) : null)}
+          >
+            <SelectTrigger id="category" className="min-h-[44px]">
+              <SelectValue placeholder="Select a category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id.toString()}>
+                  {cat.icon && <span className="mr-2">{cat.icon}</span>}
+                  {cat.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
     </>
   );
 }

@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from "sonner";
 import { useAuth } from '@/context/AuthContext';
-import { GestureContributionFormData } from '@/types/gestureContributions';
+import { GestureContributionFormData, GestureCategory } from '@/types/gestureContributions';
 import { GestureContributionService } from '@/lib/supabase/gestureContributions';
 
 export function useGestureContributionSubmission() {
@@ -16,6 +16,8 @@ export function useGestureContributionSubmission() {
   const [description, setDescription] = useState('');
   const [language, setLanguage] = useState<'ASL' | 'MSL'>('ASL');
   const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
+  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [categories, setCategories] = useState<GestureCategory[]>([]);
   
   // Media state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -24,6 +26,17 @@ export function useGestureContributionSubmission() {
   
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Load categories on mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      const { data, error } = await GestureContributionService.getCategories();
+      if (!error && data) {
+        setCategories(data);
+      }
+    };
+    loadCategories();
+  }, []);
 
   const handleFileChange = (file: File) => {
     setSelectedFile(file);
@@ -74,6 +87,7 @@ export function useGestureContributionSubmission() {
         description: description.trim(),
         language,
         media_type: mediaType,
+        category_id: categoryId,
         file: selectedFile
       };
 
@@ -98,6 +112,7 @@ export function useGestureContributionSubmission() {
       setDescription('');
       setLanguage('ASL');
       setMediaType('image');
+      setCategoryId(null);
       setSelectedFile(null);
       setPreviewUrl(null);
 
@@ -125,6 +140,9 @@ export function useGestureContributionSubmission() {
     setLanguage,
     mediaType,
     setMediaType,
+    categoryId,
+    setCategoryId,
+    categories,
     
     // Media state
     selectedFile,

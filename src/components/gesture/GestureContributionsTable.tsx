@@ -11,11 +11,15 @@ import { useIsMobile } from '@/hooks/use-mobile';
 interface GestureContributionsTableProps {
   contributions: GestureContribution[];
   userRole?: string;
-  onApprove?: (id: string) => void;
+  onApprove?: (id: string, categoryId?: number | null) => void;
   onReject?: (id: string, reason?: string) => void;
   onDelete: (id: string) => void;
+  onUpdateCategory?: (id: string, categoryId: number | null) => void;
   onRefresh?: () => void;
-  isMySubmissionsView?: boolean; // To tailor row actions/display if needed
+  isMySubmissionsView?: boolean;
+  selectedIds?: string[];
+  onSelectAll?: (checked: boolean) => void;
+  onSelectOne?: (id: string, checked: boolean) => void;
 }
 
 export default function GestureContributionsTable({
@@ -24,12 +28,18 @@ export default function GestureContributionsTable({
   onApprove,
   onReject,
   onDelete,
+  onUpdateCategory,
   onRefresh,
-  isMySubmissionsView = false
+  isMySubmissionsView = false,
+  selectedIds = [],
+  onSelectAll,
+  onSelectOne
 }: GestureContributionsTableProps) {
   // Suppress unused variable warning
   void onRefresh;
   const isMobile = useIsMobile();
+  const showCheckboxes = !isMySubmissionsView && selectedIds !== undefined && !!onSelectAll && !!onSelectOne;
+  const allSelected = showCheckboxes && contributions.length > 0 && contributions.every(c => selectedIds.includes(c.id));
 
   // Mobile view: Card-based layout
   if (isMobile) {
@@ -65,8 +75,19 @@ export default function GestureContributionsTable({
         <Table>
           <TableHeader>
             <TableRow>
+              {showCheckboxes && (
+                <TableHead className="w-12">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={(e) => onSelectAll?.(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                </TableHead>
+              )}
               <TableHead>Title</TableHead>
               <TableHead>Language</TableHead>
+              <TableHead>Category</TableHead>
               {!isMySubmissionsView && <TableHead>Submitted By</TableHead>}
               <TableHead>Status</TableHead>
               {!isMySubmissionsView && <TableHead>Duplicate</TableHead>}
@@ -84,12 +105,16 @@ export default function GestureContributionsTable({
                 onApprove={onApprove}
                 onReject={onReject}
                 onDelete={onDelete}
+                onUpdateCategory={onUpdateCategory}
                 isMySubmissionsView={isMySubmissionsView}
+                showCheckbox={showCheckboxes}
+                isSelected={selectedIds.includes(contribution.id)}
+                onSelect={(checked) => onSelectOne?.(contribution.id, checked)}
               />
             ))}
             {contributions.length === 0 && (
               <TableRow>
-                <TableCell colSpan={isMySubmissionsView ? 6 : 8} className="text-center">
+                <TableCell colSpan={showCheckboxes ? (isMySubmissionsView ? 8 : 10) : (isMySubmissionsView ? 7 : 9)} className="text-center">
                   No contributions found.
                 </TableCell>
               </TableRow>

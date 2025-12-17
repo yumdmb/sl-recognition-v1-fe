@@ -74,6 +74,17 @@ export default function GestureContributionCard({
       </CardHeader>
 
       <CardContent className="space-y-3 pb-3">
+        {/* Category */}
+        {contribution.category && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground min-w-[60px]">Category:</span>
+            <Badge variant="secondary">
+              {contribution.category.icon && <span className="mr-1">{contribution.category.icon}</span>}
+              {contribution.category.name}
+            </Badge>
+          </div>
+        )}
+
         {/* Status */}
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground min-w-[60px]">Status:</span>

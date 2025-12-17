@@ -1,11 +1,11 @@
 'use client'
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { GestureContribution } from '@/types/gestureContributions';
-import { Check, X, Trash2, Eye, Copy, AlertTriangle } from 'lucide-react';
+import { GestureContribution, GestureCategory } from '@/types/gestureContributions';
+import { Check, X, Trash2, Eye, Copy, AlertTriangle, Edit2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -13,15 +13,29 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { GestureContributionService } from '@/lib/supabase/gestureContributions';
 
 interface GestureContributionRowProps {
   contribution: GestureContribution;
   userRole?: string;
-  onApprove?: (id: string) => void;
+  onApprove?: (id: string, categoryId?: number | null) => void;
   onReject?: (id: string, reason?: string) => void;
   onDelete: (id: string) => void;
+  onUpdateCategory?: (id: string, categoryId: number | null) => void;
   isMySubmissionsView?: boolean;
+  showCheckbox?: boolean;
+  isSelected?: boolean;
+  onSelect?: (checked: boolean) => void;
 }
 
 // Helper function to get status badge
@@ -43,18 +57,36 @@ export default function GestureContributionRow({
   onApprove,
   onReject,
   onDelete,
-  isMySubmissionsView = false
+  onUpdateCategory,
+  isMySubmissionsView = false,
+  showCheckbox = false,
+  isSelected = false,
+  onSelect
 }: GestureContributionRowProps) {
   const isAdmin = userRole === 'admin';
   const isPending = contribution.status === 'pending';
-  const isOwner = contribution.submitter?.id === contribution.submitted_by; // Check if current user is the owner
+  const isOwner = contribution.submitter?.id === contribution.submitted_by;
+
+  // Category state for approval dialog
+  const [categories, setCategories] = useState<GestureCategory[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(contribution.category_id || null);
+  const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
+  const [isCategoryEditOpen, setIsCategoryEditOpen] = useState(false);
+
+  // Load categories when dialog opens
+  useEffect(() => {
+    if (isApproveDialogOpen || isCategoryEditOpen) {
+      const loadCategories = async () => {
+        const { data } = await GestureContributionService.getCategories();
+        if (data) setCategories(data);
+      };
+      loadCategories();
+    }
+  }, [isApproveDialogOpen, isCategoryEditOpen]);
 
   // Users can delete their own pending or rejected submissions.
   // Admins can delete any submission.
   const canDelete = isAdmin || (isOwner && (contribution.status === 'pending' || contribution.status === 'rejected'));
-  
-  // Users can edit their own pending submissions.
-  // const canEdit = isOwner && contribution.status === 'pending';
 
   const handleRejectClick = () => {
     if (!onReject) return;
@@ -66,8 +98,30 @@ export default function GestureContributionRow({
     }
   };
 
+  const handleApproveWithCategory = () => {
+    if (!onApprove) return;
+    onApprove(contribution.id, selectedCategoryId);
+    setIsApproveDialogOpen(false);
+  };
+
+  const handleCategoryUpdate = () => {
+    if (!onUpdateCategory) return;
+    onUpdateCategory(contribution.id, selectedCategoryId);
+    setIsCategoryEditOpen(false);
+  };
+
   return (
     <TableRow>
+      {showCheckbox && (
+        <TableCell className="w-12">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={(e) => onSelect?.(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300"
+          />
+        </TableCell>
+      )}
       <TableCell className="font-medium">
         <div>
           <div className="font-semibold">{contribution.title}</div>
@@ -76,6 +130,60 @@ export default function GestureContributionRow({
       </TableCell>
       <TableCell>
         <Badge variant="outline">{contribution.language}</Badge>
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-1">
+          {contribution.category ? (
+            <Badge variant="secondary">
+              {contribution.category.icon && <span className="mr-1">{contribution.category.icon}</span>}
+              {contribution.category.name}
+            </Badge>
+          ) : (
+            <span className="text-muted-foreground text-sm">No category</span>
+          )}
+          {isAdmin && onUpdateCategory && (
+            <Dialog open={isCategoryEditOpen} onOpenChange={setIsCategoryEditOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-6 w-6" title="Edit category">
+                  <Edit2 className="h-3 w-3" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Edit Category</DialogTitle>
+                  <DialogDescription>
+                    Update the category for &quot;{contribution.title}&quot;
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Select 
+                      value={selectedCategoryId?.toString() || ''} 
+                      onValueChange={(val) => setSelectedCategoryId(val ? parseInt(val, 10) : null)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id.toString()}>
+                            {cat.icon && <span className="mr-2">{cat.icon}</span>}
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsCategoryEditOpen(false)}>Cancel</Button>
+                  <Button onClick={handleCategoryUpdate}>Save</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </TableCell>
       {!isMySubmissionsView && (
         <TableCell>
@@ -172,15 +280,53 @@ export default function GestureContributionRow({
           {/* Admin actions for pending contributions */}
           {isAdmin && isPending && onApprove && onReject && (
             <>
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => onApprove(contribution.id)}
-                className="text-green-600 hover:text-green-700"
-                title="Approve"
-              >
-                <Check className="h-4 w-4" />
-              </Button>
+              <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="text-green-600 hover:text-green-700"
+                    title="Approve"
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Approve Gesture</DialogTitle>
+                    <DialogDescription>
+                      Review and confirm the category before approving &quot;{contribution.title}&quot;
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Category {!contribution.category_id && <span className="text-amber-500">(not set by user)</span>}</Label>
+                      <Select 
+                        value={selectedCategoryId?.toString() || ''} 
+                        onValueChange={(val) => setSelectedCategoryId(val ? parseInt(val, 10) : null)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id.toString()}>
+                              {cat.icon && <span className="mr-2">{cat.icon}</span>}
+                              {cat.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsApproveDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleApproveWithCategory} className="bg-green-600 hover:bg-green-700">
+                      Approve
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
               <Button
                 size="icon"
                 variant="ghost"

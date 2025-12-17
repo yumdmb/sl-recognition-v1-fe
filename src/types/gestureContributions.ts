@@ -14,6 +14,9 @@ export interface GestureContribution {
   reviewed_at?: string;
   created_at: string;
   updated_at: string;
+  // Category support (unified with gesture dictionary)
+  category_id?: number | null;
+  source?: 'admin' | 'contribution';
   // Duplicate detection fields
   is_duplicate?: boolean;
   duplicate_of?: string;
@@ -27,6 +30,18 @@ export interface GestureContribution {
     id: string;
     name: string;
   };
+  category?: {
+    id: number;
+    name: string;
+    icon?: string;
+  };
+}
+
+export interface GestureCategory {
+  id: number;
+  name: string;
+  icon?: string | null;
+  count?: number;
 }
 
 export interface GestureContributionFilters {
@@ -34,6 +49,7 @@ export interface GestureContributionFilters {
   language?: 'ASL' | 'MSL' | 'all';
   search?: string;
   submitted_by?: string; // For filtering by user
+  category_id?: number | null; // Filter by category
 }
 
 export interface GestureContributionFormData {
@@ -41,5 +57,6 @@ export interface GestureContributionFormData {
   description: string;
   language: 'ASL' | 'MSL';
   media_type: 'image' | 'video';
+  category_id?: number | null;
   file?: File;
 }

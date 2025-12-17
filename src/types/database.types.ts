@@ -252,6 +252,7 @@ export type Database = {
       }
       gesture_contributions: {
         Row: {
+          category_id: number | null
           created_at: string
           description: string
           duplicate_of: string | null
@@ -263,6 +264,7 @@ export type Database = {
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          source: string | null
           status: string
           submitted_by: string
           thumbnail_url: string | null
@@ -270,6 +272,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category_id?: number | null
           created_at?: string
           description: string
           duplicate_of?: string | null
@@ -281,6 +284,7 @@ export type Database = {
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          source?: string | null
           status?: string
           submitted_by: string
           thumbnail_url?: string | null
@@ -288,6 +292,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category_id?: number | null
           created_at?: string
           description?: string
           duplicate_of?: string | null
@@ -299,6 +304,7 @@ export type Database = {
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          source?: string | null
           status?: string
           submitted_by?: string
           thumbnail_url?: string | null
@@ -306,6 +312,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "gesture_contributions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "gesture_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "gesture_contributions_reviewed_by_fkey"
             columns: ["reviewed_by"]

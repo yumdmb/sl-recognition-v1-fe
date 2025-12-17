@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { Search as SearchIcon, PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { toast } from "sonner";
 import {
@@ -36,25 +37,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { GestureForm } from '@/components/gesture-recognition/GestureForm';
-
-// Define database-driven types
-interface GestureCategory {
-  id: number;
-  name: string;
-  icon: string | null;
-  count?: number;
-}
-
-interface Gesture {
-  id: number;
-  name: string;
-  description: string | null;
-  media_url: string;
-  media_type: 'image' | 'video';
-  language: 'ASL' | 'MSL';
-  category_id: number | null;
-}
+import { GestureContribution, GestureCategory } from '@/types/gestureContributions';
+import { GestureContributionService } from '@/lib/supabase/gestureContributions';
+import { AdminGestureForm } from '@/components/gesture-recognition/AdminGestureForm';
 
 const GestureRecognitionSearch: React.FC = () => {
   const supabase = createClient();
@@ -63,58 +48,61 @@ const GestureRecognitionSearch: React.FC = () => {
   const isAdmin = user?.role === 'admin';
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [searchResults, setSearchResults] = useState<Gesture[]>([]);
+  const [searchResults, setSearchResults] = useState<GestureContribution[]>([]);
   const [language, setLanguage] = useState<"ASL" | "MSL">("ASL");
   const [activeTab, setActiveTab] = useState("text");
   const [categories, setCategories] = useState<GestureCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<GestureCategory | null>(null);
-  const [categoryGestures, setCategoryGestures] = useState<Gesture[]>([]);
+  const [categoryGestures, setCategoryGestures] = useState<GestureContribution[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingGesture, setEditingGesture] = useState<Gesture | null>(null);
+  const [editingGesture, setEditingGesture] = useState<GestureContribution | null>(null);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-  const [deletingGesture, setDeletingGesture] = useState<Gesture | null>(null);
+  const [deletingGesture, setDeletingGesture] = useState<GestureContribution | null>(null);
 
+
+  // Fetch categories with counts from gesture_contributions
   const fetchCategories = useCallback(async () => {
-    const { data, error } = await supabase
+    const { data: categoriesData, error } = await supabase
       .from('gesture_categories')
-      .select('id, name, icon, gestures!inner(count)');
+      .select('id, name, icon');
 
     if (error) {
       toast.error("Failed to load categories", { 
         description: error.message,
         style: { color: 'black' }
       });
-    } else {
-      // Fetch gesture counts per category filtered by language
-      const categoriesWithCounts = await Promise.all(
-        data.map(async (category) => {
-          const { count } = await supabase
-            .from('gestures')
-            .select('*', { count: 'exact', head: true })
-            .eq('category_id', category.id)
-            .eq('language', language);
-          
-          return {
-            ...category,
-            count: count || 0
-          };
-        })
-      );
-      setCategories(categoriesWithCounts);
+      return;
     }
+
+    // Fetch gesture counts per category filtered by language (from approved contributions)
+    const categoriesWithCounts = await Promise.all(
+      (categoriesData || []).map(async (category) => {
+        const { count } = await supabase
+          .from('gesture_contributions')
+          .select('*', { count: 'exact', head: true })
+          .eq('category_id', category.id)
+          .eq('language', language)
+          .eq('status', 'approved');
+        
+        return {
+          ...category,
+          count: count || 0
+        };
+      })
+    );
+    setCategories(categoriesWithCounts);
   }, [supabase, language]);
 
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories, language]);
 
+  // Search approved gestures by title
   const handleSearch = useCallback(async () => {
     if (!searchTerm.trim()) {
       toast.error("Search term required", { 
         description: "Please enter a word to search for",
-        style: {
-          color: 'black'
-        }
+        style: { color: 'black' }
       });
       return;
     }
@@ -122,25 +110,26 @@ const GestureRecognitionSearch: React.FC = () => {
     setSearchResults([]);
     try {
       const { data, error } = await supabase
-        .from('gestures')
-        .select('*')
-        .ilike('name', `%${searchTerm}%`)
-        .eq('language', language);
+        .from('gesture_contributions')
+        .select(`
+          *,
+          category:gesture_categories!category_id(id, name, icon)
+        `)
+        .ilike('title', `%${searchTerm}%`)
+        .eq('language', language)
+        .eq('status', 'approved');
 
       if (error) throw error;
 
       setSearchResults(data || []);
       
-      // Show appropriate message based on results
       if (data && data.length > 0) {
         toast.success(`Found ${data.length} gesture${data.length > 1 ? 's' : ''} for "${searchTerm}"`, {
           style: { color: 'black' }
         });
       } else {
         toast.info(`No record for "${searchTerm}"`, {
-          style: {
-            color: 'black'
-          }
+          style: { color: 'black' }
         });
       }
     } catch (error) {
@@ -154,21 +143,26 @@ const GestureRecognitionSearch: React.FC = () => {
     }
   }, [supabase, searchTerm, language]);
 
+  // Load gestures by category
   const handleCategorySelect = useCallback(async (category: GestureCategory) => {
     setSelectedCategory(category);
     setIsLoading(true);
     setCategoryGestures([]);
     try {
       const { data, error } = await supabase
-        .from('gestures')
-        .select('*')
+        .from('gesture_contributions')
+        .select(`
+          *,
+          category:gesture_categories!category_id(id, name, icon)
+        `)
         .eq('category_id', category.id)
-        .eq('language', language);
+        .eq('language', language)
+        .eq('status', 'approved');
 
       if (error) throw error;
 
       setCategoryGestures(data || []);
-      setActiveTab('category'); // Switch tab to show results
+      setActiveTab('category');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       toast.error(`Failed to load gestures for ${category.name}`, { 
@@ -183,7 +177,6 @@ const GestureRecognitionSearch: React.FC = () => {
   const handleFormSuccess = () => {
     setIsFormOpen(false);
     setEditingGesture(null);
-    // Refresh data
     fetchCategories();
     if (activeTab === 'text' && searchTerm) {
       handleSearch();
@@ -192,72 +185,62 @@ const GestureRecognitionSearch: React.FC = () => {
     }
   };
 
-  // Silent background refresh - updates data without user notification
+  // Silent background refresh
   const silentRefresh = useCallback(async () => {
-    // Silently refresh categories
+    // Refresh categories
     const { data: categoriesData } = await supabase
       .from('gesture_categories')
-      .select('id, name, icon, gestures!inner(count)');
+      .select('id, name, icon');
 
     if (categoriesData) {
       const categoriesWithCounts = await Promise.all(
         categoriesData.map(async (category) => {
           const { count } = await supabase
-            .from('gestures')
+            .from('gesture_contributions')
             .select('*', { count: 'exact', head: true })
             .eq('category_id', category.id)
-            .eq('language', language);
+            .eq('language', language)
+            .eq('status', 'approved');
           
-          return {
-            ...category,
-            count: count || 0
-          };
+          return { ...category, count: count || 0 };
         })
       );
       setCategories(categoriesWithCounts);
     }
 
-    // Silently refresh current view if applicable
+    // Refresh current view
     if (activeTab === 'text' && searchTerm.trim()) {
       const { data } = await supabase
-        .from('gestures')
-        .select('*')
-        .ilike('name', `%${searchTerm}%`)
-        .eq('language', language);
+        .from('gesture_contributions')
+        .select(`*, category:gesture_categories!category_id(id, name, icon)`)
+        .ilike('title', `%${searchTerm}%`)
+        .eq('language', language)
+        .eq('status', 'approved');
       
-      if (data) {
-        setSearchResults(data);
-      }
+      if (data) setSearchResults(data);
     } else if (activeTab === 'category' && selectedCategory) {
       const { data } = await supabase
-        .from('gestures')
-        .select('*')
+        .from('gesture_contributions')
+        .select(`*, category:gesture_categories!category_id(id, name, icon)`)
         .eq('category_id', selectedCategory.id)
-        .eq('language', language);
+        .eq('language', language)
+        .eq('status', 'approved');
       
-      if (data) {
-        setCategoryGestures(data);
-      }
+      if (data) setCategoryGestures(data);
     }
   }, [supabase, activeTab, searchTerm, selectedCategory, language]);
 
-  // Polling for automatic updates (refreshes every 5 seconds silently)
   useEffect(() => {
-    const interval = setInterval(() => {
-      silentRefresh();
-    }, 5000); // Poll every 5 seconds
-
-    return () => {
-      clearInterval(interval);
-    };
+    const interval = setInterval(silentRefresh, 5000);
+    return () => clearInterval(interval);
   }, [silentRefresh]);
 
-  const openEditForm = (gesture: Gesture) => {
+  const openEditForm = (gesture: GestureContribution) => {
     setEditingGesture(gesture);
     setIsFormOpen(true);
   };
 
-  const openDeleteAlert = (gesture: Gesture) => {
+  const openDeleteAlert = (gesture: GestureContribution) => {
     setDeletingGesture(gesture);
     setIsDeleteAlertOpen(true);
   };
@@ -266,24 +249,11 @@ const GestureRecognitionSearch: React.FC = () => {
     if (!deletingGesture) return;
 
     try {
-      // Delete from gestures table
-      const { error: dbError } = await supabase
-        .from('gestures')
-        .delete()
-        .eq('id', deletingGesture.id);
+      const { error } = await GestureContributionService.deleteContribution(deletingGesture.id);
+      if (error) throw error;
 
-      if (dbError) throw dbError;
-
-      // Delete from storage
-      const filePath = deletingGesture.media_url.split('/').pop();
-      if (filePath) {
-        await supabase.storage.from('gestures').remove([`public/${filePath}`]);
-      }
-
-      toast.success("Gesture deleted successfully!", {
-        style: { color: 'black' }
-      });
-      handleFormSuccess(); // Re-use success logic to refresh data
+      toast.success("Gesture deleted successfully!", { style: { color: 'black' } });
+      handleFormSuccess();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       toast.error("Failed to delete gesture", { 
@@ -296,13 +266,14 @@ const GestureRecognitionSearch: React.FC = () => {
     }
   };
 
-  const renderGestureCard = (gesture: Gesture) => (
+
+  const renderGestureCard = (gesture: GestureContribution) => (
     <Card key={gesture.id} className="overflow-hidden">
       <CardContent className="p-0 relative h-48">
         {gesture.media_type === 'image' ? (
           <Image 
             src={gesture.media_url} 
-            alt={gesture.name} 
+            alt={gesture.title} 
             fill
             className="object-cover" 
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -313,15 +284,25 @@ const GestureRecognitionSearch: React.FC = () => {
       </CardContent>
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
-          {gesture.name}
+          <span>{gesture.title}</span>
           {isAdmin && (
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => openEditForm(gesture)}><Edit className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="icon" onClick={() => openDeleteAlert(gesture)}><Trash2 className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" onClick={() => openEditForm(gesture)}>
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => openDeleteAlert(gesture)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
           )}
         </CardTitle>
         <CardDescription>{gesture.description || 'No description available.'}</CardDescription>
+        {gesture.category && (
+          <Badge variant="secondary" className="w-fit mt-2">
+            {gesture.category.icon && <span className="mr-1">{gesture.category.icon}</span>}
+            {gesture.category.name}
+          </Badge>
+        )}
       </CardHeader>
     </Card>
   );
@@ -329,7 +310,7 @@ const GestureRecognitionSearch: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Sign Language Gestures</h1>
+        <h1 className="text-3xl font-bold">Sign Language Dictionary</h1>
         {isAdmin && (
           <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogTrigger asChild>
@@ -337,14 +318,14 @@ const GestureRecognitionSearch: React.FC = () => {
                 <PlusCircle className="mr-2 h-4 w-4" /> Add New Gesture
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>{editingGesture ? 'Edit' : 'Add'} Gesture</DialogTitle>
                 <DialogDescription>
-                  {editingGesture ? 'Update the details of the gesture.' : 'Fill out the form to add a new gesture to the database.'}
+                  {editingGesture ? 'Update the details of the gesture.' : 'Fill out the form to add a new gesture to the dictionary.'}
                 </DialogDescription>
               </DialogHeader>
-              <GestureForm
+              <AdminGestureForm
                 gesture={editingGesture}
                 onSuccess={handleFormSuccess}
                 onCancel={() => setIsFormOpen(false)}
@@ -468,7 +449,7 @@ const GestureRecognitionSearch: React.FC = () => {
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the gesture
-              &quot;{deletingGesture?.name}&quot; and its media file.
+              &quot;{deletingGesture?.title}&quot; and its media file.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

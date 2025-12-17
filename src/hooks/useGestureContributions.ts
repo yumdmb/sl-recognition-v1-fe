@@ -59,9 +59,9 @@ export function useGestureContributions(initialFilters?: GestureContributionFilt
   }, [loadContributions]);
 
 
-  const handleApprove = async (contributionId: string) => {
+  const handleApprove = async (contributionId: string, categoryId?: number | null) => {
     try {
-      const { error: approveError } = await GestureContributionService.approveContribution(contributionId);
+      const { error: approveError } = await GestureContributionService.approveContribution(contributionId, categoryId);
       
       if (approveError) {
         const errorMessage = approveError instanceof Error ? approveError.message : "Please try again.";
@@ -74,16 +74,64 @@ export function useGestureContributions(initialFilters?: GestureContributionFilt
       setContributions(prev => 
         prev.map(contribution => 
           contribution.id === contributionId 
-            ? { ...contribution, status: 'approved', reviewed_at: new Date().toISOString() } 
+            ? { 
+                ...contribution, 
+                status: 'approved', 
+                reviewed_at: new Date().toISOString(),
+                category_id: categoryId !== undefined ? categoryId : contribution.category_id
+              } 
             : contribution
         )
       );
       
       toast.success("Gesture Approved", {
-        description: "The gesture has been approved and published."
+        description: "The gesture has been approved and published to the dictionary."
       });
     } catch (err: unknown) {
       toast.error("An error occurred while approving the gesture", { description: err instanceof Error ? err.message : 'Unknown error' });
+    }
+  };
+
+  const handleUpdateCategory = async (contributionId: string, categoryId: number | null) => {
+    try {
+      const { error: updateError } = await GestureContributionService.updateCategory(contributionId, categoryId);
+      
+      if (updateError) {
+        const errorMessage = updateError instanceof Error ? updateError.message : "Please try again.";
+        toast.error("Failed to update category", {
+          description: errorMessage
+        });
+        return;
+      }
+
+      // Fetch the category details to update the state with full object
+      let categoryObject = null;
+      if (categoryId) {
+        const { data: categories } = await GestureContributionService.getCategories();
+        categoryObject = categories?.find(cat => cat.id === categoryId) || null;
+      }
+      
+      setContributions(prev => 
+        prev.map(contribution => 
+          contribution.id === contributionId 
+            ? { 
+                ...contribution, 
+                category_id: categoryId,
+                category: categoryObject ? {
+                  id: categoryObject.id,
+                  name: categoryObject.name,
+                  icon: categoryObject.icon || undefined
+                } : undefined
+              } 
+            : contribution
+        )
+      );
+      
+      toast.success("Category Updated", {
+        description: "The gesture category has been updated."
+      });
+    } catch (err: unknown) {
+      toast.error("An error occurred while updating the category", { description: err instanceof Error ? err.message : 'Unknown error' });
     }
   };
 
@@ -156,6 +204,7 @@ export function useGestureContributions(initialFilters?: GestureContributionFilt
     handleApprove,
     handleReject,
     handleDelete,
+    handleUpdateCategory,
     refreshContributions,
     filters,
     updateFilters,

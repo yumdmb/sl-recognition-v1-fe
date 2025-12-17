@@ -22,6 +22,9 @@ export default function GestureSubmit() {
     setLanguage,
     mediaType,
     setMediaType,
+    categoryId,
+    setCategoryId,
+    categories,
     
     // Media state
     previewUrl,
@@ -59,6 +62,9 @@ export default function GestureSubmit() {
               setLanguage={setLanguage}
               mediaType={mediaType}
               setMediaType={setMediaType}
+              categoryId={categoryId}
+              setCategoryId={setCategoryId}
+              categories={categories}
             />
 
             <div className="space-y-4">
