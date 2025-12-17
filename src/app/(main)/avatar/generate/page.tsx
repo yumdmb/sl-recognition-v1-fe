@@ -24,7 +24,7 @@ const AvatarGenerationPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [recorded3DAvatar, setRecorded3DAvatar] =
     useState<Avatar3DRecording | null>(null);
-  const [showCameraPreview, setShowCameraPreview] = useState(true);
+  const [showCameraPreview, setShowCameraPreview] = useState(false);
   const router = useRouter();
   const { currentUser, isAuthenticated } = useAuth();
 
@@ -139,8 +139,8 @@ const AvatarGenerationPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex flex-col gap-6">
+    <div className="container mx-auto p-3 md:p-6">
+      <div className="flex flex-col gap-4 md:gap-6">
         <AvatarPageHeader userRole={currentUser?.role} />
 
         {/* Hidden video element - always rendered for camera stream */}
@@ -154,8 +154,8 @@ const AvatarGenerationPage = () => {
 
         {/* Camera Start/Stop Button */}
         {!isStreaming ? (
-          <div className="flex justify-center">
-            <Button onClick={startCamera} size="lg" className="gap-2">
+          <div className="flex justify-center py-8">
+            <Button onClick={startCamera} size="lg" className="gap-2 w-full md:w-auto">
               <Camera className="h-5 w-5" />
               Start Camera
             </Button>
@@ -170,9 +170,9 @@ const AvatarGenerationPage = () => {
               onCapturePose={handleCapturePose}
             />
 
-            {/* Floating Camera Preview (toggleable) - top right corner */}
+            {/* Floating Camera Preview (toggleable) - responsive positioning */}
             {showCameraPreview && videoRef.current && (
-              <div className="absolute top-16 right-4 w-48 rounded-lg overflow-hidden shadow-lg border-2 border-primary/50 bg-black z-10">
+              <div className="absolute top-4 right-2 md:top-16 md:right-4 w-32 md:w-48 rounded-lg overflow-hidden shadow-lg border-2 border-primary/50 bg-black z-10">
                 <video
                   autoPlay
                   playsInline
@@ -188,25 +188,23 @@ const AvatarGenerationPage = () => {
               </div>
             )}
 
-            {/* Camera Controls Bar */}
-            <div className="flex items-center justify-between mt-4 p-3 bg-muted rounded-lg">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Switch
-                    id="camera-preview"
-                    checked={showCameraPreview}
-                    onCheckedChange={setShowCameraPreview}
-                  />
-                  <Label htmlFor="camera-preview" className="text-sm">
-                    Show Camera Preview
-                  </Label>
-                </div>
+            {/* Camera Controls Bar - responsive layout */}
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between mt-4 p-3 bg-muted rounded-lg gap-3 md:gap-0">
+              <div className="flex items-center gap-2 justify-center md:justify-start">
+                <Switch
+                  id="camera-preview"
+                  checked={showCameraPreview}
+                  onCheckedChange={setShowCameraPreview}
+                />
+                <Label htmlFor="camera-preview" className="text-sm">
+                  Show Camera Preview
+                </Label>
               </div>
               <Button
                 onClick={stopCamera}
                 variant="destructive"
                 size="sm"
-                className="gap-2"
+                className="gap-2 w-full md:w-auto"
               >
                 <CameraOff className="h-4 w-4" />
                 Stop Camera

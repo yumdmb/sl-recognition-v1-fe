@@ -33,25 +33,26 @@ export default function SaveForm({
 }: SaveFormProps) {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Save Gesture</CardTitle>
-        <CardDescription>Provide details about your sign language gesture</CardDescription>
+      <CardHeader className="px-3 md:px-6">
+        <CardTitle className="text-lg md:text-xl">Save Gesture</CardTitle>
+        <CardDescription className="text-xs md:text-sm">Provide details about your sign language gesture</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-3 md:px-6">
         <div className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name" className="text-sm">Name</Label>
             <Input
               id="name"
               value={signName}
               onChange={(e) => setSignName(e.target.value)}
               placeholder="Enter gesture name"
+              className="h-10"
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="language">Language</Label>
+            <Label htmlFor="language" className="text-sm">Language</Label>
             <Select value={language} onValueChange={(value: "ASL" | "MSL") => setLanguage(value)}>
-              <SelectTrigger>
+              <SelectTrigger className="h-10">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
               <SelectContent>
@@ -61,19 +62,20 @@ export default function SaveForm({
             </Select>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="description">Description (Optional)</Label>
+            <Label htmlFor="description" className="text-sm">Description (Optional)</Label>
             <Textarea
               id="description"
               value={signDescription}
               onChange={(e) => setSignDescription(e.target.value)}
               placeholder="Enter gesture description"
+              className="min-h-20 md:min-h-24"
             />
           </div>
-          <div className="flex justify-end gap-4">
-            <Button onClick={onCancel} variant="outline">
+          <div className="flex flex-col md:flex-row justify-end gap-2 md:gap-4 pt-2">
+            <Button onClick={onCancel} variant="outline" className="w-full md:w-auto order-2 md:order-1">
               Cancel
             </Button>
-            <Button onClick={onSave} disabled={isLoading}>
+            <Button onClick={onSave} disabled={isLoading} className="w-full md:w-auto order-1 md:order-2">
               {isLoading ? "Saving..." : "Save"}
             </Button>
           </div>

@@ -106,64 +106,66 @@ export const HandGestureDetector: React.FC<HandGestureDetectorProps> = ({
 
   return (
     <Card className="w-full">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
+      <CardHeader className="pb-2 px-3 md:px-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <div>
-            <CardTitle>3D Avatar Generator</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-lg md:text-xl">3D Avatar Generator</CardTitle>
+            <CardDescription className="text-xs md:text-sm">
               Real-time hand tracking and 3D visualization
             </CardDescription>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {isLoading && (
-              <Badge variant="secondary" className="animate-pulse">
+              <Badge variant="secondary" className="animate-pulse text-xs">
                 Loading model...
               </Badge>
             )}
             {isRecording && (
-              <Badge variant="destructive" className="animate-pulse">
+              <Badge variant="destructive" className="animate-pulse text-xs">
                 REC {countdown !== null ? `${countdown}s` : `${(elapsedTime / 1000).toFixed(1)}s`}
               </Badge>
             )}
             {!isLoading && isStreaming && !isRecording && (
-              <Badge variant={handsDetected > 0 ? "default" : "outline"}>
+              <Badge variant={handsDetected > 0 ? "default" : "outline"} className="text-xs">
                 {handsDetected}/2 hands detected
               </Badge>
             )}
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        {/* Main 3D Visualization - Large */}
-        <div className="aspect-[16/9] rounded-lg overflow-hidden bg-gradient-to-b from-gray-800 to-gray-900">
-          {isStreaming ? (
-            <Hand3D multiHandLandmarks={multiHandLandmarks} enableControls={false} />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <p className="text-muted-foreground">
-                Start camera to see 3D hand model
-              </p>
-            </div>
-          )}
+      <CardContent className="px-3 md:px-6">
+        {/* Main 3D Visualization - Responsive aspect ratio with max width */}
+        <div className="w-full max-w-5xl mx-auto">
+          <div className="aspect-[4/3] md:aspect-[16/9] rounded-lg overflow-hidden bg-gradient-to-b from-gray-800 to-gray-900">
+            {isStreaming ? (
+              <Hand3D multiHandLandmarks={multiHandLandmarks} enableControls={false} />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center px-4">
+                <p className="text-muted-foreground text-center text-sm md:text-base">
+                  Start camera to see 3D hand model
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Recording controls */}
-        <div className="flex items-center justify-between mt-4 gap-2">
-          <div className="flex items-center gap-2">
+        {/* Recording controls - responsive layout */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mt-4 gap-3">
+          <div className="flex items-center justify-center md:justify-start gap-2">
             {isStreaming && handsDetected > 0 && !isRecording && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs md:text-sm text-muted-foreground">
                 Detected: {getHandLabels()}
               </p>
             )}
             {isRecording && (
-              <p className="text-sm text-destructive font-medium">
+              <p className="text-xs md:text-sm text-destructive font-medium">
                 Recording in progress...
               </p>
             )}
           </div>
 
           {isStreaming && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
               {!isRecording ? (
                 <>
                   {/* Capture single pose button */}
@@ -171,14 +173,15 @@ export const HandGestureDetector: React.FC<HandGestureDetectorProps> = ({
                     onClick={handleCapturePose}
                     disabled={handsDetected === 0}
                     variant="outline"
-                    className="gap-2"
+                    className="gap-2 w-full md:w-auto"
+                    size="sm"
                   >
                     <Camera className="h-4 w-4" />
-                    Capture Pose
+                    <span className="md:inline">Capture Pose</span>
                   </Button>
 
                   {/* Recording controls */}
-                  <div className="flex items-center gap-2 border-l pl-2 ml-2">
+                  <div className="flex items-center gap-2 w-full md:w-auto md:border-l md:pl-2 md:ml-2">
                     <Select
                       value={String(selectedDuration)}
                       onValueChange={(v) =>
@@ -187,7 +190,7 @@ export const HandGestureDetector: React.FC<HandGestureDetectorProps> = ({
                         )
                       }
                     >
-                      <SelectTrigger className="w-28">
+                      <SelectTrigger className="w-full md:w-28 h-9">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -200,7 +203,8 @@ export const HandGestureDetector: React.FC<HandGestureDetectorProps> = ({
                     <Button
                       onClick={handleStartRecording}
                       disabled={handsDetected === 0}
-                      className="gap-2"
+                      className="gap-2 flex-1 md:flex-none"
+                      size="sm"
                     >
                       <Video className="h-4 w-4" />
                       Record
@@ -211,7 +215,7 @@ export const HandGestureDetector: React.FC<HandGestureDetectorProps> = ({
                 <Button
                   onClick={stopRecording}
                   variant="destructive"
-                  className="gap-2"
+                  className="gap-2 w-full md:w-auto"
                   size="lg"
                 >
                   <Square className="h-4 w-4" />
