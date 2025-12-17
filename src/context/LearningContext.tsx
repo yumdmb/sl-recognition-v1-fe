@@ -69,7 +69,18 @@ interface LearningContextProps {
     proficiency_level: 'Beginner' | 'Intermediate' | 'Advanced';
     attemptId: string;
   }>;
-  getTestResults: (attemptId: string) => Promise<any>;
+  getTestResults: (attemptId: string) => Promise<{
+    attempt: { score: number; test_id: string };
+    proficiencyLevel: string;
+    performanceAnalysis: {
+      categoryPerformance: Array<{ category: string; correct: number; total: number; percentage: number }>;
+      strengths: string[];
+      weaknesses: string[];
+      insights: string[];
+    };
+    knowledgeGaps: Array<{ questionId: string; questionText: string; userAnswer: string; correctAnswer: string }>;
+    recommendations: Array<{ type: string; title: string; description: string; reason: string; recommended_for_role?: 'deaf' | 'non-deaf' | 'all' }>;
+  }>;
   
   // Learning Path Methods
   generateLearningPath: () => Promise<void>;
@@ -78,7 +89,21 @@ interface LearningContextProps {
   clearNewRecommendationsFlag: () => void;
   
   // Test History
-  getTestHistory: () => Promise<any[]>;
+  getTestHistory: () => Promise<Array<{
+    id: string;
+    user_id: string;
+    test_id: string;
+    score: number;
+    proficiency_level: string;
+    created_at: string;
+    completed_at: string | null;
+    test?: {
+      id: string;
+      title: string;
+      description: string | null;
+      language: string;
+    };
+  }>>;
 }
 
 const LearningContext = createContext<LearningContextProps | null>(null);
@@ -101,17 +126,18 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [hasNewRecommendations, setHasNewRecommendations] = useState(false);
   const [lastUpdateTrigger, setLastUpdateTrigger] = useState<string | null>(null);
   // Helper function to handle errors
-  const handleError = (error: any, operation: string) => {
+  const handleError = (error: unknown, operation: string) => {
     console.error(`Error in ${operation}:`, error);
     
     // Log more detailed error information
     if (error && typeof error === 'object') {
+      const err = error as { message?: string; code?: string; hint?: string; details?: string; stack?: string };
       console.error('Detailed error info:', {
-        message: error.message,
-        code: error.code,
-        hint: error.hint,
-        details: error.details,
-        stack: error.stack
+        message: err.message,
+        code: err.code,
+        hint: err.hint,
+        details: err.details,
+        stack: err.stack
       });
     }
     
@@ -119,18 +145,21 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     let errorMessage = 'An unexpected error occurred';
     if (error instanceof Error) {
       errorMessage = error.message;
-    } else if (error?.message) {
-      errorMessage = error.message;
-    } else if (error?.code) {
-      switch (error.code) {
-        case 'JWT_EXPIRED':
-          errorMessage = 'Your session has expired. Please sign in again.';
-          break;
-        case 'PGRST116':
-          errorMessage = 'Access denied. Please check your permissions.';
-          break;
-        default:
-          errorMessage = `Database error: ${error.code}`;
+    } else if (error && typeof error === 'object') {
+      const err = error as { message?: string; code?: string };
+      if (err.message) {
+        errorMessage = err.message;
+      } else if (err.code) {
+        switch (err.code) {
+          case 'JWT_EXPIRED':
+            errorMessage = 'Your session has expired. Please sign in again.';
+            break;
+          case 'PGRST116':
+            errorMessage = 'Access denied. Please check your permissions.';
+            break;
+          default:
+            errorMessage = `Database error: ${err.code}`;
+        }
       }
     }
     
@@ -254,6 +283,7 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       }
 
       // Exclude properties that should not be sent on create
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, created_at, updated_at, ...insertData } = material;
 
       const newMaterialData = {
@@ -489,9 +519,10 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       if (!testAttempt) throw new Error('No active test attempt');
       
       await ProficiencyTestService.submitAnswer(testAttempt.id, questionId, choiceId);
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Retry logic with exponential backoff for network errors
-      if (retryCount < 3 && (error?.message?.includes('network') || error?.message?.includes('fetch'))) {
+      const errorMessage = error instanceof Error ? error.message : '';
+      if (retryCount < 3 && (errorMessage?.includes('network') || errorMessage?.includes('fetch'))) {
         const backoffDelay = Math.pow(2, retryCount) * 500; // 500ms, 1s, 2s
         await new Promise(resolve => setTimeout(resolve, backoffDelay));
         return submitAnswer(questionId, choiceId, retryCount + 1);
@@ -535,9 +566,10 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
         ...result,
         attemptId
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Retry logic with exponential backoff for network errors
-      if (retryCount < 3 && (error?.message?.includes('network') || error?.message?.includes('fetch'))) {
+      const errorMessage = error instanceof Error ? error.message : '';
+      if (retryCount < 3 && (errorMessage?.includes('network') || errorMessage?.includes('fetch'))) {
         const backoffDelay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
         await new Promise(resolve => setTimeout(resolve, backoffDelay));
         return submitTest(retryCount + 1);
@@ -604,8 +636,8 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
         // Fallback to default recommendations based on user's proficiency level
         if (currentUser.proficiency_level) {
           const defaultRecommendations = await getDefaultRecommendations(
-            currentUser.proficiency_level,
-            currentUser.role || 'non-deaf'
+            currentUser.proficiency_level
+            // currentUser.role || 'non-deaf'
           );
           setLearningPath(defaultRecommendations);
         } else {
@@ -622,21 +654,21 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       
       // Filter out null/undefined items
       const validRecommendations = results.recommendations.filter(
-        (rec: any) => rec && rec.id && rec.title
+        (rec): rec is LearningRecommendation => Boolean(rec && rec.id && rec.title)
       );
       
       setLearningPath(validRecommendations);
       setProficiencyLevel(results.proficiencyLevel);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Learning path generation error:', error);
       
       // Fallback to default recommendations
       try {
         if (currentUser && currentUser.proficiency_level) {
           const defaultRecommendations = await getDefaultRecommendations(
-            currentUser.proficiency_level,
-            currentUser.role || 'non-deaf'
+            currentUser.proficiency_level
+            // currentUser.role || 'non-deaf'
           );
           setLearningPath(defaultRecommendations);
           
@@ -671,7 +703,7 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
   // Helper function to get default recommendations
   const getDefaultRecommendations = async (
     proficiencyLevel: string,
-    userRole: string
+    // userRole: string
   ): Promise<LearningRecommendation[]> => {
     const { createBrowserClient } = await import('@supabase/ssr');
     const supabase = createBrowserClient<Database>(
@@ -788,8 +820,8 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
         // Fallback to default recommendations
         if (currentUser.proficiency_level) {
           const defaultRecommendations = await getDefaultRecommendations(
-            currentUser.proficiency_level,
-            currentUser.role || 'non-deaf'
+            currentUser.proficiency_level
+            // currentUser.role || 'non-deaf'
           );
           setLearningPath(defaultRecommendations);
         } else {
@@ -807,7 +839,7 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       
       // Filter out null/undefined items
       const validRecommendations = results.recommendations.filter(
-        (rec: any) => rec && rec.id && rec.title
+        (rec): rec is LearningRecommendation => Boolean(rec && rec.id && rec.title)
       );
       
       setLearningPath(validRecommendations);
@@ -840,15 +872,15 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       }
       
       setLastUpdateTrigger(triggerMessage);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Learning path update error:', error);
       
       // Fallback to default recommendations
       try {
         if (currentUser && currentUser.proficiency_level) {
           const defaultRecommendations = await getDefaultRecommendations(
-            currentUser.proficiency_level,
-            currentUser.role || 'non-deaf'
+            currentUser.proficiency_level
+            // currentUser.role || 'non-deaf'
           );
           setLearningPath(defaultRecommendations);
           

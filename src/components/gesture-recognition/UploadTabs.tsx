@@ -1,10 +1,10 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Camera } from 'lucide-react';
 import { FileUploadArea } from './FileUploadArea';
-import { CameraCapture } from './CameraCapture';
+import GestureCameraCapture from '@/components/gesture/GestureCameraCapture';
 
 interface UploadTabsProps {
   activeTab: string;
@@ -23,6 +23,8 @@ export const UploadTabs: React.FC<UploadTabsProps> = ({
   onRemoveFile,
   onPhotoCapture
 }) => {
+  const [isRecording, setIsRecording] = useState(false);
+  
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="w-full mb-4">
       <TabsList className="grid w-full grid-cols-2">
@@ -43,9 +45,11 @@ export const UploadTabs: React.FC<UploadTabsProps> = ({
       </TabsContent>
       
       <TabsContent value="camera">
-        <CameraCapture
-          isActive={activeTab === "camera"}
-          onPhotoCapture={onPhotoCapture}
+        <GestureCameraCapture
+          mediaType="image"
+          isRecording={isRecording}
+          onMediaCaptured={onPhotoCapture}
+          onRecordingStateChange={setIsRecording}
         />
       </TabsContent>
     </Tabs>

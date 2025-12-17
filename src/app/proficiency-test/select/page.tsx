@@ -6,6 +6,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 
+// This page uses cookies() via Supabase auth, so it must be dynamically rendered
+export const dynamic = 'force-dynamic';
+
 // Loading component for Suspense fallback
 function TestSelectionLoading() {
   return (

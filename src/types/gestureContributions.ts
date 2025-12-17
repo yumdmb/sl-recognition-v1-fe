@@ -14,6 +14,9 @@ export interface GestureContribution {
   reviewed_at?: string;
   created_at: string;
   updated_at: string;
+  // Duplicate detection fields
+  is_duplicate?: boolean;
+  duplicate_of?: string;
   // Populated from joins
   submitter?: {
     id: string;

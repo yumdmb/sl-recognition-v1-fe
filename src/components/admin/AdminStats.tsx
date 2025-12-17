@@ -19,7 +19,7 @@ export const AdminStats: React.FC<AdminStatsProps> = ({
     <Card>
       <CardContent className="p-6">
         <h3 className="text-lg font-medium mb-4">User Statistics</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <div className="flex items-center space-x-4">
             <div className="p-3 rounded-full bg-blue-100 text-blue-700">
               <Users className="h-6 w-6" />

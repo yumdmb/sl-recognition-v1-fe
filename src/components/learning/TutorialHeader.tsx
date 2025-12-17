@@ -6,14 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Plus } from 'lucide-react';
 
 interface TutorialHeaderProps {
-  activeTab: string;
+  // activeTab: string;
   onTabChange: (value: string) => void;
   isAdmin: boolean;
   onAddTutorial: () => void;
 }
 
 const TutorialHeader: React.FC<TutorialHeaderProps> = ({
-  activeTab,
+  // activeTab,
   onTabChange,
   isAdmin,
   onAddTutorial

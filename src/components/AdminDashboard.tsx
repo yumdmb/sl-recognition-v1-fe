@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { User } from '@/context/AuthContext';
 import { createClient } from '@/utils/supabase/client';
 import { AdminStats } from '@/components/admin/AdminStats';
 import { AdminQuickAccessPanel } from '@/components/admin/AdminQuickAccessPanel';
@@ -60,13 +59,13 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <motion.div
-      className="space-y-6"
+      className="space-y-4 md:space-y-6"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
       <motion.h2
-        className="text-3xl font-bold"
+        className="text-2xl md:text-3xl font-bold"
         variants={itemVariants}
       >
         Admin Dashboard

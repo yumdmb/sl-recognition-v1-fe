@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link';
+// import Link from 'next/link';
 import { MessageCircle, Building, Award } from "lucide-react";
 import { useRef, useState } from 'react';
 import Navigation from "@/components/landing/Navigation";

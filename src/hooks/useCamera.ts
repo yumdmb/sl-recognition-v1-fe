@@ -31,19 +31,41 @@ export const useCamera = () => {
         setIsStreaming(true);
         
         try {
-          const mediaRecorder = new MediaRecorder(stream, {
-            mimeType: 'video/webm;codecs=vp9,opus'
-          });
+          // Try different codecs in order of preference
+          const mimeTypes = [
+            "video/webm;codecs=vp9,opus",
+            "video/webm;codecs=vp8,opus",
+            "video/webm;codecs=vp9",
+            "video/webm;codecs=vp8",
+            "video/webm",
+            "video/mp4",
+          ];
+
+          let selectedMimeType = "";
+          for (const mimeType of mimeTypes) {
+            if (MediaRecorder.isTypeSupported(mimeType)) {
+              selectedMimeType = mimeType;
+              break;
+            }
+          }
+
+          const recorderOptions: MediaRecorderOptions = selectedMimeType
+            ? { mimeType: selectedMimeType }
+            : {};
+
+          const mediaRecorder = new MediaRecorder(stream, recorderOptions);
           mediaRecorderRef.current = mediaRecorder;
-          
+
           mediaRecorder.ondataavailable = (event) => {
             if (event.data.size > 0) {
               chunksRef.current.push(event.data);
             }
           };
-          
+
           mediaRecorder.onstop = () => {
-            const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+            const blob = new Blob(chunksRef.current, {
+              type: selectedMimeType || "video/webm",
+            });
             const videoUrl = URL.createObjectURL(blob);
             setRecordedVideo(videoUrl);
             chunksRef.current = [];
@@ -52,13 +74,15 @@ export const useCamera = () => {
           mediaRecorder.onerror = (event) => {
             console.error("MediaRecorder error:", event);
             toast.error("Recording Error", {
-              description: "An error occurred while recording. Please try again."
+              description:
+                "An error occurred while recording. Please try again.",
             });
           };
         } catch (error) {
           console.error("MediaRecorder initialization error:", error);
           toast.error("Recording Setup Failed", {
-            description: "Your browser may not support video recording. Try using a different browser."
+            description:
+              "Your browser may not support video recording. Try using a different browser.",
           });
         }
       }

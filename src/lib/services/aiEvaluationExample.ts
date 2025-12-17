@@ -9,6 +9,7 @@ import {
   analyzeCategoryPerformance,
   identifyKnowledgeGaps,
   generateInsights,
+  PerformanceAnalysis,
 } from './evaluationService';
 import {
   generateRecommendations,
@@ -90,7 +91,7 @@ export const getKnowledgeGapsOnly = async (attemptId: string) => {
 export const getCustomRecommendations = async (
   userId: string,
   proficiencyLevel: 'Beginner' | 'Intermediate' | 'Advanced',
-  performanceAnalysis: any
+  performanceAnalysis: PerformanceAnalysis
 ) => {
   return await generateRecommendations(userId, proficiencyLevel, performanceAnalysis);
 };

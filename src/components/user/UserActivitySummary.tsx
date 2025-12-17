@@ -3,11 +3,10 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 
-interface UserActivitySummaryProps {
-  userRole: 'non-deaf' | 'deaf';
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface UserActivitySummaryProps {}
 
-const UserActivitySummary: React.FC<UserActivitySummaryProps> = ({ userRole }) => (
+const UserActivitySummary: React.FC<UserActivitySummaryProps> = () => (
   <Card>
     <CardContent className="p-6">
       <h3 className="text-lg font-medium mb-4">Recent Activity</h3>

@@ -1,5 +1,4 @@
 import { createClient } from '@/utils/supabase/client';
-import { Database } from '@/types/database';
 import { PerformanceAnalysis } from './evaluationService';
 
 export interface LearningRecommendation {
@@ -54,7 +53,7 @@ export const generateRecommendations = async (
   // Fallback to generic recommendations for admin or unknown roles
   const [tutorials, quizzes, materials] = await Promise.all([
     fetchTutorials(proficiencyLevel),
-    fetchQuizzes(proficiencyLevel),
+    fetchQuizzes(),
     fetchMaterials(proficiencyLevel),
   ]);
 
@@ -135,7 +134,7 @@ const fetchTutorials = async (level: string) => {
  * @param level - The proficiency level to filter by.
  * @returns Array of quiz sets.
  */
-const fetchQuizzes = async (level: string) => {
+const fetchQuizzes = async (/* level: string */) => {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('quiz_sets')
@@ -271,7 +270,7 @@ export const generateDeafUserPath = async (
   // Fetch all available learning content using adjusted level
   const [tutorials, quizzes, materials] = await Promise.all([
     fetchTutorials(adjustedLevel),
-    fetchQuizzes(adjustedLevel),
+    fetchQuizzes(),
     fetchMaterials(adjustedLevel),
   ]);
 
@@ -367,7 +366,7 @@ export const generateNonDeafUserPath = async (
   // Fetch all available learning content using adjusted level
   const [tutorials, quizzes, materials] = await Promise.all([
     fetchTutorials(adjustedLevel),
-    fetchQuizzes(adjustedLevel),
+    fetchQuizzes(),
     fetchMaterials(adjustedLevel),
   ]);
 

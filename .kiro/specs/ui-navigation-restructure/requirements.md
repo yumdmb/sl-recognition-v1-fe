@@ -13,7 +13,8 @@ This document specifies the requirements for a comprehensive UI/UX restructuring
 - **Proficiency Level**: A user's assessed skill level in sign language (Beginner, Intermediate, Advanced)
 - **Gesture Contribution**: User-submitted sign language gestures for review
 - **Unread Message Indicator**: A visual symbol showing new unread messages in chat
-- **Reddit-style Forum**: A forum design pattern with upvotes, threaded comments, and card-based posts
+- **Card-based Forum**: A forum design pattern with card-based posts, comment likes, and threaded comments
+- **Like**: A single positive reaction that users can add to comments to show appreciation
 
 ## Requirements
 
@@ -74,15 +75,17 @@ This document specifies the requirements for a comprehensive UI/UX restructuring
 
 ### Requirement 6: Forum Bug Fixes and Enhancements
 
-**User Story:** As a user, I want a Reddit-style forum experience with proper data loading, so that I can engage in community discussions effectively.
+**User Story:** As a user, I want a card-based forum experience with proper data loading, so that I can engage in community discussions effectively.
 
 #### Acceptance Criteria
 
 1. WHEN a user navigates to the Forum page THEN the SignBridge System SHALL fetch and display all forum posts without errors
-2. WHEN displaying forum posts THEN the SignBridge System SHALL use a Reddit-style card layout with upvote/downvote buttons, post title, content preview, author, timestamp, and comment count
-3. WHEN a user creates or replies to a post THEN the SignBridge System SHALL allow attaching images or files to the content
-4. WHEN a user upvotes or downvotes a post THEN the SignBridge System SHALL update the vote count immediately and persist the vote to the database
-5. WHEN displaying comments THEN the SignBridge System SHALL show threaded replies with proper indentation similar to Reddit's comment structure
+2. WHEN displaying forum posts THEN the SignBridge System SHALL use a card layout with post title, content preview, author, timestamp, and comment count
+3. WHEN a user creates or replies to a post THEN the SignBridge System SHALL allow attaching images to the content
+4. WHEN displaying attached images in posts THEN the SignBridge System SHALL render images with fixed thumbnail dimensions to maintain consistent page layout
+5. WHEN a user clicks on an attached image thumbnail THEN the SignBridge System SHALL display the full-size image in a modal overlay
+6. WHEN a user likes a comment THEN the SignBridge System SHALL update the like count immediately and persist the like to the database
+7. WHEN displaying comments THEN the SignBridge System SHALL show threaded replies with proper indentation and display like count for each comment
 
 ### Requirement 7: Error Handling
 

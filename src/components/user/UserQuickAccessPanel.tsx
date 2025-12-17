@@ -5,11 +5,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import Link from 'next/link';
 import { Video, BookOpen, PlusSquare } from 'lucide-react';
 
-interface UserQuickAccessPanelProps {
-  userRole: 'non-deaf' | 'deaf';
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface UserQuickAccessPanelProps {}
 
-export const UserQuickAccessPanel: React.FC<UserQuickAccessPanelProps> = ({ userRole }) => (
+export const UserQuickAccessPanel: React.FC<UserQuickAccessPanelProps> = () => (
   <Card>
     <CardContent className="p-6">
       <h3 className="text-lg font-medium mb-4">Quick Access</h3>

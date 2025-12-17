@@ -6,7 +6,7 @@ import { createClient } from '@/utils/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { UserService } from '@/lib/services/userService';
 import { EmailService } from '@/lib/services/emailService';
-import type { UserProfile } from '@/types/database';
+// import type { UserProfile } from '@/types/database';
 
 // Define our user type - extending Supabase user with custom metadata
 export interface User {
@@ -27,7 +27,7 @@ interface AuthContextProps {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => Promise<void>;
+  logout: () => Promise<boolean>;
   register: (name: string, email: string, password: string, role: 'non-deaf' | 'deaf') => Promise<boolean>;
   updateUser: (user: Partial<User>) => Promise<void>;
   changePassword: (newPassword: string) => Promise<boolean>;
@@ -44,6 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false); // Flag to prevent race conditions
+  // const [isInitialized, setIsInitialized] = useState(false); // Track if initial auth is done
   const supabase = createClient();  // Convert Supabase user to our User type with database profile
   const convertSupabaseUser = async (supabaseUser: SupabaseUser): Promise<User> => {
     // Fallback user data from metadata (always available)
@@ -85,7 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         console.info('No profile found in database, using metadata fallback');
       }
-    } catch (error) {
+    } catch {
       console.info('Failed to fetch user profile from database, using fallback.');
     }
     
@@ -98,8 +99,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     return fallbackUser;
   };
+  // Use ref to track current user ID without causing re-renders
+  const currentUserIdRef = React.useRef<string | null>(null);
+  
+  // Keep ref in sync with state
+  React.useEffect(() => {
+    currentUserIdRef.current = currentUser?.id || null;
+  }, [currentUser?.id]);
+
   // Initialize auth state
   useEffect(() => {
+    let isMounted = true;
+    
     const initializeAuth = async () => {
       try {
         // Add timeout to prevent infinite loading
@@ -115,18 +126,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           timeoutPromise
         ]) as Awaited<typeof sessionPromise>;
         
+        if (!isMounted) return;
+        
         if (error) {
           console.error('Error getting session:', error);
         } else if (session?.user) {
           const user = await convertSupabaseUser(session.user);
-          setCurrentUser(user);
-          setIsAuthenticated(true);
+          if (isMounted) {
+            setCurrentUser(user);
+            setIsAuthenticated(true);
+          }
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
         // On timeout or error, still allow the app to proceed (user will be redirected to login)
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+          // setIsInitialized(true);
+        }
       }
     };
 
@@ -135,6 +153,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!isMounted) return;
+        
         console.log('Auth state changed:', event, session?.user?.email);
         
         // Skip USER_UPDATED events during active updates to prevent race conditions
@@ -143,19 +163,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
         
-        if (session?.user) {
-          const user = await convertSupabaseUser(session.user);
-          setCurrentUser(user);
-          setIsAuthenticated(true);
-        } else {
-          setCurrentUser(null);
-          setIsAuthenticated(false);
+        // Skip TOKEN_REFRESHED and INITIAL_SESSION if we already have a user loaded with same ID
+        // This prevents unnecessary re-fetching that causes UI flicker
+        if ((event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && 
+            currentUserIdRef.current && 
+            session?.user?.id === currentUserIdRef.current) {
+          console.log('Skipping redundant auth state update, user already loaded');
+          return;
         }
-        setIsLoading(false);
+        
+        if (session?.user) {
+          // Only re-fetch profile if user ID changed (different user) or we don't have a user yet
+          if (!currentUserIdRef.current || currentUserIdRef.current !== session.user.id) {
+            const user = await convertSupabaseUser(session.user);
+            if (isMounted) {
+              setCurrentUser(user);
+            }
+          }
+          if (isMounted) {
+            setIsAuthenticated(true);
+          }
+        } else {
+          if (isMounted) {
+            setCurrentUser(null);
+            setIsAuthenticated(false);
+          }
+        }
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     );
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, [supabase.auth, isUpdating]);
@@ -267,8 +308,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Logout function
-  const logout = async () => {
+  // Logout function - returns true on success for caller to handle redirect
+  const logout = async (): Promise<boolean> => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
@@ -276,11 +317,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         toast.error("Logout failed", {
           description: error.message
         });
-      } else {
-        toast.success("Logged out successfully");
+        return false;
       }
+      toast.success("Logged out successfully");
+      return true;
     } catch (error) {
       console.error('Logout error:', error);
+      return false;
     }
   };
   // Update user information
@@ -295,11 +338,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Updating user with:', updates);
 
       // Prepare auth metadata updates (only include defined values)
-      const authMetadata: any = {};
+      const authMetadata: Record<string, unknown> = {};
       if (updates.name !== undefined) authMetadata.name = updates.name;
       if (updates.role !== undefined) authMetadata.role = updates.role;
 
-      const authUpdates: any = {
+      const authUpdates: Record<string, unknown> = {
         data: authMetadata
       };
 
@@ -313,7 +356,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Update auth metadata and email with timeout wrapper
       // Supabase updateUser sometimes hangs, so we add a timeout
       const authUpdatePromise = supabase.auth.updateUser(authUpdates);
-      const timeoutPromise = new Promise<{ error: any }>((resolve) => {
+      const timeoutPromise = new Promise<{ error: unknown }>((resolve) => {
         setTimeout(() => {
           console.log('Auth update timeout reached, continuing anyway...');
           resolve({ error: null }); // Resolve with no error after timeout
@@ -337,7 +380,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Local state updated');
 
       // Update database profile (blocking to ensure consistency)
-      const profileUpdates: any = {};
+      const profileUpdates: Record<string, unknown> = {};
       if (updates.name !== undefined) profileUpdates.name = updates.name;
       if (updates.role !== undefined) profileUpdates.role = updates.role;
       if (updates.email !== undefined) profileUpdates.email = updates.email;
@@ -406,7 +449,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         updateResult = await Promise.race([updatePromise, timeoutPromise]);
         console.log('updateUser returned:', updateResult);
-      } catch (timeoutError) {
+      } catch {
         // If it times out, the password was likely updated (we see USER_UPDATED event)
         // So we'll assume success
         console.log('updateUser timed out, but USER_UPDATED fired, assuming success');

@@ -389,7 +389,7 @@ const GestureRecognitionSearch: React.FC = () => {
           
           {searchResults.length > 0 && (
             <div className="mt-6">
-              <h2 className="text-2xl font-bold mb-4">Search Results</h2>
+              <h2 className="text-xl md:text-2xl font-bold mb-4">Search Results</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {searchResults.map(renderGestureCard)}
               </div>
@@ -435,7 +435,7 @@ const GestureRecognitionSearch: React.FC = () => {
               <Button variant="link" onClick={() => setSelectedCategory(null)} className="mb-4">
                 &larr; Back to Categories
               </Button>
-              <h2 className="text-2xl font-bold mb-4">{selectedCategory.name} Gestures</h2>
+              <h2 className="text-xl md:text-2xl font-bold mb-4">{selectedCategory.name} Gestures</h2>
               {isLoading ? (
                 <p>Loading gestures...</p>
               ) : (
@@ -458,7 +458,7 @@ const GestureRecognitionSearch: React.FC = () => {
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the gesture
-              "{deletingGesture?.name}" and its media file.
+              &quot;{deletingGesture?.name}&quot; and its media file.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

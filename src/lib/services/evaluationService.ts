@@ -1,5 +1,4 @@
 import { createClient } from '@/utils/supabase/client';
-import { Database } from '@/types/database';
 
 export interface PerformanceAnalysis {
   strengths: string[];
@@ -58,7 +57,7 @@ export const analyzeCategoryPerformance = async (
 
   const categoryPerformance = categories.map((category) => {
     const categoryAnswers = answers.filter(
-      (answer: any) =>
+      (answer) =>
         answer.question.order_index >= category.min &&
         answer.question.order_index <= category.max
     );
@@ -132,7 +131,10 @@ export const identifyKnowledgeGaps = async (
 
   // For each incorrect answer, find the correct choice
   const knowledgeGaps: KnowledgeGap[] = await Promise.all(
-    incorrectAnswers.map(async (answer: any) => {
+    incorrectAnswers.map(async (answer: Record<string, unknown>) => {
+      const question = answer.question as { id: string; question_text: string };
+      const selectedChoice = answer.selected_choice as { choice_text: string };
+      
       const { data: correctChoice } = await supabase
         .from('proficiency_test_question_choices')
         .select('choice_text')
@@ -141,9 +143,9 @@ export const identifyKnowledgeGaps = async (
         .single();
 
       return {
-        questionId: answer.question.id,
-        questionText: answer.question.question_text,
-        userAnswer: answer.selected_choice.choice_text,
+        questionId: question.id,
+        questionText: question.question_text,
+        userAnswer: selectedChoice.choice_text,
         correctAnswer: correctChoice?.choice_text || 'Unknown',
       };
     })
@@ -165,7 +167,7 @@ export const generateInsights = (
     total: number;
     percentage: number;
   }[],
-  answers: any[]
+  answers: Array<{ is_correct: boolean }>
 ): string[] => {
   const insights: string[] = [];
   const totalCorrect = answers.filter((a) => a.is_correct).length;

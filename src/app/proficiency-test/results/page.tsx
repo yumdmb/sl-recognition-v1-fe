@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useLearning } from '@/context/LearningContext';
@@ -12,14 +12,25 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Trophy, TrendingUp, BookOpen, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 
-const ProficiencyTestResultsPage = () => {
+function ProficiencyTestResultsContent() {
   const { currentUser, isLoading: authLoading } = useAuth();
   const { getTestResults, proficiencyTestLoading } = useLearning();
   const router = useRouter();
   const searchParams = useSearchParams();
   const attemptId = searchParams.get('attemptId');
 
-  const [results, setResults] = useState<any>(null);
+  const [results, setResults] = useState<{
+    attempt: { score: number; test_id: string };
+    proficiencyLevel: string;
+    performanceAnalysis: {
+      categoryPerformance: Array<{ category: string; correct: number; total: number; percentage: number }>;
+      strengths: string[];
+      weaknesses: string[];
+      insights: string[];
+    };
+    knowledgeGaps: Array<{ questionId: string; questionText: string; userAnswer: string; correctAnswer: string }>;
+    recommendations: Array<{ type: string; title: string; description: string; reason: string; recommended_for_role?: 'deaf' | 'non-deaf' | 'all' }>;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -82,7 +93,7 @@ const ProficiencyTestResultsPage = () => {
     );
   }
 
-  const { attempt, proficiencyLevel, performanceAnalysis, knowledgeGaps, recommendations } = results;
+  const { attempt, proficiencyLevel, performanceAnalysis, recommendations } = results;
   const score = attempt.score || 0;
 
   const getProficiencyColor = (level: string) => {
@@ -111,7 +122,7 @@ const ProficiencyTestResultsPage = () => {
   };
 
   return (
-    <div className="container mx-auto py-8 max-w-4xl space-y-6">
+    <div className="container mx-auto py-8 max-w-4xl space-y-4 md:space-y-6">
       {/* Score and Level Card */}
       <Card>
         <CardHeader>
@@ -145,7 +156,7 @@ const ProficiencyTestResultsPage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {performanceAnalysis.categoryPerformance.map((category: any, index: number) => (
+          {performanceAnalysis.categoryPerformance.map((category, index: number) => (
             <div key={index} className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="font-medium">{category.category}</span>
@@ -224,7 +235,7 @@ const ProficiencyTestResultsPage = () => {
               Based on your performance, we recommend the following resources:
             </p>
             <div className="space-y-3">
-              {recommendations.slice(0, 5).map((rec: any, index: number) => (
+              {recommendations.slice(0, 5).map((rec, index: number) => (
                 <div key={index} className="p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -275,6 +286,25 @@ const ProficiencyTestResultsPage = () => {
       </div>
     </div>
   );
-};
+}
 
-export default ProficiencyTestResultsPage;
+export default function ProficiencyTestResultsPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto py-8 max-w-4xl">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-48" />
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-64 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <ProficiencyTestResultsContent />
+    </Suspense>
+  );
+}

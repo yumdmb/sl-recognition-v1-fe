@@ -110,7 +110,7 @@ export function useWordSubmission() {
 
       resetForm();
       router.push('/word/view');
-    } catch (error) {
+    } catch {
       toast.error("Error", {
         description: "Failed to submit the word. Please try again."
       });

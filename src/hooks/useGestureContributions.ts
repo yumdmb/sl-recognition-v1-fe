@@ -17,6 +17,11 @@ export function useGestureContributions(initialFilters?: GestureContributionFilt
     setFilters(prevFilters => ({ ...prevFilters, ...newFilters }));
   }, []);
 
+  // Reset filters completely (replaces instead of merging)
+  const resetFilters = useCallback((newFilters: GestureContributionFilters) => {
+    setFilters(newFilters);
+  }, []);
+
   const loadContributions = useCallback(async () => {
     if (!currentUser && !filters?.status) {
       if (filters?.status !== 'approved') {
@@ -59,8 +64,9 @@ export function useGestureContributions(initialFilters?: GestureContributionFilt
       const { error: approveError } = await GestureContributionService.approveContribution(contributionId);
       
       if (approveError) {
+        const errorMessage = approveError instanceof Error ? approveError.message : "Please try again.";
         toast.error("Failed to approve gesture", {
-          description: approveError.message || "Please try again."
+          description: errorMessage
         });
         return;
       }
@@ -76,8 +82,8 @@ export function useGestureContributions(initialFilters?: GestureContributionFilt
       toast.success("Gesture Approved", {
         description: "The gesture has been approved and published."
       });
-    } catch (err: any) {
-      toast.error("An error occurred while approving the gesture", { description: err.message });
+    } catch (err: unknown) {
+      toast.error("An error occurred while approving the gesture", { description: err instanceof Error ? err.message : 'Unknown error' });
     }
   };
 
@@ -86,8 +92,9 @@ export function useGestureContributions(initialFilters?: GestureContributionFilt
       const { error: rejectError } = await GestureContributionService.rejectContribution(contributionId, reason);
       
       if (rejectError) {
+        const errorMessage = rejectError instanceof Error ? rejectError.message : "Please try again.";
         toast.error("Failed to reject gesture", {
-          description: rejectError.message || "Please try again."
+          description: errorMessage
         });
         return;
       }
@@ -108,8 +115,8 @@ export function useGestureContributions(initialFilters?: GestureContributionFilt
       toast.error("Gesture Rejected", { // Using error style for rejection notification
         description: "The gesture has been rejected."
       });
-    } catch (err: any) {
-      toast.error("An error occurred while rejecting the gesture", { description: err.message });
+    } catch (err: unknown) {
+      toast.error("An error occurred while rejecting the gesture", { description: err instanceof Error ? err.message : 'Unknown error' });
     }
   };
 
@@ -118,8 +125,9 @@ export function useGestureContributions(initialFilters?: GestureContributionFilt
       const { error: deleteError } = await GestureContributionService.deleteContribution(contributionId);
       
       if (deleteError) {
+        const errorMessage = deleteError instanceof Error ? deleteError.message : "Please try again.";
         toast.error("Failed to delete gesture", {
-          description: deleteError.message || "Please try again."
+          description: errorMessage
         });
         return;
       }
@@ -131,8 +139,8 @@ export function useGestureContributions(initialFilters?: GestureContributionFilt
       toast.success("Gesture Deleted", {
         description: "The gesture has been permanently deleted."
       });
-    } catch (err: any) {
-      toast.error("An error occurred while deleting the gesture", { description: err.message });
+    } catch (err: unknown) {
+      toast.error("An error occurred while deleting the gesture", { description: err instanceof Error ? err.message : 'Unknown error' });
     }
   };
 
@@ -151,5 +159,6 @@ export function useGestureContributions(initialFilters?: GestureContributionFilt
     refreshContributions,
     filters,
     updateFilters,
+    resetFilters,
   };
 }

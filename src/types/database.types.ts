@@ -7,30 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   public: {
     Tables: {
@@ -99,6 +79,83 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      comment_likes: {
+        Row: {
+          comment_id: string
+          created_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_likes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "forum_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forum_attachments: {
+        Row: {
+          comment_id: string | null
+          created_at: string | null
+          file_name: string
+          file_type: string
+          file_url: string
+          id: string
+          post_id: string | null
+          user_id: string
+        }
+        Insert: {
+          comment_id?: string | null
+          created_at?: string | null
+          file_name: string
+          file_type: string
+          file_url: string
+          id?: string
+          post_id?: string | null
+          user_id: string
+        }
+        Update: {
+          comment_id?: string | null
+          created_at?: string | null
+          file_name?: string
+          file_type?: string
+          file_url?: string
+          id?: string
+          post_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_attachments_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "forum_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forum_attachments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "forum_posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       forum_comments: {
         Row: {
@@ -197,7 +254,9 @@ export type Database = {
         Row: {
           created_at: string
           description: string
+          duplicate_of: string | null
           id: string
+          is_duplicate: boolean | null
           language: string
           media_type: string
           media_url: string
@@ -213,7 +272,9 @@ export type Database = {
         Insert: {
           created_at?: string
           description: string
+          duplicate_of?: string | null
           id?: string
+          is_duplicate?: boolean | null
           language: string
           media_type: string
           media_url: string
@@ -229,7 +290,9 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string
+          duplicate_of?: string | null
           id?: string
+          is_duplicate?: boolean | null
           language?: string
           media_type?: string
           media_url?: string
@@ -447,6 +510,35 @@ export type Database = {
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "forum_posts"
             referencedColumns: ["id"]
           },
         ]
@@ -757,6 +849,69 @@ export type Database = {
         }
         Relationships: []
       }
+      sign_avatars: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_ms: number
+          frame_count: number
+          id: string
+          language: string
+          name: string
+          recording_data: Json
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_ms?: number
+          frame_count?: number
+          id?: string
+          language: string
+          name: string
+          recording_data: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_ms?: number
+          frame_count?: number
+          id?: string
+          language?: string
+          name?: string
+          recording_data?: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sign_avatars_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sign_avatars_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tutorial_progress: {
         Row: {
           created_at: string | null
@@ -846,6 +1001,7 @@ export type Database = {
           proficiency_level:
             | Database["public"]["Enums"]["proficiency_level"]
             | null
+          profile_picture_url: string | null
           role: string
           updated_at: string | null
         }
@@ -857,6 +1013,7 @@ export type Database = {
           proficiency_level?:
             | Database["public"]["Enums"]["proficiency_level"]
             | null
+          profile_picture_url?: string | null
           role?: string
           updated_at?: string | null
         }
@@ -868,6 +1025,7 @@ export type Database = {
           proficiency_level?:
             | Database["public"]["Enums"]["proficiency_level"]
             | null
+          profile_picture_url?: string | null
           role?: string
           updated_at?: string | null
         }
@@ -878,10 +1036,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_gesture_contribution_duplicates: {
+        Args: { contribution_id: string }
+        Returns: Json
+      }
       create_chat_with_participants: {
         Args: { is_group: boolean; user_ids: string[] }
         Returns: Json
       }
+      custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       debug_chat_policies: {
         Args: never
         Returns: {
@@ -896,6 +1059,10 @@ export type Database = {
       is_chat_participant: {
         Args: { chat_id_param: string; user_id_param: string }
         Returns: boolean
+      }
+      refresh_all_gesture_contribution_duplicates: {
+        Args: never
+        Returns: number
       }
     }
     Enums: {
@@ -1025,13 +1192,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       proficiency_level: ["Beginner", "Intermediate", "Advanced"],
     },
   },
 } as const
-

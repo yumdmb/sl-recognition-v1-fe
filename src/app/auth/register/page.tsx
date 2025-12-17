@@ -51,7 +51,7 @@ export default function Register() {
           router.push('/auth/login');
         }, 2000);
       }
-    } catch (error) {
+    } catch {
       toast.error("Registration failed", {
         description: "An unexpected error occurred. Please try again."
       });

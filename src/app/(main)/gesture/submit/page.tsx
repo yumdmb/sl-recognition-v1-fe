@@ -45,7 +45,7 @@ export default function GestureSubmit() {
       
       <Card>
         <CardContent className="pt-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
             <GestureFormFields
               title={title}
               setTitle={setTitle}

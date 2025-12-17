@@ -119,17 +119,13 @@ export default function Login() {
           </CardContent>
           <CardFooter className="justify-center">
             <p className="text-center text-sm">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link href="/auth/register" className="text-signlang-primary hover:underline font-medium">
                 Register
               </Link>
             </p>
           </CardFooter>
         </Card>
-        
-        <div className="mt-6 text-center text-xs text-gray-500">
-          <p>Admin login: elvissawing.muran@gmail.com / sign123</p>
-        </div>
       </div>
     </div>
   );

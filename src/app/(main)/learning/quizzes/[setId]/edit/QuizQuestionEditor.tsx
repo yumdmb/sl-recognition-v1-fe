@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Edit, Trash } from "lucide-react";
 import { useAdmin } from '@/context/AdminContext';
@@ -162,14 +162,14 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
   };
 
   // Handle updating the current question being edited
-  const handleQuestionChange = (field: string, value: any) => {
+  const handleQuestionChange = (field: string, value: { index: number; text: string } | string) => {
     if (!currentQuestion) return;
 
-    if (field === 'options') {
+    if (field === 'options' && typeof value === 'object' && 'index' in value) {
       const newOptions = [...currentQuestion.options];
       newOptions[value.index] = value.text;
       setCurrentQuestion({...currentQuestion, options: newOptions});
-    } else {
+    } else if (typeof value === 'string') {
       setCurrentQuestion({...currentQuestion, [field]: value});
     }
   };
@@ -208,7 +208,7 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
       {questions.length === 0 ? (
         <Card className="mb-6">
           <CardContent className="pt-6">
-            <p className="text-center text-gray-500">No questions added yet. Click "Add New Question" to get started.</p>
+            <p className="text-center text-gray-500">No questions added yet. Click &ldquo;Add New Question&rdquo; to get started.</p>
           </CardContent>
         </Card>
       ) : (
@@ -276,7 +276,7 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
                   <Input 
                     value={option}
                     onChange={(e) => handleQuestionChange('options', { index: idx, text: e.target.value })}
-                    placeholder={`Option ${idx + 1}`}
+                    placeholder={`Option ${idx + 1} (e.g., A)`}
                     className="flex-1"
                   />
                   <Button 

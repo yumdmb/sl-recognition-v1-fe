@@ -97,9 +97,10 @@ export function ProfilePictureUpload({
       onUpdate(urlWithCacheBust);
       const message = currentPictureUrl ? "Profile picture changed successfully!" : "Profile picture uploaded successfully!";
       toast.success(message);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Upload error:', error);
-      toast.error("Failed to upload picture", { description: error.message });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error("Failed to upload picture", { description: errorMessage });
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
@@ -133,9 +134,10 @@ export function ProfilePictureUpload({
       // Update local state and trigger re-render
       onUpdate(null);
       toast.success("Profile picture removed successfully!");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Delete error:', error);
-      toast.error("Failed to delete picture", { description: error.message });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error("Failed to delete picture", { description: errorMessage });
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);

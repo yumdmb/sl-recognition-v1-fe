@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { GestureContribution } from '@/types/gestureContributions';
-import { Check, X, Trash2, Eye, Edit3 } from 'lucide-react';
+import { Check, X, Trash2, Eye, Copy, AlertTriangle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -14,13 +14,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import Link from 'next/link'; // For edit button
 
 interface GestureContributionRowProps {
   contribution: GestureContribution;
   userRole?: string;
-  onApprove: (id: string) => void;
-  onReject: (id: string, reason?: string) => void; // Allow passing reason for rejection
+  onApprove?: (id: string) => void;
+  onReject?: (id: string, reason?: string) => void;
   onDelete: (id: string) => void;
   isMySubmissionsView?: boolean;
 }
@@ -55,14 +54,14 @@ export default function GestureContributionRow({
   const canDelete = isAdmin || (isOwner && (contribution.status === 'pending' || contribution.status === 'rejected'));
   
   // Users can edit their own pending submissions.
-  const canEdit = isOwner && contribution.status === 'pending';
+  // const canEdit = isOwner && contribution.status === 'pending';
 
   const handleRejectClick = () => {
+    if (!onReject) return;
     if (isAdmin) {
       const reason = prompt("Enter reason for rejection (optional):");
       onReject(contribution.id, reason || undefined);
     } else {
-      // Non-admins should not be able to trigger this directly if UI is correct
       onReject(contribution.id);
     }
   };
@@ -96,6 +95,42 @@ export default function GestureContributionRow({
           )}
         </div>
       </TableCell>
+      {!isMySubmissionsView && (
+        <TableCell>
+          {contribution.is_duplicate ? (
+            <div className="flex items-center gap-1">
+              <Badge variant="destructive" className="flex items-center gap-1">
+                <Copy className="h-3 w-3" />
+                Duplicate
+              </Badge>
+              {contribution.duplicate_of && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                      <AlertTriangle className="h-4 w-4 text-amber-500" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Duplicate Details</DialogTitle>
+                      <DialogDescription>
+                        This contribution appears to be a duplicate of existing content.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="mt-2 p-3 bg-muted rounded-md text-sm">
+                      {contribution.duplicate_of}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
+          ) : (
+            <Badge variant="outline" className="text-green-600 border-green-600">
+              Unique
+            </Badge>
+          )}
+        </TableCell>
+      )}
       <TableCell>
         <Dialog>
           <DialogTrigger asChild>
@@ -135,7 +170,7 @@ export default function GestureContributionRow({
       <TableCell>
         <div className="flex gap-1 items-center">
           {/* Admin actions for pending contributions */}
-          {isAdmin && isPending && (
+          {isAdmin && isPending && onApprove && onReject && (
             <>
               <Button
                 size="icon"
@@ -149,7 +184,7 @@ export default function GestureContributionRow({
               <Button
                 size="icon"
                 variant="ghost"
-                onClick={handleRejectClick} // Use new handler
+                onClick={handleRejectClick}
                 className="text-red-600 hover:text-red-700"
                 title="Reject"
               >

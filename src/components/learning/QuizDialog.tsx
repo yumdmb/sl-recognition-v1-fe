@@ -42,33 +42,33 @@ const QuizDialog: React.FC<QuizDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[525px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{quizSet.id ? 'Edit' : 'Add'} Quiz Set</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="title" className="text-right">Title</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+            <Label htmlFor="title" className="sm:text-right">Title</Label>
             <Input
               id="title"
               value={quizSet.title}
               onChange={(e) => handleFieldChange('title', e.target.value)}
-              className="col-span-3"
+              className="sm:col-span-3"
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="description" className="text-right">Description</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+            <Label htmlFor="description" className="sm:text-right">Description</Label>
             <Textarea
               id="description"
               value={quizSet.description}
               onChange={(e) => handleFieldChange('description', e.target.value)}
-              className="col-span-3"
+              className="sm:col-span-3"
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="language" className="text-right">Language</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+            <Label htmlFor="language" className="sm:text-right">Language</Label>
             <Select value={quizSet.language} onValueChange={handleLanguageChange}>
-              <SelectTrigger className="col-span-3">
+              <SelectTrigger className="sm:col-span-3">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
               <SelectContent>
@@ -78,9 +78,9 @@ const QuizDialog: React.FC<QuizDialogProps> = ({
             </Select>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={() => onSave(quizSet)}>Save</Button>
+        <DialogFooter className="flex-col sm:flex-row gap-3">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Cancel</Button>
+          <Button onClick={() => onSave(quizSet)} className="w-full sm:w-auto">Save</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

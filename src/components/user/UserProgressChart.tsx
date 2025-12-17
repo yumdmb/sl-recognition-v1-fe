@@ -3,11 +3,10 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 
-interface UserProgressChartProps {
-  userRole: 'non-deaf' | 'deaf';
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface UserProgressChartProps {}
 
-const UserProgressChart: React.FC<UserProgressChartProps> = ({ userRole }) => (
+const UserProgressChart: React.FC<UserProgressChartProps> = () => (
   <Card>
     <CardContent className="p-6">
       <h3 className="text-lg font-medium mb-4">Learning Progress</h3>

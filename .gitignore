@@ -46,3 +46,4 @@ local-docs/
 .roo/
 .roomodes
 .vscode
+src/app/(main)/debug-jwt/

@@ -43,11 +43,11 @@ COMMENT ON TABLE public.table_name IS 'description';
 ```
 
 **Never:**
-- ❌ Make schema changes directly in remote Studio
-- ❌ Skip local testing
-- ❌ Modify applied migrations
-- ❌ Push without generating types
-- ❌ Change `.env.local` to push migrations (CLI uses project link!)
+- Make schema changes directly in remote Studio
+- Skip local testing
+- Modify applied migrations
+- Push without generating types
+- Change `.env.local` to push migrations (CLI uses project link!)
 
 **Environment:**
 ```env
@@ -69,6 +69,128 @@ Get keys: `npx supabase status` → Copy "API URL" and "Publishable key"
 
 **Why**: Running `npm run build` during active development is unnecessary and slows down the workflow. The dev server provides hot reloading and faster feedback.
 
+## Build Error Prevention
+
+**Critical Rule**: Write code that passes linting and type checking to avoid build failures. Always follow these guidelines:
+
+### TypeScript ESLint Rules
+
+**Common build-breaking rules to avoid:**
+
+1. **@typescript-eslint/no-unused-vars** - Unused variables/imports
+   ```typescript
+   // BAD - Will cause build error
+   import { useState } from 'react';
+   const unusedVar = 'test';
+   
+   // GOOD - Remove unused code
+   // Or prefix with underscore if intentionally unused
+   const _intentionallyUnused = 'test';
+   ```
+
+2. **@typescript-eslint/no-explicit-any** - Using `any` type
+   ```typescript
+   // BAD - Will cause build error
+   function process(data: any) { }
+   
+   // GOOD - Use proper types
+   function process(data: unknown) { }
+   function process(data: Record<string, unknown>) { }
+   // Or for rest args (allowed by config)
+   function process(...args: any[]) { }
+   ```
+
+3. **@typescript-eslint/no-unsafe-assignment** - Unsafe type assignments
+   ```typescript
+   // BAD
+   const data: any = fetchData();
+   const value = data.something;
+   
+   // GOOD
+   const data = fetchData() as MyType;
+   const value = data.something;
+   ```
+
+4. **@typescript-eslint/no-unsafe-member-access** - Accessing properties on `any`
+   ```typescript
+   // BAD
+   function process(obj: any) {
+     return obj.property;
+   }
+   
+   // GOOD
+   function process(obj: { property: string }) {
+     return obj.property;
+   }
+   ```
+
+5. **@typescript-eslint/no-unsafe-call** - Calling functions with `any` type
+   ```typescript
+   // BAD
+   const fn: any = getSomeFunction();
+   fn();
+   
+   // GOOD
+   const fn = getSomeFunction() as () => void;
+   fn();
+   ```
+
+### Best Practices
+
+**Before writing code:**
+- Use Context7 MCP to verify TypeScript ESLint rules if unsure
+- Check project's `eslint.config.mjs` for specific rule configurations
+- Understand which rules are set to 'error' vs 'warn'
+
+**While writing code:**
+- Always define proper TypeScript types/interfaces
+- Remove unused imports and variables immediately
+- Use `unknown` instead of `any` when type is truly unknown
+- Prefix intentionally unused variables with underscore: `_unused`
+- Use type assertions carefully: `as Type` only when necessary
+- Leverage TypeScript's type inference when possible
+
+**Common patterns to avoid:**
+```typescript
+// Avoid these patterns
+const data: any = await fetch();
+let result: any;
+function handler(event: any) { }
+const items: any[] = [];
+
+// Use these instead
+const data: unknown = await fetch();
+const data = await fetch() as MyType;
+let result: MyType | undefined;
+function handler(event: React.MouseEvent) { }
+const items: MyType[] = [];
+```
+
+**When you must use flexible types:**
+```typescript
+// Use unknown and type guards
+function process(data: unknown) {
+  if (typeof data === 'string') {
+    return data.toUpperCase();
+  }
+}
+
+// Use generic constraints
+function getValue<T extends Record<string, unknown>>(obj: T, key: keyof T) {
+  return obj[key];
+}
+
+// Use utility types
+type Params = Record<string, string | number>;
+```
+
+**Quick check before committing:**
+- No unused imports or variables
+- No `any` types (except in rest parameters if needed)
+- All functions have return types (or inferred correctly)
+- No type assertions without good reason
+- All async functions properly typed
+
 ## Task Completion Verification
 
 **After completing any task**, you MUST provide the user by writing in md file in docs/verification-steps-docs/ folder with:
@@ -82,7 +204,7 @@ Get keys: `npx supabase status` → Copy "API URL" and "Publishable key"
 
 **Example Format:**
 ```
-✅ Task Complete: [Task Name]
+Task Complete: [Task Name]
 
 Changes Made:
 - Created X component

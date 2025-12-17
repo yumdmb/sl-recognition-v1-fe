@@ -13,7 +13,6 @@ const PROTECTED_ROUTES = [
   '/interaction',
   '/proficiency-test'
 ]
-const PUBLIC_ROUTES = ['/', '/auth']
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -53,9 +52,9 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   // Check if route is public
-  const isPublicRoute = PUBLIC_ROUTES.some(
-    route => pathname === route || pathname.startsWith(`${route}/`)
-  )
+  // const isPublicRoute = PUBLIC_ROUTES.some(
+  //   route => pathname === route || pathname.startsWith(`${route}/`)
+  // )
 
   // Check if route requires authentication
   const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route))
@@ -76,12 +75,48 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Get user role from JWT claims (set by custom_access_token_hook)
+  // Falls back to user_metadata.role if custom claim not available yet
+  const { data: { session } } = await supabase.auth.getSession()
+  const getUserRole = (): string | undefined => {
+    // Try to get from JWT custom claim first (most reliable after hook is enabled)
+    // The custom hook injects 'user_role' into the JWT claims
+    if (session?.access_token) {
+      try {
+        const payload = JSON.parse(atob(session.access_token.split('.')[1]))
+        if (payload.user_role) return payload.user_role
+      } catch {
+        // Ignore parse errors
+      }
+    }
+    // Fallback to user_metadata
+    return user?.user_metadata?.role
+  }
+  
+  const userRole = getUserRole()
+
   // Role-based protection for admin routes
   if (user && isAdminRoute) {
-    const userRole = user.user_metadata?.role
     if (userRole !== 'admin') {
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
+  }
+
+  // Role-based redirects for gesture contribution routes
+  if (user && (pathname === '/gesture/view' || pathname === '/gesture/manage-contributions')) {
+    // Admin trying to access /gesture/view -> redirect to /gesture/manage-contributions
+    if (userRole === 'admin' && pathname === '/gesture/view') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/gesture/manage-contributions'
+      return NextResponse.redirect(url)
+    }
+    
+    // Non-admin trying to access /gesture/manage-contributions -> redirect to /gesture/view
+    if (userRole !== 'admin' && pathname === '/gesture/manage-contributions') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/gesture/view'
       return NextResponse.redirect(url)
     }
   }

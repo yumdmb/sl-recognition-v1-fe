@@ -6,7 +6,7 @@ import GestureBrowseHeader from '@/components/gesture/GestureBrowseHeader';
 import GestureBrowseGrid from '@/components/gesture/GestureBrowseGrid';
 import GestureFilters from '@/components/gesture/GestureFilters';
 import { useGestureContributions } from '@/hooks/useGestureContributions';
-import { GestureContributionFilters } from '@/types/gestureContributions';
+// import { GestureContributionFilters } from '@/types/gestureContributions';
 
 export default function GestureBrowse() {
   const {
@@ -25,7 +25,7 @@ export default function GestureBrowse() {
       <Toaster />
       <GestureBrowseHeader userRole={userRole} />
 
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <GestureFilters 
           filters={filters || { status: 'approved' }}
           onFiltersChange={updateFilters}

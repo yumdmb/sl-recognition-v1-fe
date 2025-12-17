@@ -77,7 +77,7 @@ export function useGestureContributionSubmission() {
         file: selectedFile
       };
 
-      const { data, error } = await GestureContributionService.submitContribution(formData);
+      const { error } = await GestureContributionService.submitContribution(formData);
 
       if (error) {
         console.error("Detailed submission error from hook:", error); // Added for more client-side logging
@@ -104,9 +104,9 @@ export function useGestureContributionSubmission() {
       // Redirect to view page
       router.push('/gesture/view');
       
-    } catch (err: any) { // Catch unexpected errors in the hook itself
+    } catch (err: unknown) { // Catch unexpected errors in the hook itself
       console.error("Unexpected error in handleSubmit:", err);
-      const errorMessage = err?.message || "An unexpected error occurred. Please try again.";
+      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred. Please try again.";
       toast.error("An unexpected error occurred", {
         description: errorMessage
       });
