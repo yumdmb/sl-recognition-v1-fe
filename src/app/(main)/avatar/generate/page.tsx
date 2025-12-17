@@ -8,6 +8,7 @@ import CameraControls from '@/components/avatar/CameraControls';
 import GesturePreview from '@/components/avatar/GesturePreview';
 import AvatarPageHeader from '@/components/avatar/AvatarPageHeader';
 import SaveForm from '@/components/avatar/SaveForm';
+import HandGestureDetector from '@/components/avatar/HandGestureDetector';
 import { useCamera } from '@/hooks/useCamera';
 
 const AvatarGenerationPage = () => {
@@ -143,7 +144,7 @@ const AvatarGenerationPage = () => {
       <div className="flex flex-col gap-6">
         <AvatarPageHeader userRole={currentUser?.role} />
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-8">
           <CameraControls
             isStreaming={isStreaming}
             isRecording={isRecording}
@@ -157,6 +158,13 @@ const AvatarGenerationPage = () => {
             onStopRecording={stopRecording}
           />
 
+          <HandGestureDetector
+            videoRef={videoRef}
+            isStreaming={isStreaming}
+          />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           <GesturePreview
             capturedImage={capturedImage}
             recordedVideo={recordedVideo}
