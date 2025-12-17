@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Camera, CameraOff } from "lucide-react";
+import { signAvatarService } from "@/services/signAvatarService";
 
 const AvatarGenerationPage = () => {
   const [signName, setSignName] = useState("");
@@ -97,30 +98,18 @@ const AvatarGenerationPage = () => {
     if (recorded3DAvatar && recorded3DAvatar.frames.length > 0) {
       setIsLoading(true);
       try {
-        const storedAvatars = localStorage.getItem("avatars");
-        const avatars: unknown[] = storedAvatars
-          ? (JSON.parse(storedAvatars) as unknown[])
-          : [];
-
-        const newAvatar = {
-          id: `avatar-${Date.now()}`,
-          name: signName.trim(),
-          description: signDescription.trim(),
-          language,
-          recording3D: recorded3DAvatar,
-          userId: currentUser.id,
-          userName: currentUser.name,
-          status: "unverified",
-          date: new Date().toISOString(),
-        };
-
-        localStorage.setItem(
-          "avatars",
-          JSON.stringify([newAvatar, ...avatars])
+        await signAvatarService.create(
+          {
+            name: signName.trim(),
+            description: signDescription.trim() || undefined,
+            language: language as "ASL" | "MSL",
+            recording: recorded3DAvatar,
+          },
+          currentUser.id
         );
 
         toast.success("Saved to My Avatar", {
-          description: "Your 3D gesture avatar has been saved",
+          description: "Your 3D gesture avatar has been saved to the database",
         });
 
         router.push("/avatar/my-avatars");

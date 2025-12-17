@@ -11,23 +11,10 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar3DRecording } from "@/types/hand";
 import Avatar3DPlayer from "./Avatar3DPlayer";
 import { User, Calendar, Languages, FileText } from "lucide-react";
-
-interface AvatarData {
-  id: string;
-  name: string;
-  date: string;
-  thumbnail: string | null;
-  video: string | null;
-  recording3D?: Avatar3DRecording | null;
-  userId: string;
-  userName: string;
-  language: "ASL" | "MSL";
-  description?: string;
-  status: "verified" | "unverified";
-}
+import { SignAvatar } from "@/services/signAvatarService";
 
 interface AvatarViewDialogProps {
-  avatar: AvatarData | null;
+  avatar: SignAvatar | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -39,7 +26,8 @@ export const AvatarViewDialog: React.FC<AvatarViewDialogProps> = ({
 }) => {
   if (!avatar) return null;
 
-  const isSingleFrame = avatar.recording3D && avatar.recording3D.frames.length <= 1;
+  const recording: Avatar3DRecording | null = avatar.recording_data || null;
+  const isSingleFrame = recording && recording.frames.length <= 1;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -55,20 +43,8 @@ export const AvatarViewDialog: React.FC<AvatarViewDialogProps> = ({
 
         {/* 3D Avatar Preview */}
         <div className="aspect-video bg-muted rounded-lg overflow-hidden">
-          {avatar.recording3D && avatar.recording3D.frames.length > 0 ? (
-            <Avatar3DPlayer recording={avatar.recording3D} />
-          ) : avatar.video ? (
-            <video
-              src={avatar.video}
-              controls
-              className="w-full h-full object-contain"
-            />
-          ) : avatar.thumbnail ? (
-            <img
-              src={avatar.thumbnail}
-              alt={avatar.name}
-              className="w-full h-full object-contain"
-            />
+          {recording && recording.frames.length > 0 ? (
+            <Avatar3DPlayer recording={recording} />
           ) : (
             <div className="flex items-center justify-center h-full text-muted-foreground">
               No preview available
@@ -81,17 +57,15 @@ export const AvatarViewDialog: React.FC<AvatarViewDialogProps> = ({
           {/* Type Badge */}
           <div className="flex gap-2">
             <Badge variant="outline">
-              {avatar.recording3D
+              {recording
                 ? isSingleFrame
                   ? "3D Static Pose"
-                  : `3D Animation (${avatar.recording3D.frames.length} frames)`
-                : avatar.video
-                  ? "Video"
-                  : "Image"}
+                  : `3D Animation (${recording.frames.length} frames)`
+                : "No Recording"}
             </Badge>
-            {avatar.recording3D && !isSingleFrame && (
+            {recording && !isSingleFrame && (
               <Badge variant="outline">
-                {(avatar.recording3D.duration / 1000).toFixed(1)}s
+                {(recording.duration / 1000).toFixed(1)}s
               </Badge>
             )}
           </div>
@@ -102,13 +76,13 @@ export const AvatarViewDialog: React.FC<AvatarViewDialogProps> = ({
               <User className="h-4 w-4" />
               <span>Created by:</span>
             </div>
-            <div>{avatar.userName}</div>
+            <div>{avatar.user_name || "Unknown"}</div>
 
             <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-4 w-4" />
               <span>Date:</span>
             </div>
-            <div>{new Date(avatar.date).toLocaleDateString()}</div>
+            <div>{new Date(avatar.created_at).toLocaleDateString()}</div>
 
             <div className="flex items-center gap-2 text-muted-foreground">
               <Languages className="h-4 w-4" />

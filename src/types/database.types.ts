@@ -849,6 +849,69 @@ export type Database = {
         }
         Relationships: []
       }
+      sign_avatars: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_ms: number
+          frame_count: number
+          id: string
+          language: string
+          name: string
+          recording_data: Json
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_ms?: number
+          frame_count?: number
+          id?: string
+          language: string
+          name: string
+          recording_data: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_ms?: number
+          frame_count?: number
+          id?: string
+          language?: string
+          name?: string
+          recording_data?: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sign_avatars_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sign_avatars_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tutorial_progress: {
         Row: {
           created_at: string | null
@@ -981,6 +1044,7 @@ export type Database = {
         Args: { is_group: boolean; user_ids: string[] }
         Returns: Json
       }
+      custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       debug_chat_policies: {
         Args: never
         Returns: {
