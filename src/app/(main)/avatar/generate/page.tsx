@@ -4,13 +4,16 @@ import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import CameraControls from "@/components/avatar/CameraControls";
 import GesturePreview from "@/components/avatar/GesturePreview";
 import AvatarPageHeader from "@/components/avatar/AvatarPageHeader";
 import SaveForm from "@/components/avatar/SaveForm";
 import HandGestureDetector from "@/components/avatar/HandGestureDetector";
 import { useCamera } from "@/hooks/useCamera";
-import { MultiHandLandmarks } from "@/types/hand";
+import { Avatar3DRecording } from "@/types/hand";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Camera, CameraOff } from "lucide-react";
 
 const AvatarGenerationPage = () => {
   const [signName, setSignName] = useState("");
@@ -18,26 +21,14 @@ const AvatarGenerationPage = () => {
   const [language, setLanguage] = useState<"ASL" | "MSL" | "">("");
   const [showForm, setShowForm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [captured3DAvatar, setCaptured3DAvatar] =
-    useState<MultiHandLandmarks | null>(null);
+  const [recorded3DAvatar, setRecorded3DAvatar] =
+    useState<Avatar3DRecording | null>(null);
+  const [showCameraPreview, setShowCameraPreview] = useState(true);
   const router = useRouter();
   const { currentUser, isAuthenticated } = useAuth();
-  
-  const {
-    isStreaming,
-    isRecording,
-    isPaused,
-    capturedImage,
-    recordedVideo,
-    videoRef,
-    startCamera,
-    stopCamera,
-    startRecording,
-    pauseRecording,
-    stopRecording,
-    captureImage,
-    resetCapture
-  } = useCamera();
+
+  const { isStreaming, videoRef, startCamera, stopCamera, resetCapture } =
+    useCamera();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -48,17 +39,24 @@ const AvatarGenerationPage = () => {
     }
   }, [isAuthenticated, router]);
 
-  const handleCapture3D = useCallback((landmarks: MultiHandLandmarks) => {
-    setCaptured3DAvatar(landmarks);
+  const handleRecordingComplete = useCallback((recording: Avatar3DRecording) => {
+    setRecorded3DAvatar(recording);
+    toast.success("3D Recording Complete", {
+      description: `Recorded ${recording.frames.length} frames (${(recording.duration / 1000).toFixed(1)}s)`,
+    });
+  }, []);
+
+  const handleCapturePose = useCallback((pose: Avatar3DRecording) => {
+    setRecorded3DAvatar(pose);
     toast.success("3D Pose Captured", {
-      description: `Captured ${landmarks.hands.length} hand(s)`,
+      description: `Captured ${pose.frames[0]?.landmarks.hands.length || 0} hand(s)`,
     });
   }, []);
 
   const handleSaveClick = () => {
-    if (!capturedImage && !recordedVideo && !captured3DAvatar) {
+    if (!recorded3DAvatar || recorded3DAvatar.frames.length === 0) {
       toast.error("No Content", {
-        description: "Please capture a 3D pose first",
+        description: "Please record a 3D gesture first",
       });
       return;
     }
@@ -67,7 +65,7 @@ const AvatarGenerationPage = () => {
 
   const handleFormReset = () => {
     resetCapture();
-    setCaptured3DAvatar(null);
+    setRecorded3DAvatar(null);
     setSignName("");
     setSignDescription("");
     setLanguage("");
@@ -96,7 +94,7 @@ const AvatarGenerationPage = () => {
       return;
     }
 
-    if (capturedImage || recordedVideo || captured3DAvatar) {
+    if (recorded3DAvatar && recorded3DAvatar.frames.length > 0) {
       setIsLoading(true);
       try {
         const storedAvatars = localStorage.getItem("avatars");
@@ -109,9 +107,7 @@ const AvatarGenerationPage = () => {
           name: signName.trim(),
           description: signDescription.trim(),
           language,
-          thumbnail: capturedImage,
-          video: recordedVideo,
-          landmarks3D: captured3DAvatar,
+          recording3D: recorded3DAvatar,
           userId: currentUser.id,
           userName: currentUser.name,
           status: "unverified",
@@ -158,37 +154,85 @@ const AvatarGenerationPage = () => {
       <div className="flex flex-col gap-6">
         <AvatarPageHeader userRole={currentUser?.role} />
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-8">
-          <CameraControls
-            isStreaming={isStreaming}
-            isRecording={isRecording}
-            isPaused={isPaused}
-            videoRef={videoRef}
-            onStartCamera={startCamera}
-            onStopCamera={stopCamera}
-            onCaptureImage={captureImage}
-            onStartRecording={startRecording}
-            onPauseRecording={pauseRecording}
-            onStopRecording={stopRecording}
-          />
+        {/* Hidden video element - always rendered for camera stream */}
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className="hidden"
+        />
 
-          <HandGestureDetector
-            videoRef={videoRef}
-            isStreaming={isStreaming}
-            onCapture3D={handleCapture3D}
-          />
-        </div>
+        {/* Camera Start/Stop Button */}
+        {!isStreaming ? (
+          <div className="flex justify-center">
+            <Button onClick={startCamera} size="lg" className="gap-2">
+              <Camera className="h-5 w-5" />
+              Start Camera
+            </Button>
+          </div>
+        ) : (
+          <div className="relative">
+            {/* Primary: 3D Avatar Visualization */}
+            <HandGestureDetector
+              videoRef={videoRef}
+              isStreaming={isStreaming}
+              onRecordingComplete={handleRecordingComplete}
+              onCapturePose={handleCapturePose}
+            />
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <GesturePreview
-            capturedImage={capturedImage}
-            recordedVideo={recordedVideo}
-            captured3DAvatar={captured3DAvatar}
-            isLoading={isLoading}
-            onReset={handleFormReset}
-            onSave={handleSaveClick}
-          />
-        </div>
+            {/* Floating Camera Preview (toggleable) - top right corner */}
+            {showCameraPreview && videoRef.current && (
+              <div className="absolute top-16 right-4 w-48 rounded-lg overflow-hidden shadow-lg border-2 border-primary/50 bg-black z-10">
+                <video
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                  style={{ transform: "scaleX(-1)" }}
+                  ref={(el) => {
+                    if (el && videoRef.current?.srcObject) {
+                      el.srcObject = videoRef.current.srcObject;
+                    }
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Camera Controls Bar */}
+            <div className="flex items-center justify-between mt-4 p-3 bg-muted rounded-lg">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="camera-preview"
+                    checked={showCameraPreview}
+                    onCheckedChange={setShowCameraPreview}
+                  />
+                  <Label htmlFor="camera-preview" className="text-sm">
+                    Show Camera Preview
+                  </Label>
+                </div>
+              </div>
+              <Button
+                onClick={stopCamera}
+                variant="destructive"
+                size="sm"
+                className="gap-2"
+              >
+                <CameraOff className="h-4 w-4" />
+                Stop Camera
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Preview Section */}
+        <GesturePreview
+          recorded3DAvatar={recorded3DAvatar}
+          isLoading={isLoading}
+          onReset={handleFormReset}
+          onSave={handleSaveClick}
+        />
 
         {showForm && (
           <SaveForm

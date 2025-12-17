@@ -1,12 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trash2, Download, Eye, Plus, CheckCircle2, XCircle, User } from 'lucide-react';
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import { Avatar3DRecording } from "@/types/hand";
+import Avatar3DPlayer from "@/components/avatar/Avatar3DPlayer";
+import AvatarViewDialog from "@/components/avatar/AvatarViewDialog";
 
 type Avatar = {
   id: string;
@@ -14,6 +18,7 @@ type Avatar = {
   date: string;
   thumbnail: string | null;
   video: string | null;
+  recording3D?: Avatar3DRecording | null;
   userId: string;
   userName: string;
   language: "ASL" | "MSL";
@@ -24,6 +29,8 @@ type Avatar = {
 const AdminAvatarDatabasePage = () => {
   const [avatars, setAvatars] = useState<Avatar[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedAvatar, setSelectedAvatar] = useState<Avatar | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const router = useRouter();
   const { currentUser, isAuthenticated } = useAuth();
 
@@ -44,29 +51,27 @@ const AdminAvatarDatabasePage = () => {
       return;
     }
     
+    const fetchAvatars = () => {
+      try {
+        const storedAvatars = localStorage.getItem('avatars');
+        if (!storedAvatars) {
+          setAvatars([]);
+        } else {
+          const allAvatars: Avatar[] = JSON.parse(storedAvatars);
+          setAvatars(allAvatars);
+        }
+      } catch (error) {
+        console.error("Error fetching avatars:", error);
+        toast.error("Failed to load avatars", {
+          description: "Please try again later"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     fetchAvatars();
   }, [isAuthenticated, currentUser, router]);
-
-  const fetchAvatars = () => {
-    try {
-      // Get all avatars from localStorage
-      const storedAvatars = localStorage.getItem('avatars');
-      if (!storedAvatars) {
-        setAvatars([]);
-      } else {
-        // For admin, show all avatars
-        const allAvatars: Avatar[] = JSON.parse(storedAvatars);
-        setAvatars(allAvatars);
-      }
-    } catch (error) {
-      console.error("Error fetching avatars:", error);
-      toast.error("Failed to load avatars", {
-        description: "Please try again later"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const deleteAvatar = (id: string) => {
     try {
@@ -210,12 +215,15 @@ const AdminAvatarDatabasePage = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="aspect-square bg-muted rounded-lg mb-4 flex items-center justify-center overflow-hidden">
-                    {avatar.thumbnail ? (
-                      <img 
+                  <div className="aspect-square bg-muted rounded-lg mb-4 flex items-center justify-center overflow-hidden relative">
+                    {avatar.recording3D && avatar.recording3D.frames.length > 0 ? (
+                      <Avatar3DPlayer recording={avatar.recording3D} />
+                    ) : avatar.thumbnail ? (
+                      <Image 
                         src={avatar.thumbnail} 
                         alt={avatar.name}
-                        className="w-full h-full object-cover" 
+                        fill
+                        className="object-cover" 
                       />
                     ) : avatar.video ? (
                       <video
@@ -241,11 +249,8 @@ const AdminAvatarDatabasePage = () => {
                         variant="outline" 
                         size="sm"
                         onClick={() => {
-                          if (avatar.thumbnail) {
-                            window.open(avatar.thumbnail, '_blank');
-                          } else if (avatar.video) {
-                            window.open(avatar.video, '_blank');
-                          }
+                          setSelectedAvatar(avatar);
+                          setViewDialogOpen(true);
                         }}
                       >
                         <Eye className="h-4 w-4 mr-2" />
@@ -278,6 +283,13 @@ const AdminAvatarDatabasePage = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* View Dialog */}
+        <AvatarViewDialog
+          avatar={selectedAvatar}
+          open={viewDialogOpen}
+          onOpenChange={setViewDialogOpen}
+        />
       </div>
     </div>
   );

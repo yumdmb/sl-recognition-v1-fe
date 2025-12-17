@@ -132,9 +132,13 @@ function HandModel({ landmarks, handIndex }: HandModelProps) {
 
 interface Hand3DProps {
   multiHandLandmarks: MultiHandLandmarks | null;
+  enableControls?: boolean;
 }
 
-export const Hand3D: React.FC<Hand3DProps> = ({ multiHandLandmarks }) => {
+export const Hand3D: React.FC<Hand3DProps> = ({
+  multiHandLandmarks,
+  enableControls = false,
+}) => {
   return (
     <div className="w-full h-full bg-gradient-to-b from-gray-800 to-gray-900 rounded-lg shadow-lg">
       <Canvas camera={{ position: [0, 0, 3], fov: 50 }}>
@@ -149,13 +153,15 @@ export const Hand3D: React.FC<Hand3DProps> = ({ multiHandLandmarks }) => {
           <HandModel key={`hand-${index}`} landmarks={hand} handIndex={index} />
         ))}
 
-        {/* Controls and helpers */}
-        <OrbitControls
-          enableZoom={true}
-          enablePan={true}
-          minDistance={1}
-          maxDistance={5}
-        />
+        {/* Controls - only enabled when explicitly requested */}
+        {enableControls && (
+          <OrbitControls
+            enableZoom={true}
+            enablePan={true}
+            minDistance={1}
+            maxDistance={5}
+          />
+        )}
         <gridHelper args={[5, 20, "#444444", "#222222"]} position={[0, -1, 0]} />
       </Canvas>
     </div>
