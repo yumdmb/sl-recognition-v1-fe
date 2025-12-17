@@ -78,12 +78,13 @@ function HandModel({ landmarks, handIndex }: HandModelProps) {
   const positions = useMemo(() => {
     if (!landmarks?.landmarks) return [];
 
-    // Use actual hand positions from MediaPipe - scale factor increased for better separation
+    // Scale Z much more to make depth visible when rotating
+    // MediaPipe Z values are very small (relative to wrist), so we amplify them
     return landmarks.landmarks.map((landmark) => {
       return new THREE.Vector3(
-        (landmark.x - 0.5) * 4, // Increased scale for wider spread
+        (landmark.x - 0.5) * 4,
         -(landmark.y - 0.5) * 4,
-        -landmark.z * 2
+        -landmark.z * 10 // Increased from 2 to 10 for visible depth
       );
     });
   }, [landmarks]);

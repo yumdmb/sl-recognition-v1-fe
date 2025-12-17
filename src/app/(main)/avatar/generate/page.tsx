@@ -1,22 +1,25 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import CameraControls from '@/components/avatar/CameraControls';
-import GesturePreview from '@/components/avatar/GesturePreview';
-import AvatarPageHeader from '@/components/avatar/AvatarPageHeader';
-import SaveForm from '@/components/avatar/SaveForm';
-import HandGestureDetector from '@/components/avatar/HandGestureDetector';
-import { useCamera } from '@/hooks/useCamera';
+import CameraControls from "@/components/avatar/CameraControls";
+import GesturePreview from "@/components/avatar/GesturePreview";
+import AvatarPageHeader from "@/components/avatar/AvatarPageHeader";
+import SaveForm from "@/components/avatar/SaveForm";
+import HandGestureDetector from "@/components/avatar/HandGestureDetector";
+import { useCamera } from "@/hooks/useCamera";
+import { MultiHandLandmarks } from "@/types/hand";
 
 const AvatarGenerationPage = () => {
-  const [signName, setSignName] = useState('');
-  const [signDescription, setSignDescription] = useState('');
+  const [signName, setSignName] = useState("");
+  const [signDescription, setSignDescription] = useState("");
   const [language, setLanguage] = useState<"ASL" | "MSL" | "">("");
   const [showForm, setShowForm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [captured3DAvatar, setCaptured3DAvatar] =
+    useState<MultiHandLandmarks | null>(null);
   const router = useRouter();
   const { currentUser, isAuthenticated } = useAuth();
   
@@ -45,10 +48,17 @@ const AvatarGenerationPage = () => {
     }
   }, [isAuthenticated, router]);
 
+  const handleCapture3D = useCallback((landmarks: MultiHandLandmarks) => {
+    setCaptured3DAvatar(landmarks);
+    toast.success("3D Pose Captured", {
+      description: `Captured ${landmarks.hands.length} hand(s)`,
+    });
+  }, []);
+
   const handleSaveClick = () => {
-    if (!capturedImage && !recordedVideo) {
+    if (!capturedImage && !recordedVideo && !captured3DAvatar) {
       toast.error("No Content", {
-        description: "Please capture an image or record a video first"
+        description: "Please capture a 3D pose first",
       });
       return;
     }
@@ -57,8 +67,9 @@ const AvatarGenerationPage = () => {
 
   const handleFormReset = () => {
     resetCapture();
-    setSignName('');
-    setSignDescription('');
+    setCaptured3DAvatar(null);
+    setSignName("");
+    setSignDescription("");
     setLanguage("");
     setShowForm(false);
   };
@@ -85,14 +96,14 @@ const AvatarGenerationPage = () => {
       return;
     }
 
-    if (capturedImage || recordedVideo) {
+    if (capturedImage || recordedVideo || captured3DAvatar) {
       setIsLoading(true);
       try {
-        // Get existing avatars from localStorage or initialize empty array
-        const storedAvatars = localStorage.getItem('avatars');
-        const avatars = storedAvatars ? JSON.parse(storedAvatars) : [];
-        
-        // Create new avatar object
+        const storedAvatars = localStorage.getItem("avatars");
+        const avatars: unknown[] = storedAvatars
+          ? (JSON.parse(storedAvatars) as unknown[])
+          : [];
+
         const newAvatar = {
           id: `avatar-${Date.now()}`,
           name: signName.trim(),
@@ -100,24 +111,27 @@ const AvatarGenerationPage = () => {
           language,
           thumbnail: capturedImage,
           video: recordedVideo,
+          landmarks3D: captured3DAvatar,
           userId: currentUser.id,
           userName: currentUser.name,
           status: "unverified",
           date: new Date().toISOString(),
         };
-        
-        // Save updated avatars to localStorage
-        localStorage.setItem('avatars', JSON.stringify([newAvatar, ...avatars]));
-        
+
+        localStorage.setItem(
+          "avatars",
+          JSON.stringify([newAvatar, ...avatars])
+        );
+
         toast.success("Saved to My Avatar", {
-          description: "Your gesture has been saved"
+          description: "Your 3D gesture avatar has been saved",
         });
-        
-        router.push('/avatar/my-avatars');
+
+        router.push("/avatar/my-avatars");
       } catch (error) {
         console.error("Error saving avatar:", error);
         toast.error("Save Failed", {
-          description: "Unable to save your avatar. Please try again."
+          description: "Unable to save your avatar. Please try again.",
         });
       } finally {
         setIsLoading(false);
@@ -161,6 +175,7 @@ const AvatarGenerationPage = () => {
           <HandGestureDetector
             videoRef={videoRef}
             isStreaming={isStreaming}
+            onCapture3D={handleCapture3D}
           />
         </div>
 
@@ -168,6 +183,7 @@ const AvatarGenerationPage = () => {
           <GesturePreview
             capturedImage={capturedImage}
             recordedVideo={recordedVideo}
+            captured3DAvatar={captured3DAvatar}
             isLoading={isLoading}
             onReset={handleFormReset}
             onSave={handleSaveClick}
