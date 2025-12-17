@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { GestureContribution, GestureCategory } from '@/types/gestureContributions';
 import { Check, X, Trash2, Eye, Copy, AlertTriangle, Edit2 } from 'lucide-react';
@@ -110,28 +109,30 @@ export default function GestureContributionRow({
     setIsCategoryEditOpen(false);
   };
 
+  const cellClass = "p-4 align-middle border-b";
+  
   return (
-    <TableRow>
+    <tr className="hover:bg-muted/50 transition-colors">
       {showCheckbox && (
-        <TableCell className="w-12">
+        <td className={`${cellClass} w-12`}>
           <input
             type="checkbox"
             checked={isSelected}
             onChange={(e) => onSelect?.(e.target.checked)}
             className="h-4 w-4 rounded border-gray-300"
           />
-        </TableCell>
+        </td>
       )}
-      <TableCell className="font-medium">
+      <td className={`${cellClass} font-medium`}>
         <div>
           <div className="font-semibold">{contribution.title}</div>
           <div className="text-xs text-muted-foreground truncate max-w-xs">{contribution.description}</div>
         </div>
-      </TableCell>
-      <TableCell>
+      </td>
+      <td className={cellClass}>
         <Badge variant="outline">{contribution.language}</Badge>
-      </TableCell>
-      <TableCell>
+      </td>
+      <td className={cellClass}>
         <div className="flex items-center gap-1">
           {contribution.category ? (
             <Badge variant="secondary">
@@ -184,16 +185,16 @@ export default function GestureContributionRow({
             </Dialog>
           )}
         </div>
-      </TableCell>
+      </td>
       {!isMySubmissionsView && (
-        <TableCell>
+        <td className={cellClass}>
           <div>
             <div className="font-medium">{contribution.submitter?.name || 'Unknown'}</div>
             {contribution.submitter?.email && <div className="text-sm text-muted-foreground">{contribution.submitter.email}</div>}
           </div>
-        </TableCell>
+        </td>
       )}
-      <TableCell>
+      <td className={cellClass}>
         <div>
           {getStatusBadge(contribution.status)}
           {contribution.status === 'rejected' && contribution.rejection_reason && (
@@ -202,9 +203,9 @@ export default function GestureContributionRow({
             </div>
           )}
         </div>
-      </TableCell>
+      </td>
       {!isMySubmissionsView && (
-        <TableCell>
+        <td className={cellClass}>
           {contribution.is_duplicate ? (
             <div className="flex items-center gap-1">
               <Badge variant="destructive" className="flex items-center gap-1">
@@ -237,9 +238,9 @@ export default function GestureContributionRow({
               Unique
             </Badge>
           )}
-        </TableCell>
+        </td>
       )}
-      <TableCell>
+      <td className={cellClass}>
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm">
@@ -269,13 +270,13 @@ export default function GestureContributionRow({
             </div>
           </DialogContent>
         </Dialog>
-      </TableCell>
-      <TableCell>
+      </td>
+      <td className={cellClass}>
         <div className="text-sm text-muted-foreground">
             {new Date(contribution.created_at).toLocaleDateString()}
         </div>
-      </TableCell>
-      <TableCell>
+      </td>
+      <td className={cellClass}>
         <div className="flex gap-1 items-center">
           {/* Admin actions for pending contributions */}
           {isAdmin && isPending && onApprove && onReject && (
@@ -352,7 +353,7 @@ export default function GestureContributionRow({
             </Button>
           )}
         </div>
-      </TableCell>
-    </TableRow>
+      </td>
+    </tr>
   );
 }

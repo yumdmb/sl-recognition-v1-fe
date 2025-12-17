@@ -188,25 +188,34 @@ export default function ManageContributions() {
         />
       </div>
 
-      {/* Content */}
+      {/* Content - Scrollable Container */}
       {isLoading ? (
-        <GestureViewLoadingState />
+        <div className="p-6 border rounded-lg">
+          <GestureViewLoadingState />
+        </div>
       ) : contributions.length > 0 ? (
-        <GestureContributionsTable
-          contributions={contributions}
-          userRole={userRole}
-          onApprove={handleApprove}
-          onReject={handleReject}
-          onDelete={handleDelete}
-          onUpdateCategory={handleUpdateCategory}
-          onRefresh={refreshContributions}
-          isMySubmissionsView={false}
-          selectedIds={selectedIds}
-          onSelectAll={handleSelectAll}
-          onSelectOne={handleSelectOne}
-        />
+        <div 
+          className="border rounded-lg overflow-auto"
+          style={{ maxHeight: 'calc(100vh - 320px)' }}
+        >
+          <GestureContributionsTable
+            contributions={contributions}
+            userRole={userRole}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            onDelete={handleDelete}
+            onUpdateCategory={handleUpdateCategory}
+            onRefresh={refreshContributions}
+            isMySubmissionsView={false}
+            selectedIds={selectedIds}
+            onSelectAll={handleSelectAll}
+            onSelectOne={handleSelectOne}
+          />
+        </div>
       ) : (
-        <GestureViewEmptyState isMySubmissions={false} />
+        <div className="p-6 border rounded-lg">
+          <GestureViewEmptyState isMySubmissions={false} />
+        </div>
       )}
 
       {/* Bulk Action Confirmations */}

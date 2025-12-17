@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { GestureContribution } from '@/types/gestureContributions';
 import GestureContributionRow from './GestureContributionRow';
 import GestureContributionCard from './GestureContributionCard';
@@ -68,60 +67,59 @@ export default function GestureContributionsTable({
     );
   }
 
-  // Desktop view: Table layout
+  // Desktop view: Table layout with sticky header
+  // Using thead with sticky positioning - the scrollable container must be the parent
+  const thBaseClass = "h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background";
+  
   return (
-    <Card>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {showCheckboxes && (
-                <TableHead className="w-12">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={(e) => onSelectAll?.(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300"
-                  />
-                </TableHead>
-              )}
-              <TableHead>Title</TableHead>
-              <TableHead>Language</TableHead>
-              <TableHead>Category</TableHead>
-              {!isMySubmissionsView && <TableHead>Submitted By</TableHead>}
-              <TableHead>Status</TableHead>
-              {!isMySubmissionsView && <TableHead>Duplicate</TableHead>}
-              <TableHead>Media</TableHead>
-              <TableHead>Submitted At</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {contributions.map((contribution) => (
-              <GestureContributionRow
-                key={contribution.id}
-                contribution={contribution}
-                userRole={userRole}
-                onApprove={onApprove}
-                onReject={onReject}
-                onDelete={onDelete}
-                onUpdateCategory={onUpdateCategory}
-                isMySubmissionsView={isMySubmissionsView}
-                showCheckbox={showCheckboxes}
-                isSelected={selectedIds.includes(contribution.id)}
-                onSelect={(checked) => onSelectOne?.(contribution.id, checked)}
+    <table className="w-full caption-bottom text-sm">
+      <thead className="sticky top-0 z-10 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
+        <tr>
+          {showCheckboxes && (
+            <th className={`${thBaseClass} w-12`}>
+              <input
+                type="checkbox"
+                checked={allSelected}
+                onChange={(e) => onSelectAll?.(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300"
               />
-            ))}
-            {contributions.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={showCheckboxes ? (isMySubmissionsView ? 8 : 10) : (isMySubmissionsView ? 7 : 9)} className="text-center">
-                  No contributions found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+            </th>
+          )}
+          <th className={thBaseClass}>Title</th>
+          <th className={thBaseClass}>Language</th>
+          <th className={thBaseClass}>Category</th>
+          {!isMySubmissionsView && <th className={thBaseClass}>Submitted By</th>}
+          <th className={thBaseClass}>Status</th>
+          {!isMySubmissionsView && <th className={thBaseClass}>Duplicate</th>}
+          <th className={thBaseClass}>Media</th>
+          <th className={thBaseClass}>Submitted At</th>
+          <th className={thBaseClass}>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {contributions.map((contribution) => (
+          <GestureContributionRow
+            key={contribution.id}
+            contribution={contribution}
+            userRole={userRole}
+            onApprove={onApprove}
+            onReject={onReject}
+            onDelete={onDelete}
+            onUpdateCategory={onUpdateCategory}
+            isMySubmissionsView={isMySubmissionsView}
+            showCheckbox={showCheckboxes}
+            isSelected={selectedIds.includes(contribution.id)}
+            onSelect={(checked) => onSelectOne?.(contribution.id, checked)}
+          />
+        ))}
+        {contributions.length === 0 && (
+          <tr>
+            <td colSpan={showCheckboxes ? (isMySubmissionsView ? 8 : 10) : (isMySubmissionsView ? 7 : 9)} className="p-4 text-center">
+              No contributions found.
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
   );
 }
