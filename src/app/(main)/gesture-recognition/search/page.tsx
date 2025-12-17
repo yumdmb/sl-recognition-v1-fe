@@ -79,7 +79,10 @@ const GestureRecognitionSearch: React.FC = () => {
       .select('id, name, icon, gestures!inner(count)');
 
     if (error) {
-      toast.error("Failed to load categories", { description: error.message });
+      toast.error("Failed to load categories", { 
+        description: error.message,
+        style: { color: 'black' }
+      });
     } else {
       // Fetch gesture counts per category filtered by language
       const categoriesWithCounts = await Promise.all(
@@ -106,7 +109,12 @@ const GestureRecognitionSearch: React.FC = () => {
 
   const handleSearch = useCallback(async () => {
     if (!searchTerm.trim()) {
-      toast.error("Search term required", { description: "Please enter a word to search for" });
+      toast.error("Search term required", { 
+        description: "Please enter a word to search for",
+        style: {
+          color: 'black'
+        }
+      });
       return;
     }
     setIsLoading(true);
@@ -121,9 +129,24 @@ const GestureRecognitionSearch: React.FC = () => {
       if (error) throw error;
 
       setSearchResults(data || []);
-      toast.success(`Found ${data?.length || 0} gestures for "${searchTerm}"`);
+      
+      // Show appropriate message based on results
+      if (data && data.length > 0) {
+        toast.success(`Found ${data.length} gesture${data.length > 1 ? 's' : ''} for "${searchTerm}"`, {
+          style: { color: 'black' }
+        });
+      } else {
+        toast.info(`No record for "${searchTerm}"`, {
+          style: {
+            color: 'black'
+          }
+        });
+      }
     } catch (error: any) {
-      toast.error("Search failed", { description: error.message });
+      toast.error("Search failed", { 
+        description: error.message,
+        style: { color: 'black' }
+      });
     } finally {
       setIsLoading(false);
     }
@@ -145,7 +168,10 @@ const GestureRecognitionSearch: React.FC = () => {
       setCategoryGestures(data || []);
       setActiveTab('category'); // Switch tab to show results
     } catch (error: any) {
-      toast.error(`Failed to load gestures for ${category.name}`, { description: error.message });
+      toast.error(`Failed to load gestures for ${category.name}`, { 
+        description: error.message,
+        style: { color: 'black' }
+      });
     } finally {
       setIsLoading(false);
     }
@@ -163,24 +189,65 @@ const GestureRecognitionSearch: React.FC = () => {
     }
   };
 
-  // Polling for automatic updates (refreshes every 5 seconds)
+  // Silent background refresh - updates data without user notification
+  const silentRefresh = useCallback(async () => {
+    // Silently refresh categories
+    const { data: categoriesData } = await supabase
+      .from('gesture_categories')
+      .select('id, name, icon, gestures!inner(count)');
+
+    if (categoriesData) {
+      const categoriesWithCounts = await Promise.all(
+        categoriesData.map(async (category) => {
+          const { count } = await supabase
+            .from('gestures')
+            .select('*', { count: 'exact', head: true })
+            .eq('category_id', category.id)
+            .eq('language', language);
+          
+          return {
+            ...category,
+            count: count || 0
+          };
+        })
+      );
+      setCategories(categoriesWithCounts);
+    }
+
+    // Silently refresh current view if applicable
+    if (activeTab === 'text' && searchTerm.trim()) {
+      const { data } = await supabase
+        .from('gestures')
+        .select('*')
+        .ilike('name', `%${searchTerm}%`)
+        .eq('language', language);
+      
+      if (data) {
+        setSearchResults(data);
+      }
+    } else if (activeTab === 'category' && selectedCategory) {
+      const { data } = await supabase
+        .from('gestures')
+        .select('*')
+        .eq('category_id', selectedCategory.id)
+        .eq('language', language);
+      
+      if (data) {
+        setCategoryGestures(data);
+      }
+    }
+  }, [supabase, activeTab, searchTerm, selectedCategory, language]);
+
+  // Polling for automatic updates (refreshes every 5 seconds silently)
   useEffect(() => {
     const interval = setInterval(() => {
-      // Refresh categories to update counts
-      fetchCategories();
-      
-      // Refresh current view if applicable
-      if (activeTab === 'text' && searchTerm) {
-        handleSearch();
-      } else if (activeTab === 'category' && selectedCategory) {
-        handleCategorySelect(selectedCategory);
-      }
+      silentRefresh();
     }, 5000); // Poll every 5 seconds
 
     return () => {
       clearInterval(interval);
     };
-  }, [activeTab, searchTerm, selectedCategory, fetchCategories, handleSearch, handleCategorySelect]);
+  }, [silentRefresh]);
 
   const openEditForm = (gesture: Gesture) => {
     setEditingGesture(gesture);
@@ -210,10 +277,15 @@ const GestureRecognitionSearch: React.FC = () => {
         await supabase.storage.from('gestures').remove([`public/${filePath}`]);
       }
 
-      toast.success("Gesture deleted successfully!");
+      toast.success("Gesture deleted successfully!", {
+        style: { color: 'black' }
+      });
       handleFormSuccess(); // Re-use success logic to refresh data
     } catch (error: any) {
-      toast.error("Failed to delete gesture", { description: error.message });
+      toast.error("Failed to delete gesture", { 
+        description: error.message,
+        style: { color: 'black' }
+      });
     } finally {
       setIsDeleteAlertOpen(false);
       setDeletingGesture(null);
