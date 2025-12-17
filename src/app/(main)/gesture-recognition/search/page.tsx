@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -142,9 +143,10 @@ const GestureRecognitionSearch: React.FC = () => {
           }
         });
       }
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       toast.error("Search failed", { 
-        description: error.message,
+        description: errorMessage,
         style: { color: 'black' }
       });
     } finally {
@@ -167,9 +169,10 @@ const GestureRecognitionSearch: React.FC = () => {
 
       setCategoryGestures(data || []);
       setActiveTab('category'); // Switch tab to show results
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       toast.error(`Failed to load gestures for ${category.name}`, { 
-        description: error.message,
+        description: errorMessage,
         style: { color: 'black' }
       });
     } finally {
@@ -281,9 +284,10 @@ const GestureRecognitionSearch: React.FC = () => {
         style: { color: 'black' }
       });
       handleFormSuccess(); // Re-use success logic to refresh data
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       toast.error("Failed to delete gesture", { 
-        description: error.message,
+        description: errorMessage,
         style: { color: 'black' }
       });
     } finally {
@@ -294,9 +298,15 @@ const GestureRecognitionSearch: React.FC = () => {
 
   const renderGestureCard = (gesture: Gesture) => (
     <Card key={gesture.id} className="overflow-hidden">
-      <CardContent className="p-0">
+      <CardContent className="p-0 relative h-48">
         {gesture.media_type === 'image' ? (
-          <img src={gesture.media_url} alt={gesture.name} className="w-full h-48 object-cover" />
+          <Image 
+            src={gesture.media_url} 
+            alt={gesture.name} 
+            fill
+            className="object-cover" 
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
         ) : (
           <video src={gesture.media_url} controls className="w-full h-48 object-cover" />
         )}

@@ -163,7 +163,7 @@ export default function GestureCameraCapture({
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
+      <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
         <video
           ref={videoRef}
           className="w-full h-full object-cover"

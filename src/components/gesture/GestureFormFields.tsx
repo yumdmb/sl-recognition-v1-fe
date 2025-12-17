@@ -58,11 +58,11 @@ export default function GestureFormFields({
       <div className="space-y-2">
         <Label>Sign Language *</Label>
         <RadioGroup value={language} onValueChange={setLanguage} className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-          <div className="flex items-center space-x-3 min-h-[44px] p-2 rounded-md hover:bg-gray-50 cursor-pointer">
+          <div className="flex items-center space-x-3 min-h-[44px] p-2 rounded-md hover:bg-muted cursor-pointer">
             <RadioGroupItem value="ASL" id="asl" className="min-h-[24px] min-w-[24px]" />
             <Label htmlFor="asl" className="cursor-pointer text-base">ASL (American Sign Language)</Label>
           </div>
-          <div className="flex items-center space-x-3 min-h-[44px] p-2 rounded-md hover:bg-gray-50 cursor-pointer">
+          <div className="flex items-center space-x-3 min-h-[44px] p-2 rounded-md hover:bg-muted cursor-pointer">
             <RadioGroupItem value="MSL" id="msl" className="min-h-[24px] min-w-[24px]" />
             <Label htmlFor="msl" className="cursor-pointer text-base">MSL (Malaysian Sign Language)</Label>
           </div>
@@ -73,11 +73,11 @@ export default function GestureFormFields({
       <div className="space-y-2">
         <Label>Media Type *</Label>
         <RadioGroup value={mediaType} onValueChange={setMediaType} className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-          <div className="flex items-center space-x-3 min-h-[44px] p-2 rounded-md hover:bg-gray-50 cursor-pointer">
+          <div className="flex items-center space-x-3 min-h-[44px] p-2 rounded-md hover:bg-muted cursor-pointer">
             <RadioGroupItem value="image" id="image" className="min-h-[24px] min-w-[24px]" />
             <Label htmlFor="image" className="cursor-pointer text-base">Image</Label>
           </div>
-          <div className="flex items-center space-x-3 min-h-[44px] p-2 rounded-md hover:bg-gray-50 cursor-pointer">
+          <div className="flex items-center space-x-3 min-h-[44px] p-2 rounded-md hover:bg-muted cursor-pointer">
             <RadioGroupItem value="video" id="video" className="min-h-[24px] min-w-[24px]" />
             <Label htmlFor="video" className="cursor-pointer text-base">Video</Label>
           </div>

@@ -48,7 +48,7 @@ interface GestureFormProps {
 }
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+  name: z.string().min(1, { message: "Name must be at least 1 character." }),
   description: z.string().optional(),
   language: z.enum(["ASL", "MSL"]),
   category_id: z.string().refine(val => !isNaN(parseInt(val, 10)), { message: "Invalid category" }),
