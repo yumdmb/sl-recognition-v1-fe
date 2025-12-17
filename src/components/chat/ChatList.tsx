@@ -116,13 +116,20 @@ export default function ChatList({
                   <div className="flex justify-between items-center">
                     <h3 className="font-medium truncate">{chatName}</h3>
                     <div className="flex items-center gap-2">
-                      {chat.last_message_at && (
-                        <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(chat.last_message_at), {
-                            addSuffix: true,
-                          })}
-                        </span>
-                      )}
+                      {chat.last_message_at && (() => {
+                        const dateObj = new Date(chat.last_message_at);
+                        // Only render if date is valid
+                        if (!isNaN(dateObj.getTime())) {
+                          return (
+                            <span className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(dateObj, {
+                                addSuffix: true,
+                              })}
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
                       <UnreadBadge count={unreadCounts[chat.id] || 0} />
                     </div>
                   </div>

@@ -49,6 +49,7 @@ export default function ChatLayout() {
     return () => {
       unreadChannel.unsubscribe();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, router]);
 
   // Load messages when a chat is selected
@@ -59,6 +60,7 @@ export default function ChatLayout() {
       markMessagesAsRead();
       return unsubscribe;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedChat]);
 
   const loadChats = async () => {
@@ -135,7 +137,9 @@ export default function ChatLayout() {
             sender_id: newRecord.sender_id as string,
             chat_id: newRecord.chat_id as string,
             file_url: (newRecord.file_url as string | null) ?? undefined,
-            created_at: newRecord.created_at as string,
+            created_at: (newRecord.created_at && typeof newRecord.created_at === 'string' && newRecord.created_at.trim() !== '') 
+              ? newRecord.created_at 
+              : new Date().toISOString(),
             is_edited: (newRecord.is_edited as boolean) || false,
             reply_to_id: (newRecord.reply_to_id as string | null) ?? undefined,
             sender: {
@@ -160,7 +164,9 @@ export default function ChatLayout() {
           sender_id: newRecord.sender_id as string,
           chat_id: newRecord.chat_id as string,
           file_url: (newRecord.file_url as string | null) ?? undefined,
-          created_at: newRecord.created_at as string,
+          created_at: (newRecord.created_at && typeof newRecord.created_at === 'string' && newRecord.created_at.trim() !== '') 
+            ? newRecord.created_at 
+            : new Date().toISOString(),
           is_edited: (newRecord.is_edited as boolean) || false,
           reply_to_id: (newRecord.reply_to_id as string | null) ?? undefined,
           sender: {
