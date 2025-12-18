@@ -55,13 +55,19 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ isActive, language
       formData.append("language", language); // Add language to formData
 
       try {
-        const res = await fetch("http://localhost:8000/predict-image", {
+        // Docker API runs on port 80 through Nginx
+        const res = await fetch("http://localhost/predict-image/", {
           method: "POST",
           body: formData,
         });
 
         const data = await res.json();
-        setPrediction(`${data.label} (${(data.confidence * 100).toFixed(1)}%)`);
+        // Handle response - check if prediction was successful
+        if (data.success && data.label) {
+          setPrediction(`${data.label} (${(data.confidence * 100).toFixed(1)}%)`);
+        } else {
+          setPrediction(null); // No hand detected
+        }
       } catch (error) {
         console.error("Error sending frame:", error);
         // Optionally, provide user feedback here via toast or by setting an error state
