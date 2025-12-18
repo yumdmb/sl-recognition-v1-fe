@@ -28,6 +28,20 @@ export const useCamera = () => {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
+        
+        // Explicitly play the video - Chrome requires this even with autoPlay attribute
+        // Firefox is more lenient but Chrome blocks autoplay in many cases
+        try {
+          await videoRef.current.play();
+          console.log(" Video playback started successfully");
+        } catch (playError) {
+          console.warn(" Video autoplay failed, trying with muted:", playError);
+          // If play fails, try muting first (some browsers require this)
+          videoRef.current.muted = true;
+          await videoRef.current.play();
+          console.log(" Video playback started (muted)");
+        }
+        
         setIsStreaming(true);
         
         try {

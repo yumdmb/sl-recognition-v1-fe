@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -139,9 +139,55 @@ export const Hand3D: React.FC<Hand3DProps> = ({
   multiHandLandmarks,
   enableControls = false,
 }) => {
+  const [webglError, setWebglError] = useState<string | null>(null);
+
+  // Handle WebGL context creation errors
+  const handleCreated = ({ gl }: { gl: THREE.WebGLRenderer }) => {
+    // Check if WebGL context is valid
+    const context = gl.getContext();
+    if (!context) {
+      setWebglError("WebGL context creation failed");
+      console.error("❌ WebGL context is null");
+    } else {
+      console.log("✅ Three.js WebGL context created successfully");
+    }
+  };
+
+  const handleError = (event: React.SyntheticEvent<HTMLDivElement, Event>) => {
+    console.error("❌ Three.js Canvas error:", event);
+    setWebglError("Failed to initialize 3D renderer");
+  };
+
+  if (webglError) {
+    return (
+      <div className="w-full h-full bg-gradient-to-b from-gray-800 to-gray-900 rounded-lg shadow-lg flex items-center justify-center">
+        <div className="text-center text-white p-4">
+          <p className="text-red-400 mb-2">WebGL Error</p>
+          <p className="text-sm text-gray-400">{webglError}</p>
+          <p className="text-xs text-gray-500 mt-2">Try enabling hardware acceleration in your browser settings</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full bg-gradient-to-b from-gray-800 to-gray-900 rounded-lg shadow-lg">
-      <Canvas camera={{ position: [0, 0, 3], fov: 50 }}>
+      <Canvas 
+        camera={{ position: [0, 0, 3], fov: 50 }}
+        onCreated={handleCreated}
+        onError={handleError}
+        gl={{ 
+          antialias: true,
+          alpha: false,
+          powerPreference: "default",
+          failIfMajorPerformanceCaveat: false,
+        }}
+        fallback={
+          <div className="w-full h-full flex items-center justify-center text-white">
+            <p>Loading 3D renderer...</p>
+          </div>
+        }
+      >
         {/* Lighting setup for realistic hand rendering */}
         <ambientLight intensity={0.6} />
         <directionalLight position={[5, 5, 5]} intensity={0.8} castShadow />
