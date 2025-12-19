@@ -20,6 +20,7 @@ const AvatarGenerationPage = () => {
   const [signName, setSignName] = useState("");
   const [signDescription, setSignDescription] = useState("");
   const [language, setLanguage] = useState<"ASL" | "MSL" | "">("");
+  const [categoryId, setCategoryId] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [recorded3DAvatar, setRecorded3DAvatar] =
@@ -70,6 +71,7 @@ const AvatarGenerationPage = () => {
     setSignName("");
     setSignDescription("");
     setLanguage("");
+    setCategoryId(null);
     setShowForm(false);
   };
 
@@ -104,6 +106,7 @@ const AvatarGenerationPage = () => {
             description: signDescription.trim() || undefined,
             language: language as "ASL" | "MSL",
             recording: recorded3DAvatar,
+            categoryId: categoryId,
           },
           currentUser.id
         );
@@ -229,6 +232,8 @@ const AvatarGenerationPage = () => {
             setSignDescription={setSignDescription}
             language={language}
             setLanguage={setLanguage}
+            categoryId={categoryId}
+            setCategoryId={setCategoryId}
             isLoading={isLoading}
             onSave={saveToSignbank}
             onCancel={handleFormReset}

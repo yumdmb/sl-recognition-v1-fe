@@ -5,13 +5,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Eye, CheckCircle2, XCircle, User, Search } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Trash2, Eye, CheckCircle2, XCircle, User, Search, Tag } from 'lucide-react';
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import Avatar3DPlayer from "@/components/avatar/Avatar3DPlayer";
 import AvatarViewDialog from "@/components/avatar/AvatarViewDialog";
 import { signAvatarService, SignAvatar } from "@/lib/services/signAvatarService";
+import { createClient } from "@/utils/supabase/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+
+interface GestureCategory {
+  id: number;
+  name: string;
+  icon: string | null;
+}
 
 const AdminAvatarDatabasePage = () => {
   const [avatars, setAvatars] = useState<SignAvatar[]>([]);
@@ -20,6 +36,10 @@ const AdminAvatarDatabasePage = () => {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [languageFilter, setLanguageFilter] = useState<"all" | "ASL" | "MSL">("all");
+  const [categories, setCategories] = useState<GestureCategory[]>([]);
+  const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
+  const [editingAvatar, setEditingAvatar] = useState<SignAvatar | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const router = useRouter();
   const { currentUser, isAuthenticated } = useAuth();
 
@@ -46,6 +66,15 @@ const AdminAvatarDatabasePage = () => {
     }
   }, []);
 
+  const fetchCategories = useCallback(async () => {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from('gesture_categories')
+      .select('id, name, icon')
+      .order('name');
+    setCategories(data || []);
+  }, []);
+
   useEffect(() => {
     if (!isAuthenticated) {
       toast.error("Authentication Required", {
@@ -64,7 +93,8 @@ const AdminAvatarDatabasePage = () => {
     }
     
     void fetchAvatars();
-  }, [isAuthenticated, currentUser, router, fetchAvatars]);
+    void fetchCategories();
+  }, [isAuthenticated, currentUser, router, fetchAvatars, fetchCategories]);
 
   const deleteAvatar = async (id: string) => {
     try {
@@ -93,13 +123,52 @@ const AdminAvatarDatabasePage = () => {
         avatar.id === id ? { ...avatar, status: newStatus } : avatar
       ));
       
-      toast.success("Status updated", {
-        description: `Avatar is now ${newStatus}`
-      });
+      if (newStatus === "verified") {
+        toast.success("Avatar Verified", {
+          description: "Avatar has been verified and added to the Gesture Dictionary"
+        });
+      } else {
+        toast.success("Avatar Unverified", {
+          description: "Avatar has been unverified and removed from the Gesture Dictionary"
+        });
+      }
     } catch (error) {
       console.error("Error updating avatar status:", error);
       toast.error("Update failed", {
         description: "Unable to update avatar status. Please try again."
+      });
+    }
+  };
+
+  const openEditCategoryDialog = (avatar: SignAvatar) => {
+    setEditingAvatar(avatar);
+    setSelectedCategoryId(avatar.category_id?.toString() || "");
+    setEditCategoryDialogOpen(true);
+  };
+
+  const handleUpdateCategory = async () => {
+    if (!editingAvatar) return;
+
+    try {
+      const categoryId = selectedCategoryId ? parseInt(selectedCategoryId) : null;
+      await signAvatarService.updateCategory(editingAvatar.id, categoryId);
+      
+      // Update local state
+      const updatedCategory = categories.find(c => c.id === categoryId);
+      setAvatars(avatars.map(avatar => 
+        avatar.id === editingAvatar.id 
+          ? { ...avatar, category_id: categoryId, category: updatedCategory || undefined } 
+          : avatar
+      ));
+      
+      toast.success("Category Updated", {
+        description: "Avatar category has been updated"
+      });
+      setEditCategoryDialogOpen(false);
+    } catch (error) {
+      console.error("Error updating category:", error);
+      toast.error("Update failed", {
+        description: "Unable to update avatar category. Please try again."
       });
     }
   };
@@ -178,6 +247,20 @@ const AdminAvatarDatabasePage = () => {
                     <User className="h-4 w-4" />
                     {avatar.user_name || "Unknown"} • {avatar.language} • {new Date(avatar.created_at).toLocaleDateString()}
                   </CardDescription>
+                  {/* Category Badge */}
+                  <div className="flex items-center gap-2 mt-2">
+                    {avatar.category ? (
+                      <Badge variant="secondary" className="cursor-pointer" onClick={() => openEditCategoryDialog(avatar)}>
+                        {avatar.category.icon && <span className="mr-1">{avatar.category.icon}</span>}
+                        {avatar.category.name}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="cursor-pointer text-muted-foreground" onClick={() => openEditCategoryDialog(avatar)}>
+                        <Tag className="h-3 w-3 mr-1" />
+                        No category
+                      </Badge>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="aspect-square bg-muted rounded-lg mb-4 flex items-center justify-center overflow-hidden relative">
@@ -246,6 +329,45 @@ const AdminAvatarDatabasePage = () => {
         open={viewDialogOpen}
         onOpenChange={setViewDialogOpen}
       />
+
+      {/* Edit Category Dialog */}
+      <Dialog open={editCategoryDialogOpen} onOpenChange={setEditCategoryDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Category</DialogTitle>
+            <DialogDescription>
+              Change the category for &quot;{editingAvatar?.name}&quot;
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Select value={selectedCategoryId || "none"} onValueChange={(v) => setSelectedCategoryId(v === "none" ? "" : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No category</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.icon && <span className="mr-2">{category.icon}</span>}
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditCategoryDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => void handleUpdateCategory()}>
+                Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
