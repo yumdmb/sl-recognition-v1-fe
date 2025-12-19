@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react';
+import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,10 +29,12 @@ function GestureCard({ contribution }: { contribution: GestureContribution }) {
       <div className="relative aspect-video bg-gray-100">
         {contribution.media_url ? (
           contribution.media_type === 'image' ? (
-            <img
+            <Image
               src={contribution.media_url}
               alt={contribution.title}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gray-100">
@@ -103,11 +106,15 @@ function GestureCard({ contribution }: { contribution: GestureContribution }) {
                   <div className="mt-4">
                     {contribution.media_url ? (
                       contribution.media_type === 'image' ? (
-                        <img
-                          src={contribution.media_url}
-                          alt={contribution.title}
-                          className="w-full max-h-[50vh] md:max-h-96 object-contain rounded-lg"
-                        />
+                        <div className="relative w-full max-h-[50vh] md:max-h-96 aspect-video">
+                          <Image
+                            src={contribution.media_url}
+                            alt={contribution.title}
+                            fill
+                            className="object-contain rounded-lg"
+                            sizes="(max-width: 768px) 95vw, 672px"
+                          />
+                        </div>
                       ) : (
                         <video
                           src={contribution.media_url}

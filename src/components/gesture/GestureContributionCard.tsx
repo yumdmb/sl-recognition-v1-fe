@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react';
+import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -174,18 +175,28 @@ export default function GestureContributionCard({
               <DialogDescription>{contribution.description}</DialogDescription>
             </DialogHeader>
             <div className="mt-4">
-              {contribution.media_type === 'image' ? (
-                <img
-                  src={contribution.media_url}
-                  alt={contribution.title}
-                  className="w-full max-h-[70vh] object-contain rounded-lg"
-                />
+              {contribution.media_url ? (
+                contribution.media_type === 'image' ? (
+                  <div className="relative w-full max-h-[70vh] aspect-video">
+                    <Image
+                      src={contribution.media_url}
+                      alt={contribution.title}
+                      fill
+                      className="object-contain rounded-lg"
+                      sizes="(max-width: 768px) 95vw, 672px"
+                    />
+                  </div>
+                ) : (
+                  <video
+                    src={contribution.media_url}
+                    controls
+                    className="w-full max-h-[70vh] rounded-lg"
+                  />
+                )
               ) : (
-                <video
-                  src={contribution.media_url}
-                  controls
-                  className="w-full max-h-[70vh] rounded-lg"
-                />
+                <div className="w-full h-64 flex items-center justify-center bg-gray-200 rounded-lg">
+                  <Eye className="h-16 w-16 text-gray-400" />
+                </div>
               )}
             </div>
           </DialogContent>
