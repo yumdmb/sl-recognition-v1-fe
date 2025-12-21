@@ -9,9 +9,13 @@ import { motion } from 'framer-motion';
 
 interface UserDashboardProps {
   userRole: 'non-deaf' | 'deaf';
+  userName?: string;
 }
 
-const UserDashboard: React.FC<UserDashboardProps> = ({ userRole }) => {
+const UserDashboard: React.FC<UserDashboardProps> = ({ 
+  userRole, // eslint-disable-line @typescript-eslint/no-unused-vars
+  userName 
+}) => {
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -44,7 +48,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ userRole }) => {
         className="text-2xl md:text-3xl font-bold"
         variants={itemVariants}
       >
-        {userRole === 'deaf' ? 'Deaf Person Dashboard' : 'Non-Deaf Person Dashboard'}
+        Hello, {userName || 'User'}!
       </motion.h2>
       
       <motion.div

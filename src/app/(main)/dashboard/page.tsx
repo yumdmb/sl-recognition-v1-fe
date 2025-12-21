@@ -59,7 +59,10 @@ export default function Dashboard() {
       {showAdminDashboard ? (
         <AdminDashboard />
       ) : (
-        <UserDashboard userRole={currentUser?.role as 'non-deaf' | 'deaf' || 'non-deaf'} />
+        <UserDashboard 
+          userRole={currentUser?.role as 'non-deaf' | 'deaf' || 'non-deaf'} 
+          userName={currentUser?.name}
+        />
       )}
     </>
   );
