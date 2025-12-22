@@ -68,7 +68,7 @@ const AdminDashboard: React.FC = () => {
         className="text-2xl md:text-3xl font-bold"
         variants={itemVariants}
       >
-        Admin Dashboard
+        Hi Admin!
       </motion.h2>
       
       <motion.div variants={itemVariants}>

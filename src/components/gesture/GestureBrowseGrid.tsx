@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react';
+import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,24 +27,32 @@ function GestureCard({ contribution }: { contribution: GestureContribution }) {
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <div className="relative aspect-video bg-gray-100">
-        {contribution.media_type === 'image' ? (
-          <img
-            src={contribution.media_url}
-            alt={contribution.title}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-100">
-            <video
+        {contribution.media_url ? (
+          contribution.media_type === 'image' ? (
+            <Image
               src={contribution.media_url}
-              className="w-full h-full object-cover"
-              muted
+              alt={contribution.title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="bg-black bg-opacity-50 rounded-full p-3">
-                <Play className="h-6 w-6 text-white" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gray-100">
+              <video
+                src={contribution.media_url}
+                className="w-full h-full object-cover"
+                muted
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="bg-black bg-opacity-50 rounded-full p-3">
+                  <Play className="h-6 w-6 text-white" />
+                </div>
               </div>
             </div>
+          )
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gray-200">
+            <ImageIcon className="h-12 w-12 text-gray-400" />
           </div>
         )}
         
@@ -95,18 +104,28 @@ function GestureCard({ contribution }: { contribution: GestureContribution }) {
                 <div className="space-y-4">
                   {/* Media */}
                   <div className="mt-4">
-                    {contribution.media_type === 'image' ? (
-                      <img
-                        src={contribution.media_url}
-                        alt={contribution.title}
-                        className="w-full max-h-[50vh] md:max-h-96 object-contain rounded-lg"
-                      />
+                    {contribution.media_url ? (
+                      contribution.media_type === 'image' ? (
+                        <div className="relative w-full max-h-[50vh] md:max-h-96 aspect-video">
+                          <Image
+                            src={contribution.media_url}
+                            alt={contribution.title}
+                            fill
+                            className="object-contain rounded-lg"
+                            sizes="(max-width: 768px) 95vw, 672px"
+                          />
+                        </div>
+                      ) : (
+                        <video
+                          src={contribution.media_url}
+                          controls
+                          className="w-full max-h-[50vh] md:max-h-96 rounded-lg"
+                        />
+                      )
                     ) : (
-                      <video
-                        src={contribution.media_url}
-                        controls
-                        className="w-full max-h-[50vh] md:max-h-96 rounded-lg"
-                      />
+                      <div className="w-full h-64 flex items-center justify-center bg-gray-200 rounded-lg">
+                        <ImageIcon className="h-16 w-16 text-gray-400" />
+                      </div>
                     )}
                   </div>
                   

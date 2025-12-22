@@ -252,6 +252,7 @@ export type Database = {
       }
       gesture_contributions: {
         Row: {
+          avatar_id: string | null
           category_id: number | null
           created_at: string
           description: string
@@ -260,7 +261,7 @@ export type Database = {
           is_duplicate: boolean | null
           language: string
           media_type: string
-          media_url: string
+          media_url: string | null
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -272,6 +273,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          avatar_id?: string | null
           category_id?: number | null
           created_at?: string
           description: string
@@ -280,7 +282,7 @@ export type Database = {
           is_duplicate?: boolean | null
           language: string
           media_type: string
-          media_url: string
+          media_url?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -292,6 +294,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          avatar_id?: string | null
           category_id?: number | null
           created_at?: string
           description?: string
@@ -300,7 +303,7 @@ export type Database = {
           is_duplicate?: boolean | null
           language?: string
           media_type?: string
-          media_url?: string
+          media_url?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -312,6 +315,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "gesture_contributions_avatar_id_fkey"
+            columns: ["avatar_id"]
+            isOneToOne: false
+            referencedRelation: "sign_avatars"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "gesture_contributions_category_id_fkey"
             columns: ["category_id"]
@@ -864,6 +874,7 @@ export type Database = {
       }
       sign_avatars: {
         Row: {
+          category_id: number | null
           created_at: string
           description: string | null
           duration_ms: number
@@ -879,6 +890,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category_id?: number | null
           created_at?: string
           description?: string | null
           duration_ms?: number
@@ -894,6 +906,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category_id?: number | null
           created_at?: string
           description?: string | null
           duration_ms?: number
@@ -909,6 +922,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "sign_avatars_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "gesture_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sign_avatars_reviewed_by_fkey"
             columns: ["reviewed_by"]

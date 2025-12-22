@@ -109,6 +109,7 @@ export class GestureContributionService {
   }
   
   // Get gesture contributions with filters
+  // By default excludes avatar entries (source = 'avatar') - these are managed separately
   static async getContributions(filters?: GestureContributionFilters): Promise<{ data: GestureContribution[] | null; error: unknown }> {
     const supabase = createClient();
     try {
@@ -120,6 +121,7 @@ export class GestureContributionService {
           reviewer:user_profiles!reviewed_by(id, name),
           category:gesture_categories!category_id(id, name, icon)
         `)
+        .neq('media_type', 'avatar') // Exclude avatar entries - managed in avatar admin
         .order('created_at', { ascending: false });
       
       // Apply filters
