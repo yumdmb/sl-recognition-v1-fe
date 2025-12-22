@@ -16,7 +16,7 @@ const AvatarPageHeader: React.FC<AvatarPageHeaderProps> = ({ userRole }) => {
     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
       <div>
         <h1 className="text-xl md:text-2xl lg:text-3xl font-bold tracking-tight">Avatar Generation</h1>
-        <p className="text-muted-foreground text-sm md:text-base">Generate 3D avatars from your sign language gestures</p>
+        <p className="text-muted-foreground text-sm md:text-base">Help us build a gesture dictionary using avatars, without worrying about your privacy.</p>
       </div>
       <Button 
         onClick={() => router.push(userRole === 'admin' ? '/avatar/admin-database' : '/avatar/my-avatars')}

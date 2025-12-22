@@ -149,7 +149,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
           >
             <Link href="/" className="flex items-center space-x-3">
               <Image
-                src="/signbridge-logo-no-word.png"
+                src="/signbridge-logo-no-word.PNG"
                 alt="SignBridge Logo"
                 width={40}
                 height={30}
@@ -210,7 +210,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
             >
               <Link href="/" className="inline-flex items-center space-x-2">
                 <Image
-                  src="/signbridge-logo-no-word.png"
+                  src="/signbridge-logo-no-word.PNG"
                   alt="SignBridge Logo"
                   width={48}
                   height={36}
