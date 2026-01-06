@@ -208,9 +208,16 @@ const LearningPathPanel: React.FC = () => {
               </Badge>
             )}
           </div>
-          <Badge variant="outline" className="capitalize">
-            {currentUser.proficiency_level}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {currentUser.preferred_language && (
+              <Badge variant="outline" className="text-xs">
+                {currentUser.preferred_language === 'ASL' ? '🇺🇸 ASL' : '🇲🇾 MSL'}
+              </Badge>
+            )}
+            <Badge variant="outline" className="capitalize">
+              {currentUser.proficiency_level}
+            </Badge>
+          </div>
         </CardTitle>
         {hasNewRecommendations && lastUpdateTrigger && (
           <p className="text-sm text-muted-foreground mt-2">

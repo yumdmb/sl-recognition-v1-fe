@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       chat_participants: {
@@ -846,6 +871,7 @@ export type Database = {
           description: string
           id: string
           language: string
+          level: string | null
           recommended_for_role: string | null
           title: string
           updated_at: string | null
@@ -856,6 +882,7 @@ export type Database = {
           description: string
           id?: string
           language: string
+          level?: string | null
           recommended_for_role?: string | null
           title: string
           updated_at?: string | null
@@ -866,6 +893,7 @@ export type Database = {
           description?: string
           id?: string
           language?: string
+          level?: string | null
           recommended_for_role?: string | null
           title?: string
           updated_at?: string | null
@@ -1031,6 +1059,7 @@ export type Database = {
           email: string
           id: string
           name: string
+          preferred_language: string | null
           proficiency_level:
             | Database["public"]["Enums"]["proficiency_level"]
             | null
@@ -1043,6 +1072,7 @@ export type Database = {
           email: string
           id: string
           name: string
+          preferred_language?: string | null
           proficiency_level?:
             | Database["public"]["Enums"]["proficiency_level"]
             | null
@@ -1055,6 +1085,7 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+          preferred_language?: string | null
           proficiency_level?:
             | Database["public"]["Enums"]["proficiency_level"]
             | null
@@ -1225,6 +1256,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       proficiency_level: ["Beginner", "Intermediate", "Advanced"],

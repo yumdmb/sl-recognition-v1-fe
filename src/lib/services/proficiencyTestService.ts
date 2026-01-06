@@ -118,6 +118,7 @@ export const submitAnswer = async (attemptId: string, questionId: string, choice
 
 /**
  * Calculates the final score, updates the attempt, and assigns a proficiency level to the user.
+ * Also saves the test's language as the user's preferred language.
  * @param attemptId - The ID of the test attempt to finalize.
  * @param userId - The ID of the user to update.
  */
@@ -135,7 +136,21 @@ export const calculateResultAndAssignProficiency = async (attemptId: string, use
     throw attemptError || new Error('Attempt not found');
   }
 
-  // 2. Get total number of questions for the test
+  // 2. Get the test's language
+  const { data: test, error: testError } = await supabase
+    .from('proficiency_tests')
+    .select('language')
+    .eq('id', attempt.test_id)
+    .single();
+
+  if (testError || !test) {
+    console.error('Error fetching test:', testError);
+    throw testError || new Error('Test not found');
+  }
+
+  const preferredLanguage = test.language as 'ASL' | 'MSL';
+
+  // 3. Get total number of questions for the test
   const { count: totalQuestions, error: countError } = await supabase
     .from('proficiency_test_questions')
     .select('*', { count: 'exact', head: true })
@@ -146,7 +161,7 @@ export const calculateResultAndAssignProficiency = async (attemptId: string, use
     throw countError || new Error('Could not determine total questions');
   }
 
-  // 3. Get all correct answers for the attempt
+  // 4. Get all correct answers for the attempt
   const { count: correctAnswers, error: answersError } = await supabase
     .from('proficiency_test_attempt_answers')
     .select('*', { count: 'exact', head: true })
@@ -158,7 +173,7 @@ export const calculateResultAndAssignProficiency = async (attemptId: string, use
     throw answersError || new Error('Could not determine correct answers');
   }
 
-  // 4. Calculate score and determine proficiency level
+  // 5. Calculate score and determine proficiency level
   const score = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
   let proficiency_level: 'Beginner' | 'Intermediate' | 'Advanced';
 
@@ -170,7 +185,7 @@ export const calculateResultAndAssignProficiency = async (attemptId: string, use
     proficiency_level = 'Advanced';
   }
 
-  // 5. Update the proficiency_test_attempts table
+  // 6. Update the proficiency_test_attempts table
   const { error: updateAttemptError } = await supabase
     .from('proficiency_test_attempts')
     .update({ score, completed_at: new Date().toISOString() })
@@ -181,10 +196,10 @@ export const calculateResultAndAssignProficiency = async (attemptId: string, use
     throw updateAttemptError;
   }
 
-  // 6. Update the user_profiles table
+  // 7. Update the user_profiles table with proficiency level AND preferred language
   const { error: updateUserProfileError } = await supabase
     .from('user_profiles')
-    .update({ proficiency_level })
+    .update({ proficiency_level, preferred_language: preferredLanguage })
     .eq('id', userId);
 
   if (updateUserProfileError) {
@@ -192,7 +207,7 @@ export const calculateResultAndAssignProficiency = async (attemptId: string, use
     throw updateUserProfileError;
   }
 
-  return { score, proficiency_level };
+  return { score, proficiency_level, preferred_language: preferredLanguage };
 };
 /**
  * Gets comprehensive test results including performance analysis and recommendations.

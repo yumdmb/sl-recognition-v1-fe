@@ -109,7 +109,7 @@ interface LearningContextProps {
 const LearningContext = createContext<LearningContextProps | null>(null);
 
 export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, refreshUserProfile } = useAuth();
   const [tutorialsLoading, setTutorialsLoading] = useState(false);
   const [materialsLoading, setMaterialsLoading] = useState(false);
   const [quizSetsLoading, setQuizSetsLoading] = useState(false);
@@ -554,6 +554,9 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       
       // Update local state
       setProficiencyLevel(result.proficiency_level);
+      
+      // Refresh AuthContext user to sync profile data (proficiency_level, preferred_language)
+      await refreshUserProfile();
       
       // Generate learning path automatically
       await generateLearningPath();

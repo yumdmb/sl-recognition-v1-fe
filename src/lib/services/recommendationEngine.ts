@@ -29,10 +29,10 @@ export const generateRecommendations = async (
   recentQuizScore?: number
 ): Promise<LearningRecommendation[]> => {
   const supabase = createClient();
-  // Fetch user profile to get role
+  // Fetch user profile to get role and preferred language
   const { data: userProfile, error: profileError } = await supabase
     .from('user_profiles')
-    .select('role')
+    .select('role, preferred_language')
     .eq('id', userId)
     .single();
 
@@ -42,19 +42,20 @@ export const generateRecommendations = async (
   }
 
   const userRole = userProfile.role;
+  const preferredLanguage = (userProfile.preferred_language as 'ASL' | 'MSL') || 'MSL';
 
   // Use role-specific path generation with adaptive logic
   if (userRole === 'deaf') {
-    return generateDeafUserPath(proficiencyLevel, performanceAnalysis, recentQuizScore);
+    return generateDeafUserPath(proficiencyLevel, performanceAnalysis, preferredLanguage, recentQuizScore);
   } else if (userRole === 'non-deaf') {
-    return generateNonDeafUserPath(proficiencyLevel, performanceAnalysis, recentQuizScore);
+    return generateNonDeafUserPath(proficiencyLevel, performanceAnalysis, preferredLanguage, recentQuizScore);
   }
 
   // Fallback to generic recommendations for admin or unknown roles
   const [tutorials, quizzes, materials] = await Promise.all([
-    fetchTutorials(proficiencyLevel),
-    fetchQuizzes(),
-    fetchMaterials(proficiencyLevel),
+    fetchTutorials(proficiencyLevel, preferredLanguage),
+    fetchQuizzes(preferredLanguage),
+    fetchMaterials(proficiencyLevel, preferredLanguage),
   ]);
 
   const recommendations: LearningRecommendation[] = [];
@@ -110,16 +111,18 @@ export const generateRecommendations = async (
 };
 
 /**
- * Fetches tutorials matching the user's proficiency level.
+ * Fetches tutorials matching the user's proficiency level and preferred language.
  * @param level - The proficiency level to filter by.
+ * @param language - The preferred sign language (ASL or MSL).
  * @returns Array of tutorials.
  */
-const fetchTutorials = async (level: string) => {
+const fetchTutorials = async (level: string, language: 'ASL' | 'MSL') => {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('tutorials')
     .select('*')
-    .eq('level', level);
+    .eq('level', level)
+    .eq('language', language);
 
   if (error) {
     console.error('Error fetching tutorials:', error);
@@ -130,37 +133,38 @@ const fetchTutorials = async (level: string) => {
 };
 
 /**
- * Fetches quizzes matching the user's proficiency level.
- * @param level - The proficiency level to filter by.
+ * Fetches quizzes matching the user's preferred language.
+ * @param language - The preferred sign language (ASL or MSL).
  * @returns Array of quiz sets.
  */
-const fetchQuizzes = async (/* level: string */) => {
+const fetchQuizzes = async (language: 'ASL' | 'MSL') => {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('quiz_sets')
-    .select('*');
+    .select('*')
+    .eq('language', language);
 
   if (error) {
     console.error('Error fetching quizzes:', error);
     return [];
   }
 
-  // Note: quiz_sets don't have a level field in current schema
-  // Return all quizzes for now
   return data || [];
 };
 
 /**
- * Fetches learning materials matching the user's proficiency level.
+ * Fetches learning materials matching the user's proficiency level and preferred language.
  * @param level - The proficiency level to filter by.
+ * @param language - The preferred sign language (ASL or MSL).
  * @returns Array of materials.
  */
-const fetchMaterials = async (level: string) => {
+const fetchMaterials = async (level: string, language: 'ASL' | 'MSL') => {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('materials')
     .select('*')
-    .eq('level', level);
+    .eq('level', level)
+    .eq('language', language);
 
   if (error) {
     console.error('Error fetching materials:', error);
@@ -256,22 +260,24 @@ const adjustLevelByPerformance = (
  * Prioritizes visual learning materials and sign language-first content.
  * @param proficiencyLevel - The user's proficiency level.
  * @param performanceAnalysis - Analysis of the user's test performance.
+ * @param preferredLanguage - The user's preferred sign language (ASL or MSL).
  * @param recentQuizScore - Optional recent quiz score percentage for adaptive recommendations.
  * @returns Array of learning recommendations tailored for deaf users.
  */
 export const generateDeafUserPath = async (
   proficiencyLevel: 'Beginner' | 'Intermediate' | 'Advanced',
   performanceAnalysis: PerformanceAnalysis,
+  preferredLanguage: 'ASL' | 'MSL',
   recentQuizScore?: number
 ): Promise<LearningRecommendation[]> => {
   // Adjust level based on recent performance
   const adjustedLevel = adjustLevelByPerformance(proficiencyLevel, recentQuizScore);
   
-  // Fetch all available learning content using adjusted level
+  // Fetch all available learning content using adjusted level and language
   const [tutorials, quizzes, materials] = await Promise.all([
-    fetchTutorials(adjustedLevel),
-    fetchQuizzes(),
-    fetchMaterials(adjustedLevel),
+    fetchTutorials(adjustedLevel, preferredLanguage),
+    fetchQuizzes(preferredLanguage),
+    fetchMaterials(adjustedLevel, preferredLanguage),
   ]);
 
   // Filter for deaf-specific and universal content
@@ -352,22 +358,24 @@ export const generateDeafUserPath = async (
  * Includes comparative content with sign language and spoken language.
  * @param proficiencyLevel - The user's proficiency level.
  * @param performanceAnalysis - Analysis of the user's test performance.
+ * @param preferredLanguage - The user's preferred sign language (ASL or MSL).
  * @param recentQuizScore - Optional recent quiz score percentage for adaptive recommendations.
  * @returns Array of learning recommendations tailored for non-deaf users.
  */
 export const generateNonDeafUserPath = async (
   proficiencyLevel: 'Beginner' | 'Intermediate' | 'Advanced',
   performanceAnalysis: PerformanceAnalysis,
+  preferredLanguage: 'ASL' | 'MSL',
   recentQuizScore?: number
 ): Promise<LearningRecommendation[]> => {
   // Adjust level based on recent performance
   const adjustedLevel = adjustLevelByPerformance(proficiencyLevel, recentQuizScore);
   
-  // Fetch all available learning content using adjusted level
+  // Fetch all available learning content using adjusted level and language
   const [tutorials, quizzes, materials] = await Promise.all([
-    fetchTutorials(adjustedLevel),
-    fetchQuizzes(),
-    fetchMaterials(adjustedLevel),
+    fetchTutorials(adjustedLevel, preferredLanguage),
+    fetchQuizzes(preferredLanguage),
+    fetchMaterials(adjustedLevel, preferredLanguage),
   ]);
 
   // Filter for non-deaf-specific and universal content

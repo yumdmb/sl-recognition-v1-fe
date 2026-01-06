@@ -9,6 +9,7 @@ export interface Database {
           email: string;
           role: "admin" | "deaf" | "non-deaf";
           proficiency_level: "Beginner" | "Intermediate" | "Advanced" | null;
+          preferred_language: "ASL" | "MSL" | null;
           profile_picture_url: string | null;
           created_at: string;
           updated_at: string;
@@ -19,6 +20,7 @@ export interface Database {
           email: string;
           role?: "admin" | "deaf" | "non-deaf";
           proficiency_level?: "Beginner" | "Intermediate" | "Advanced" | null;
+          preferred_language?: "ASL" | "MSL" | null;
           profile_picture_url?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -29,6 +31,7 @@ export interface Database {
           email?: string;
           role?: "admin" | "deaf" | "non-deaf";
           proficiency_level?: "Beginner" | "Intermediate" | "Advanced" | null;
+          preferred_language?: "ASL" | "MSL" | null;
           profile_picture_url?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -255,6 +258,7 @@ export interface Database {
           id: string;
           title: string;
           description: string | null;
+          language: "ASL" | "MSL";
           created_at: string;
           updated_at: string;
         };
@@ -262,6 +266,7 @@ export interface Database {
           id?: string;
           title: string;
           description?: string | null;
+          language: "ASL" | "MSL";
           created_at?: string;
           updated_at?: string;
         };
@@ -269,6 +274,7 @@ export interface Database {
           id?: string;
           title?: string;
           description?: string | null;
+          language?: "ASL" | "MSL";
           created_at?: string;
           updated_at?: string;
         };

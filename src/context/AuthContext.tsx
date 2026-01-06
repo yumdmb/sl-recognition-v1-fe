@@ -15,6 +15,7 @@ export interface User {
   email: string;
   role: 'non-deaf' | 'admin' | 'deaf';
   proficiency_level: 'Beginner' | 'Intermediate' | 'Advanced' | null;
+  preferred_language: 'ASL' | 'MSL' | null;
   profile_picture_url?: string | null;
   isVerified?: boolean;
   email_confirmed_at?: string;
@@ -30,6 +31,7 @@ interface AuthContextProps {
   logout: () => Promise<boolean>;
   register: (name: string, email: string, password: string, role: 'non-deaf' | 'deaf') => Promise<boolean>;
   updateUser: (user: Partial<User>) => Promise<void>;
+  refreshUserProfile: () => Promise<void>;
   changePassword: (newPassword: string) => Promise<boolean>;
   resetPassword: (email: string) => Promise<boolean>;
   resendConfirmation: (email: string) => Promise<boolean>;
@@ -55,6 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email: supabaseUser.email || '',
       role: (metadata.role as 'non-deaf' | 'admin' | 'deaf') || 'non-deaf',
       proficiency_level: null,
+      preferred_language: null,
       isVerified: !!supabaseUser.email_confirmed_at,
       email_confirmed_at: supabaseUser.email_confirmed_at
     };
@@ -79,6 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: profile.email,
           role: profile.role,
           proficiency_level: profile.proficiency_level,
+          preferred_language: profile.preferred_language || null,
           profile_picture_url: profile.profile_picture_url,
           isVerified: !!supabaseUser.email_confirmed_at,
           email_confirmed_at: supabaseUser.email_confirmed_at
@@ -415,6 +419,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Refresh user profile from database (useful after external updates like proficiency test completion)
+  const refreshUserProfile = async () => {
+    try {
+      if (!currentUser) return;
+      
+      console.log('Refreshing user profile from database...');
+      const profile = await UserService.getUserProfile(currentUser.id);
+      
+      if (profile) {
+        setCurrentUser(prev => prev ? {
+          ...prev,
+          name: profile.name,
+          email: profile.email,
+          role: profile.role,
+          proficiency_level: profile.proficiency_level,
+          preferred_language: profile.preferred_language || null,
+          profile_picture_url: profile.profile_picture_url,
+        } : null);
+        console.log('User profile refreshed successfully');
+      }
+    } catch (error) {
+      console.error('Failed to refresh user profile:', error);
+    }
+  };
+
   // Change password function
   const changePassword = async (newPassword: string): Promise<boolean> => {
     try {
@@ -564,6 +593,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout, 
         register,
         updateUser,
+        refreshUserProfile,
         changePassword,
         resetPassword,
         resendConfirmation
