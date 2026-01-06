@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAdmin } from '@/context/AdminContext';
 import { useLearning } from '@/context/LearningContext';
@@ -13,6 +13,12 @@ import TutorialLoadingState from '@/components/learning/TutorialLoadingState';
 import TutorialDialog from '@/components/learning/TutorialDialog';
 import type { TutorialWithProgress } from '@/types/database';
 
+// Helper to convert proficiency level to lowercase
+const toLowerLevel = (level: string | null | undefined): 'beginner' | 'intermediate' | 'advanced' | undefined => {
+  if (!level) return undefined;
+  return level.toLowerCase() as 'beginner' | 'intermediate' | 'advanced';
+};
+
 export default function TutorialsPage() {
   const [activeTab, setActiveTab] = useState<string>('all');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -21,17 +27,27 @@ export default function TutorialsPage() {
   
   const { language } = useLanguage();
   const { isAdmin } = useAdmin();
-  const { currentUser } = useAuth();const { 
+  const { currentUser } = useAuth();
+  const { 
     tutorials, 
     tutorialsLoading, 
     getTutorials, 
     createTutorial, 
     updateTutorial, 
     deleteTutorial: deleteFromDB
-  } = useLearning();  useEffect(() => {
-    // Load tutorials when component mounts or language changes
-    getTutorials(language);
-  }, [language, getTutorials]);
+  } = useLearning();
+
+  // Get the user's proficiency level for filtering (only for non-admins)
+  const userLevel = useMemo(() => {
+    if (isAdmin) return undefined; // Admins see all levels
+    return toLowerLevel(currentUser?.proficiency_level);
+  }, [isAdmin, currentUser?.proficiency_level]);
+
+  useEffect(() => {
+    // Load tutorials when component mounts or language/level changes
+    // Pass level for non-admins to filter server-side
+    getTutorials(language, userLevel);
+  }, [language, userLevel, getTutorials]);
 
   // Reset saving state when tutorialsLoading changes
   useEffect(() => {
@@ -40,10 +56,13 @@ export default function TutorialsPage() {
     }
   }, [tutorialsLoading, isSaving]);
 
-  // Filter tutorials by level
-  const filteredTutorials = tutorials.filter(tutorial => 
-    activeTab === 'all' || tutorial.level === activeTab
-  );  // Function to handle adding a new tutorial
+  // Filter tutorials by level (only used by admins with level tabs)
+  const filteredTutorials = useMemo(() => {
+    if (!isAdmin) return tutorials; // Non-admins already get filtered from server
+    return tutorials.filter(tutorial => 
+      activeTab === 'all' || tutorial.level === activeTab
+    );
+  }, [tutorials, activeTab, isAdmin]);  // Function to handle adding a new tutorial
   const handleAddTutorial = () => {    setCurrentTutorial({
       id: '',
       title: '',
@@ -136,6 +155,7 @@ export default function TutorialsPage() {
         onTabChange={setActiveTab}
         isAdmin={isAdmin}
         onAddTutorial={handleAddTutorial}
+        userLevel={currentUser?.proficiency_level || undefined}
       />
       
       {tutorialsLoading ? (

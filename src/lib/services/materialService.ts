@@ -2,17 +2,24 @@ import { createClient } from '@/utils/supabase/client';
 import type { Material } from '@/types/database';
 
 /**
- * Fetches materials for a given language.
+ * Fetches materials for a given language and optionally by level.
  * @param language - The language to filter materials by ('ASL' or 'MSL').
+ * @param level - Optional level to filter materials by.
  * @returns A promise that resolves to an array of materials.
  */
-export const getMaterials = async (language: 'ASL' | 'MSL'): Promise<Material[]> => {
+export const getMaterials = async (language: 'ASL' | 'MSL', level?: 'beginner' | 'intermediate' | 'advanced'): Promise<Material[]> => {
   const supabase = createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from('materials')
     .select('*')
     .eq('language', language)
     .order('created_at', { ascending: false });
+
+  if (level) {
+    query = query.eq('level', level);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error('Error fetching materials:', error);

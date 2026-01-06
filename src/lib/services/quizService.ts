@@ -10,7 +10,7 @@ import type {
 
 export class QuizService {
   // Get all quiz sets with optional progress for a user
-  static async getQuizSets(userId?: string, language?: 'ASL' | 'MSL'): Promise<QuizSetWithProgress[]> {
+  static async getQuizSets(userId?: string, language?: 'ASL' | 'MSL', level?: 'beginner' | 'intermediate' | 'advanced'): Promise<QuizSetWithProgress[]> {
     const supabase = createClient();
     try {
       let query = supabase
@@ -23,6 +23,10 @@ export class QuizService {
 
       if (language) {
         query = query.eq('language', language);
+      }
+
+      if (level) {
+        query = query.eq('level', level);
       }
 
       const { data: quizSets, error } = await query;

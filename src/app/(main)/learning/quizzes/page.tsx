@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from '@/context/LanguageContext';
 import { useAdmin } from '@/context/AdminContext';
@@ -13,6 +13,12 @@ import QuizEmptyState from '@/components/learning/QuizEmptyState';
 import QuizLoadingState from '@/components/learning/QuizLoadingState';
 import QuizDialog from '@/components/learning/QuizDialog';
 import { QuizSetWithProgress } from '@/types/database';
+
+// Helper to convert proficiency level to lowercase
+const toLowerLevel = (level: string | null | undefined): 'beginner' | 'intermediate' | 'advanced' | undefined => {
+  if (!level) return undefined;
+  return level.toLowerCase() as 'beginner' | 'intermediate' | 'advanced';
+};
 
 export default function QuizzesPage() {
     const router = useRouter();
@@ -30,11 +36,18 @@ export default function QuizzesPage() {
     
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [currentQuizSet, setCurrentQuizSet] = useState<QuizSetWithProgress | null>(null);
+
+    // Get the user's proficiency level for filtering (only for non-admins)
+    const userLevel = useMemo(() => {
+        if (isAdmin) return undefined; // Admins see all levels
+        return toLowerLevel(currentUser?.proficiency_level);
+    }, [isAdmin, currentUser?.proficiency_level]);
     
     useEffect(() => {
         // Get quiz sets from Supabase via our service
-        getQuizSets(language);
-    }, [language]); // Removed getQuizSets from dependencies to prevent infinite loop
+        // Pass level for non-admins to filter server-side
+        getQuizSets(language, userLevel);
+    }, [language, userLevel]); // Removed getQuizSets from dependencies to prevent infinite loop
 
     // Filter quiz sets based on selected language (redundant now, but kept for safety)
     const filteredQuizSets = quizSets.filter(set => set.language === language);
@@ -45,6 +58,7 @@ export default function QuizzesPage() {
             id: '',
             title: '',
             description: '',
+            level: 'beginner', // Default level for new quiz sets
             questionCount: 0,
             language: language,
             created_at: new Date().toISOString(),

@@ -26,7 +26,7 @@ interface LearningContextProps {
   proficiencyTestLoading: boolean;
     // Tutorials
   tutorials: TutorialWithProgress[];
-  getTutorials: (language?: 'ASL' | 'MSL') => Promise<void>;
+  getTutorials: (language?: 'ASL' | 'MSL', level?: 'beginner' | 'intermediate' | 'advanced') => Promise<void>;
   createTutorial: (tutorial: Database['public']['Tables']['tutorials']['Insert']) => Promise<void>;
   updateTutorial: (id: string, updates: Database['public']['Tables']['tutorials']['Update']) => Promise<void>;
   deleteTutorial: (id: string) => Promise<void>;
@@ -36,14 +36,14 @@ interface LearningContextProps {
   
   // Materials
   materials: Material[];
-  getMaterials: (language?: 'ASL' | 'MSL') => Promise<void>;
+  getMaterials: (language?: 'ASL' | 'MSL', level?: 'beginner' | 'intermediate' | 'advanced') => Promise<void>;
   createMaterial: (material: Material, file?: File) => Promise<void>;
   updateMaterial: (id: string, updates: Partial<Omit<Material, 'id'>>, file?: File) => Promise<void>;
   deleteMaterial: (id: string) => Promise<void>;
   
   // Quizzes
   quizSets: QuizSetWithProgress[];
-  getQuizSets: (language?: 'ASL' | 'MSL') => Promise<void>;
+  getQuizSets: (language?: 'ASL' | 'MSL', level?: 'beginner' | 'intermediate' | 'advanced') => Promise<void>;
   getQuizSetWithQuestions: (id: string) => Promise<QuizSetWithQuestions | null>;
   createQuizSet: (quizSet: Database['public']['Tables']['quiz_sets']['Insert']) => Promise<void>;
   updateQuizSet: (id: string, updates: Database['public']['Tables']['quiz_sets']['Update']) => Promise<void>;
@@ -167,10 +167,10 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       description: errorMessage
     });
   };  // Tutorials
-  const getTutorials = useCallback(async (language?: 'ASL' | 'MSL') => {
+  const getTutorials = useCallback(async (language?: 'ASL' | 'MSL', level?: 'beginner' | 'intermediate' | 'advanced') => {
     try {
       setTutorialsLoading(true);
-      const data = await TutorialService.getTutorials(currentUser?.id, language);
+      const data = await TutorialService.getTutorials(currentUser?.id, language, level);
       setTutorials(data);
     } catch (error) {
       handleError(error, 'fetch tutorials');
@@ -256,10 +256,10 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (!currentUser) return { totalStarted: 0, totalCompleted: 0, completionPercentage: 0 };
     return await TutorialService.getOverallProgress(currentUser.id);
   };  // Materials
-  const getMaterials = useCallback(async (language: 'ASL' | 'MSL' = 'MSL') => {
+  const getMaterials = useCallback(async (language: 'ASL' | 'MSL' = 'MSL', level?: 'beginner' | 'intermediate' | 'advanced') => {
     try {
       setMaterialsLoading(true);
-      const data = await MaterialService.getMaterials(language);
+      const data = await MaterialService.getMaterials(language, level);
       setMaterials(data);
     } catch (error) {
       handleError(error, 'fetch materials');
@@ -346,10 +346,10 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       setMaterialsLoading(false);
     }
   };  // Quizzes
-  const getQuizSets = useCallback(async (language?: 'ASL' | 'MSL') => {
+  const getQuizSets = useCallback(async (language?: 'ASL' | 'MSL', level?: 'beginner' | 'intermediate' | 'advanced') => {
     try {
       setQuizSetsLoading(true);
-      const data = await QuizService.getQuizSets(currentUser?.id, language);
+      const data = await QuizService.getQuizSets(currentUser?.id, language, level);
       setQuizSets(data);
     } catch (error) {
       handleError(error, 'fetch quiz sets');

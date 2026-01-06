@@ -8,7 +8,7 @@ import type {
 
 export class TutorialService {
   // Get all tutorials with optional status for a user
-  static async getTutorials(userId?: string, language?: 'ASL' | 'MSL'): Promise<TutorialWithProgress[]> {
+  static async getTutorials(userId?: string, language?: 'ASL' | 'MSL', level?: 'beginner' | 'intermediate' | 'advanced'): Promise<TutorialWithProgress[]> {
     const supabase = createClient();
     try {
       let query = supabase
@@ -18,6 +18,10 @@ export class TutorialService {
 
       if (language) {
         query = query.eq('language', language);
+      }
+
+      if (level) {
+        query = query.eq('level', level);
       }
 
       const { data: tutorials, error } = await query;

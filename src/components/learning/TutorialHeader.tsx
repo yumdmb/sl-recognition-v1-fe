@@ -3,31 +3,44 @@
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Plus, GraduationCap } from 'lucide-react';
 
 interface TutorialHeaderProps {
-  // activeTab: string;
   onTabChange: (value: string) => void;
   isAdmin: boolean;
   onAddTutorial: () => void;
+  userLevel?: string; // User's proficiency level (for non-admins)
 }
 
 const TutorialHeader: React.FC<TutorialHeaderProps> = ({
-  // activeTab,
   onTabChange,
   isAdmin,
-  onAddTutorial
+  onAddTutorial,
+  userLevel
 }) => {
   return (
     <div className="flex justify-between items-center mb-6">
-      <Tabs defaultValue="all" onValueChange={onTabChange} className="flex-1">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="all">All Levels</TabsTrigger>
-          <TabsTrigger value="beginner">Beginner</TabsTrigger>
-          <TabsTrigger value="intermediate">Intermediate</TabsTrigger>
-          <TabsTrigger value="advanced">Advanced</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {isAdmin ? (
+        // Admins see level tabs to filter content
+        <Tabs defaultValue="all" onValueChange={onTabChange} className="flex-1">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="all">All Levels</TabsTrigger>
+            <TabsTrigger value="beginner">Beginner</TabsTrigger>
+            <TabsTrigger value="intermediate">Intermediate</TabsTrigger>
+            <TabsTrigger value="advanced">Advanced</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      ) : (
+        // Regular users see their proficiency level badge
+        <div className="flex items-center gap-2">
+          <GraduationCap className="h-5 w-5 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">Your Level:</span>
+          <Badge variant="secondary" className="capitalize">
+            {userLevel || 'Not Set'}
+          </Badge>
+        </div>
+      )}
       
       {isAdmin && (
         <Button className="ml-4" onClick={onAddTutorial}>
