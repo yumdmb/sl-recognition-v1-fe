@@ -37,11 +37,20 @@ export default function TutorialsPage() {
     deleteTutorial: deleteFromDB
   } = useLearning();
 
-  // Get the user's proficiency level for filtering (only for non-admins)
+  // Get the user's proficiency level for the currently selected language (only for non-admins)
   const userLevel = useMemo(() => {
     if (isAdmin) return undefined; // Admins see all levels
+    
+    // Use language-specific proficiency level based on selected language
+    if (language === 'ASL') {
+      return toLowerLevel(currentUser?.asl_proficiency_level);
+    } else if (language === 'MSL') {
+      return toLowerLevel(currentUser?.msl_proficiency_level);
+    }
+    
+    // Fallback to legacy proficiency_level
     return toLowerLevel(currentUser?.proficiency_level);
-  }, [isAdmin, currentUser?.proficiency_level]);
+  }, [isAdmin, currentUser?.asl_proficiency_level, currentUser?.msl_proficiency_level, currentUser?.proficiency_level, language]);
 
   useEffect(() => {
     // Load tutorials when component mounts or language/level changes

@@ -8,24 +8,28 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { BookOpen, FileText, Brain, ArrowRight, Loader2, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getTestResultsWithAnalysis } from '@/lib/services/proficiencyTestService';
-import { LearningRecommendation } from '@/lib/services/recommendationEngine';
+import { LearningRecommendation, getSimpleRecommendationsForLanguage } from '@/lib/services/recommendationEngine';
+
+type LanguageTab = 'ASL' | 'MSL';
 
 const LearningPathPanel: React.FC = () => {
   const { currentUser } = useAuth();
   const { hasNewRecommendations, lastUpdateTrigger, clearNewRecommendationsFlag } = useLearning();
   const router = useRouter();
-  const [recommendations, setRecommendations] = useState<LearningRecommendation[]>([]);
+  
+  const [activeTab, setActiveTab] = useState<LanguageTab>('ASL');
+  const [aslRecommendations, setAslRecommendations] = useState<LearningRecommendation[]>([]);
+  const [mslRecommendations, setMslRecommendations] = useState<LearningRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Use stable values for dependencies to prevent infinite re-fetching
+  // Get proficiency levels
+  const aslLevel = currentUser?.asl_proficiency_level;
+  const mslLevel = currentUser?.msl_proficiency_level;
   const userId = currentUser?.id;
-  const proficiencyLevel = currentUser?.proficiency_level;
 
   useEffect(() => {
     const fetchRecommendations = async () => {
-      if (!userId || !proficiencyLevel) {
+      if (!userId) {
         setLoading(false);
         return;
       }
@@ -33,42 +37,23 @@ const LearningPathPanel: React.FC = () => {
       try {
         setLoading(true);
         
-        // Get the user's most recent test attempt
-        const { createBrowserClient } = await import('@supabase/ssr');
-        const supabase = createBrowserClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
+        // Fetch recommendations for both languages in parallel
+        const [aslRecs, mslRecs] = await Promise.all([
+          aslLevel ? getSimpleRecommendationsForLanguage('ASL', aslLevel) : Promise.resolve([]),
+          mslLevel ? getSimpleRecommendationsForLanguage('MSL', mslLevel) : Promise.resolve([]),
+        ]);
         
-        const { data: latestAttempt, error: attemptError } = await supabase
-          .from('proficiency_test_attempts')
-          .select('id')
-          .eq('user_id', userId)
-          .not('completed_at', 'is', null)
-          .order('completed_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (attemptError || !latestAttempt) {
-          setError('No test results found');
-          setLoading(false);
-          return;
-        }
-
-        // Get comprehensive results with recommendations
-        const results = await getTestResultsWithAnalysis(latestAttempt.id, userId);
-        setRecommendations(results.recommendations);
-        setError(null);
+        setAslRecommendations(aslRecs);
+        setMslRecommendations(mslRecs);
       } catch (err) {
         console.error('Error fetching recommendations:', err);
-        setError('Failed to load recommendations');
       } finally {
         setLoading(false);
       }
     };
 
     fetchRecommendations();
-  }, [userId, proficiencyLevel]);
+  }, [userId, aslLevel, mslLevel]);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -83,33 +68,7 @@ const LearningPathPanel: React.FC = () => {
     }
   };
 
-  const getPriorityColor = (priority: number) => {
-    switch (priority) {
-      case 1:
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 2:
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 3:
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getRoleLabel = (role?: 'deaf' | 'non-deaf' | 'all') => {
-    switch (role) {
-      case 'deaf':
-        return { label: 'Deaf', color: 'bg-purple-100 text-purple-800 border-purple-200' };
-      case 'non-deaf':
-        return { label: 'Non-Deaf', color: 'bg-green-100 text-green-800 border-green-200' };
-      case 'all':
-      default:
-        return { label: 'Universal', color: 'bg-blue-100 text-blue-800 border-blue-200' };
-    }
-  };
-
   const handleStartLearning = (item: LearningRecommendation) => {
-    // Navigate based on content type
     switch (item.type) {
       case 'tutorial':
         router.push('/learning/tutorials');
@@ -123,7 +82,10 @@ const LearningPathPanel: React.FC = () => {
     }
   };
 
-  if (!currentUser?.proficiency_level) {
+  // Check if user has any proficiency level set
+  const hasAnyProficiency = aslLevel || mslLevel;
+
+  if (!hasAnyProficiency) {
     return (
       <Card>
         <CardHeader>
@@ -164,31 +126,8 @@ const LearningPathPanel: React.FC = () => {
     );
   }
 
-  if (error || recommendations.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5" />
-            Your Learning Path
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <p className="text-gray-600 mb-4">
-              {error || 'No recommendations available at this time'}
-            </p>
-            <Button variant="outline" onClick={() => router.push('/proficiency-test/select')}>
-              Retake Test
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Show top 5 recommendations on dashboard
-  const topRecommendations = recommendations.slice(0, 5);
+  const activeRecommendations = activeTab === 'ASL' ? aslRecommendations : mslRecommendations;
+  const activeLevel = activeTab === 'ASL' ? aslLevel : mslLevel;
 
   return (
     <Card>
@@ -208,16 +147,6 @@ const LearningPathPanel: React.FC = () => {
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            {currentUser.preferred_language && (
-              <Badge variant="outline" className="text-xs">
-                {currentUser.preferred_language === 'ASL' ? '🇺🇸 ASL' : '🇲🇾 MSL'}
-              </Badge>
-            )}
-            <Badge variant="outline" className="capitalize">
-              {currentUser.proficiency_level}
-            </Badge>
-          </div>
         </CardTitle>
         {hasNewRecommendations && lastUpdateTrigger && (
           <p className="text-sm text-muted-foreground mt-2">
@@ -226,63 +155,122 @@ const LearningPathPanel: React.FC = () => {
         )}
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
-          {topRecommendations.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-start gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+        {/* Language Tabs */}
+        <div className="flex gap-2 mb-4 border-b">
+          <button
+            onClick={() => setActiveTab('ASL')}
+            className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
+              activeTab === 'ASL'
+                ? 'border-blue-500 text-blue-600 font-medium'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <span>🇺🇸</span>
+            <span>ASL</span>
+            {aslLevel && (
+              <Badge variant="outline" className="capitalize text-xs">
+                {aslLevel}
+              </Badge>
+            )}
+            {!aslLevel && (
+              <Badge variant="outline" className="text-xs text-gray-400">
+                Not Set
+              </Badge>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('MSL')}
+            className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
+              activeTab === 'MSL'
+                ? 'border-green-500 text-green-600 font-medium'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <span>🇲🇾</span>
+            <span>MSL</span>
+            {mslLevel && (
+              <Badge variant="outline" className="capitalize text-xs">
+                {mslLevel}
+              </Badge>
+            )}
+            {!mslLevel && (
+              <Badge variant="outline" className="text-xs text-gray-400">
+                Not Set
+              </Badge>
+            )}
+          </button>
+        </div>
+
+        {/* Content Area */}
+        {!activeLevel ? (
+          <div className="text-center py-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <p className="text-gray-600 dark:text-gray-400 mb-3">
+              Take the {activeTab} proficiency test to unlock learning content
+            </p>
+            <Button 
+              size="sm" 
+              onClick={() => router.push('/proficiency-test/select')}
             >
-              <div className="mt-1 text-gray-600">
-                {getIcon(item.type)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <h4 className="font-medium text-sm line-clamp-1">{item.title}</h4>
-                  <div className="flex gap-1 shrink-0">
-                    <Badge 
-                      variant="outline" 
-                      className={`text-xs ${getPriorityColor(item.priority)}`}
-                    >
-                      Priority {item.priority}
-                    </Badge>
-                    {item.recommended_for_role && item.recommended_for_role !== 'all' && (
-                      <Badge 
-                        variant="outline" 
-                        className={`text-xs ${getRoleLabel(item.recommended_for_role).color}`}
-                      >
-                        {getRoleLabel(item.recommended_for_role).label}
-                      </Badge>
-                    )}
-                  </div>
+              Take {activeTab} Test
+            </Button>
+          </div>
+        ) : activeRecommendations.length === 0 ? (
+          <div className="text-center py-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <p className="text-gray-600 dark:text-gray-400 mb-3">
+              No {activeTab} content available for {activeLevel} level yet
+            </p>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => router.push('/learning/tutorials')}
+            >
+              Browse All Tutorials
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {activeRecommendations.slice(0, 5).map((item) => (
+              <div
+                key={item.id}
+                className="flex items-start gap-3 p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <div className="mt-1 text-gray-600">
+                  {getIcon(item.type)}
                 </div>
-                <p className="text-xs text-gray-600 line-clamp-2 mb-2">
-                  {item.description}
-                </p>
-                <p className="text-xs text-gray-500 italic mb-2">
-                  {item.reason}
-                </p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-medium text-sm truncate">{item.title}</h4>
+                    <Badge variant="outline" className="text-xs capitalize shrink-0">
+                      {item.type}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-gray-500 line-clamp-2">
+                    {item.reason}
+                  </p>
+                </div>
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="h-7 text-xs"
+                  variant="ghost"
+                  className="shrink-0"
                   onClick={() => handleStartLearning(item)}
                 >
-                  Start Learning
-                  <ArrowRight className="h-3 w-3 ml-1" />
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
-          ))}
-        </div>
-        
-        {recommendations.length > 5 && (
+            ))}
+          </div>
+        )}
+
+        {/* View All Button */}
+        {activeRecommendations.length > 0 && (
           <div className="mt-4 pt-4 border-t">
-            <Button
-              variant="outline"
+            <Button 
+              variant="outline" 
               className="w-full"
-              onClick={() => router.push('/learning-path')}
+              onClick={() => router.push('/learning/tutorials')}
             >
-              View Full Learning Path ({recommendations.length} items)
+              View All {activeTab} Content
+              <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </div>
         )}

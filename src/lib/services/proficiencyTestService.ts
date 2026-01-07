@@ -196,10 +196,24 @@ export const calculateResultAndAssignProficiency = async (attemptId: string, use
     throw updateAttemptError;
   }
 
-  // 7. Update the user_profiles table with proficiency level AND preferred language
+  // 7. Update the user_profiles table with language-specific proficiency level AND preferred language
+  // Determine which column to update based on test language
+  const updateData: Record<string, string> = {
+    preferred_language: preferredLanguage,
+    // Also update the legacy proficiency_level for backward compatibility
+    proficiency_level: proficiency_level,
+  };
+  
+  // Set the language-specific proficiency column
+  if (preferredLanguage === 'ASL') {
+    updateData.asl_proficiency_level = proficiency_level;
+  } else if (preferredLanguage === 'MSL') {
+    updateData.msl_proficiency_level = proficiency_level;
+  }
+
   const { error: updateUserProfileError } = await supabase
     .from('user_profiles')
-    .update({ proficiency_level, preferred_language: preferredLanguage })
+    .update(updateData)
     .eq('id', userId);
 
   if (updateUserProfileError) {
@@ -234,10 +248,10 @@ export const getTestResultsWithAnalysis = async (
     throw attemptError || new Error('Attempt not found');
   }
 
-  // Get user's proficiency level
+  // Get user's proficiency level based on their preferred language
   const { data: userProfile, error: profileError } = await supabase
     .from('user_profiles')
-    .select('proficiency_level')
+    .select('proficiency_level, preferred_language, asl_proficiency_level, msl_proficiency_level')
     .eq('id', userId)
     .single();
 
@@ -246,7 +260,16 @@ export const getTestResultsWithAnalysis = async (
     throw profileError || new Error('User profile not found');
   }
 
-  const proficiencyLevel = userProfile.proficiency_level || 'Beginner';
+  // Determine the correct proficiency level based on preferred language
+  let proficiencyLevel: 'Beginner' | 'Intermediate' | 'Advanced' = 'Beginner';
+  if (userProfile.preferred_language === 'ASL' && userProfile.asl_proficiency_level) {
+    proficiencyLevel = userProfile.asl_proficiency_level as 'Beginner' | 'Intermediate' | 'Advanced';
+  } else if (userProfile.preferred_language === 'MSL' && userProfile.msl_proficiency_level) {
+    proficiencyLevel = userProfile.msl_proficiency_level as 'Beginner' | 'Intermediate' | 'Advanced';
+  } else if (userProfile.proficiency_level) {
+    // Fallback to legacy proficiency_level
+    proficiencyLevel = userProfile.proficiency_level as 'Beginner' | 'Intermediate' | 'Advanced';
+  }
 
   // Perform performance analysis
   const performanceAnalysis = await analyzeCategoryPerformance(attemptId);

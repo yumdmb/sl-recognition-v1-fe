@@ -450,3 +450,77 @@ export const generateNonDeafUserPath = async (
 
   return prioritizeContent(recommendations).slice(0, 20);
 };
+
+/**
+ * Generates simple recommendations for a specific language and proficiency level.
+ * This is used for the dual-language learning path display.
+ * @param language - The sign language ('ASL' or 'MSL')
+ * @param proficiencyLevel - The proficiency level for this language
+ * @returns Array of learning recommendations for the specified language
+ */
+export const getSimpleRecommendationsForLanguage = async (
+  language: 'ASL' | 'MSL',
+  proficiencyLevel: 'Beginner' | 'Intermediate' | 'Advanced' | null
+): Promise<LearningRecommendation[]> => {
+  if (!proficiencyLevel) {
+    return []; // No recommendations if no proficiency level
+  }
+
+  const level = proficiencyLevel.toLowerCase();
+  
+  // Fetch content for this specific language and level
+  const [tutorials, quizzes, materials] = await Promise.all([
+    fetchTutorials(level, language),
+    fetchQuizzes(language),
+    fetchMaterials(level, language),
+  ]);
+
+  const recommendations: LearningRecommendation[] = [];
+
+  // Add tutorials
+  tutorials.slice(0, 3).forEach((tutorial) => {
+    recommendations.push({
+      id: tutorial.id,
+      type: 'tutorial',
+      title: tutorial.title,
+      description: tutorial.description,
+      level: tutorial.level,
+      language: tutorial.language,
+      priority: 1,
+      reason: `${language} tutorial at ${proficiencyLevel} level`,
+      recommended_for_role: 'all',
+    });
+  });
+
+  // Add quizzes
+  quizzes.slice(0, 2).forEach((quiz) => {
+    recommendations.push({
+      id: quiz.id,
+      type: 'quiz',
+      title: quiz.title,
+      description: quiz.description,
+      level: quiz.level || level,
+      language: quiz.language,
+      priority: 2,
+      reason: `${language} quiz to test your knowledge`,
+      recommended_for_role: 'all',
+    });
+  });
+
+  // Add materials
+  materials.slice(0, 2).forEach((material) => {
+    recommendations.push({
+      id: material.id,
+      type: 'material',
+      title: material.title,
+      description: material.description,
+      level: material.level,
+      language: material.language,
+      priority: 3,
+      reason: `${language} learning resource`,
+      recommended_for_role: 'all',
+    });
+  });
+
+  return recommendations;
+};

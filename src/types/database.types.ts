@@ -1055,9 +1055,11 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          asl_proficiency_level: string | null
           created_at: string | null
           email: string
           id: string
+          msl_proficiency_level: string | null
           name: string
           preferred_language: string | null
           proficiency_level:
@@ -1068,9 +1070,11 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          asl_proficiency_level?: string | null
           created_at?: string | null
           email: string
           id: string
+          msl_proficiency_level?: string | null
           name: string
           preferred_language?: string | null
           proficiency_level?:
@@ -1081,9 +1085,11 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          asl_proficiency_level?: string | null
           created_at?: string | null
           email?: string
           id?: string
+          msl_proficiency_level?: string | null
           name?: string
           preferred_language?: string | null
           proficiency_level?:

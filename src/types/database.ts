@@ -9,6 +9,8 @@ export interface Database {
           email: string;
           role: "admin" | "deaf" | "non-deaf";
           proficiency_level: "Beginner" | "Intermediate" | "Advanced" | null;
+          asl_proficiency_level: "Beginner" | "Intermediate" | "Advanced" | null;
+          msl_proficiency_level: "Beginner" | "Intermediate" | "Advanced" | null;
           preferred_language: "ASL" | "MSL" | null;
           profile_picture_url: string | null;
           created_at: string;
@@ -20,6 +22,8 @@ export interface Database {
           email: string;
           role?: "admin" | "deaf" | "non-deaf";
           proficiency_level?: "Beginner" | "Intermediate" | "Advanced" | null;
+          asl_proficiency_level?: "Beginner" | "Intermediate" | "Advanced" | null;
+          msl_proficiency_level?: "Beginner" | "Intermediate" | "Advanced" | null;
           preferred_language?: "ASL" | "MSL" | null;
           profile_picture_url?: string | null;
           created_at?: string;
@@ -31,6 +35,8 @@ export interface Database {
           email?: string;
           role?: "admin" | "deaf" | "non-deaf";
           proficiency_level?: "Beginner" | "Intermediate" | "Advanced" | null;
+          asl_proficiency_level?: "Beginner" | "Intermediate" | "Advanced" | null;
+          msl_proficiency_level?: "Beginner" | "Intermediate" | "Advanced" | null;
           preferred_language?: "ASL" | "MSL" | null;
           profile_picture_url?: string | null;
           created_at?: string;

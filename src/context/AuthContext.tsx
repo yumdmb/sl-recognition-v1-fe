@@ -15,6 +15,8 @@ export interface User {
   email: string;
   role: 'non-deaf' | 'admin' | 'deaf';
   proficiency_level: 'Beginner' | 'Intermediate' | 'Advanced' | null;
+  asl_proficiency_level: 'Beginner' | 'Intermediate' | 'Advanced' | null;
+  msl_proficiency_level: 'Beginner' | 'Intermediate' | 'Advanced' | null;
   preferred_language: 'ASL' | 'MSL' | null;
   profile_picture_url?: string | null;
   isVerified?: boolean;
@@ -57,6 +59,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email: supabaseUser.email || '',
       role: (metadata.role as 'non-deaf' | 'admin' | 'deaf') || 'non-deaf',
       proficiency_level: null,
+      asl_proficiency_level: null,
+      msl_proficiency_level: null,
       preferred_language: null,
       isVerified: !!supabaseUser.email_confirmed_at,
       email_confirmed_at: supabaseUser.email_confirmed_at
@@ -82,6 +86,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: profile.email,
           role: profile.role,
           proficiency_level: profile.proficiency_level,
+          asl_proficiency_level: profile.asl_proficiency_level || null,
+          msl_proficiency_level: profile.msl_proficiency_level || null,
           preferred_language: profile.preferred_language || null,
           profile_picture_url: profile.profile_picture_url,
           isVerified: !!supabaseUser.email_confirmed_at,
@@ -434,6 +440,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: profile.email,
           role: profile.role,
           proficiency_level: profile.proficiency_level,
+          asl_proficiency_level: profile.asl_proficiency_level || null,
+          msl_proficiency_level: profile.msl_proficiency_level || null,
           preferred_language: profile.preferred_language || null,
           profile_picture_url: profile.profile_picture_url,
         } : null);

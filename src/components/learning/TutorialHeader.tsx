@@ -32,14 +32,8 @@ const TutorialHeader: React.FC<TutorialHeaderProps> = ({
           </TabsList>
         </Tabs>
       ) : (
-        // Regular users see their proficiency level badge
-        <div className="flex items-center gap-2">
-          <GraduationCap className="h-5 w-5 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">Your Level:</span>
-          <Badge variant="secondary" className="capitalize">
-            {userLevel || 'Not Set'}
-          </Badge>
-        </div>
+        // Regular users don't need level tabs - content is already filtered server-side
+        <div className="flex-1" />
       )}
       
       {isAdmin && (
