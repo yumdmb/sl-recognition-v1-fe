@@ -55,8 +55,9 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ isActive, language
       formData.append("language", language); // Add language to formData
 
       try {
-        // Docker API runs on port 80 through Nginx
-        const res = await fetch("http://localhost/predict-image/", {
+        // Use environment variable for API URL (localhost for dev, EC2 for production)
+        const apiUrl = process.env.NEXT_PUBLIC_ML_API_URL || "http://localhost";
+        const res = await fetch(`${apiUrl}/predict-image/`, {
           method: "POST",
           body: formData,
         });
