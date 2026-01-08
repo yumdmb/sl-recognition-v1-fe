@@ -6,10 +6,10 @@ import type {
   Database 
 } from '@/types/database';
 
-const supabase = createClient();
-
-export class TutorialService {  // Get all tutorials with optional status for a user
-  static async getTutorials(userId?: string, language?: 'ASL' | 'MSL'): Promise<TutorialWithProgress[]> {
+export class TutorialService {
+  // Get all tutorials with optional status for a user
+  static async getTutorials(userId?: string, language?: 'ASL' | 'MSL', level?: 'beginner' | 'intermediate' | 'advanced'): Promise<TutorialWithProgress[]> {
+    const supabase = createClient();
     try {
       let query = supabase
         .from('tutorials')
@@ -18,6 +18,10 @@ export class TutorialService {  // Get all tutorials with optional status for a 
 
       if (language) {
         query = query.eq('language', language);
+      }
+
+      if (level) {
+        query = query.eq('level', level);
       }
 
       const { data: tutorials, error } = await query;
@@ -48,11 +52,12 @@ export class TutorialService {  // Get all tutorials with optional status for a 
       
       // Provide more detailed error information
       if (error && typeof error === 'object') {
+        const err = error as { message?: string; code?: string; hint?: string; details?: string };
         console.error('Error details:', {
-          message: (error as any).message,
-          code: (error as any).code,
-          hint: (error as any).hint,
-          details: (error as any).details
+          message: err.message,
+          code: err.code,
+          hint: err.hint,
+          details: err.details
         });
       }
       
@@ -61,6 +66,7 @@ export class TutorialService {  // Get all tutorials with optional status for a 
   }
   // Get single tutorial by ID
   static async getTutorial(id: string, userId?: string): Promise<TutorialWithProgress | null> {
+    const supabase = createClient();
     try {
       const { data: tutorial, error } = await supabase
         .from('tutorials')
@@ -97,6 +103,7 @@ export class TutorialService {  // Get all tutorials with optional status for a 
   static async createTutorial(
     tutorial: Database['public']['Tables']['tutorials']['Insert']
   ): Promise<Tutorial> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('tutorials')
@@ -117,6 +124,7 @@ export class TutorialService {  // Get all tutorials with optional status for a 
     id: string, 
     updates: Database['public']['Tables']['tutorials']['Update']
   ): Promise<Tutorial> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('tutorials')
@@ -135,6 +143,7 @@ export class TutorialService {  // Get all tutorials with optional status for a 
 
   // Delete tutorial (admin only)
   static async deleteTutorial(id: string): Promise<void> {
+    const supabase = createClient();
     try {
       const { error } = await supabase
         .from('tutorials')
@@ -151,6 +160,7 @@ export class TutorialService {  // Get all tutorials with optional status for a 
     userId: string, 
     tutorialId: string
   ): Promise<TutorialProgress> {
+    const supabase = createClient();
     try {
       console.log('Starting tutorial with:', { userId, tutorialId });
       
@@ -173,11 +183,12 @@ export class TutorialService {  // Get all tutorials with optional status for a 
       console.log('Tutorial started successfully:', data);
       return data;    } catch (error) {
       console.error('Error starting tutorial:', error);
+      const err = error as { message?: string; code?: string; details?: string; hint?: string };
       console.error('Error details:', {
-        message: (error as any)?.message,
-        code: (error as any)?.code,
-        details: (error as any)?.details,
-        hint: (error as any)?.hint
+        message: err?.message,
+        code: err?.code,
+        details: err?.details,
+        hint: err?.hint
       });
       throw error;
     }
@@ -186,6 +197,7 @@ export class TutorialService {  // Get all tutorials with optional status for a 
     userId: string, 
     tutorialId: string
   ): Promise<TutorialProgress> {
+    const supabase = createClient();
     try {
       console.log('Marking tutorial as done with:', { userId, tutorialId });
       
@@ -245,6 +257,7 @@ export class TutorialService {  // Get all tutorials with optional status for a 
     totalCompleted: number;
     completionPercentage: number;
   }> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('tutorial_progress')
@@ -270,6 +283,7 @@ export class TutorialService {  // Get all tutorials with optional status for a 
 
   // Get user's tutorial progress
   static async getUserProgress(userId: string): Promise<TutorialProgress[]> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('tutorial_progress')

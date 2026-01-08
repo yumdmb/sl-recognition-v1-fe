@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAdmin } from '@/context/AdminContext';
 import { useLearning } from '@/context/LearningContext';
@@ -12,6 +12,12 @@ import MaterialEmptyState from '@/components/learning/MaterialEmptyState';
 import MaterialLoadingState from '@/components/learning/MaterialLoadingState';
 import MaterialDialog from '@/components/learning/MaterialDialog';
 import type { Material } from '@/types/database';
+
+// Helper to convert proficiency level to lowercase
+const toLowerLevel = (level: string | null | undefined): 'beginner' | 'intermediate' | 'advanced' | undefined => {
+  if (!level) return undefined;
+  return level.toLowerCase() as 'beginner' | 'intermediate' | 'advanced';
+};
 
 export default function MaterialsPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -29,10 +35,26 @@ export default function MaterialsPage() {
     deleteMaterial: deleteFromDB 
   } = useLearning();
 
+  // Get the user's proficiency level for the currently selected language (only for non-admins)
+  const userLevel = useMemo(() => {
+    if (isAdmin) return undefined; // Admins see all levels
+    
+    // Use language-specific proficiency level based on selected language
+    if (language === 'ASL') {
+      return toLowerLevel(currentUser?.asl_proficiency_level);
+    } else if (language === 'MSL') {
+      return toLowerLevel(currentUser?.msl_proficiency_level);
+    }
+    
+    // Fallback to legacy proficiency_level
+    return toLowerLevel(currentUser?.proficiency_level);
+  }, [isAdmin, currentUser?.asl_proficiency_level, currentUser?.msl_proficiency_level, currentUser?.proficiency_level, language]);
+
   useEffect(() => {
-    // Load materials when component mounts or language changes
-    getMaterials(language);
-  }, [language, getMaterials]);
+    // Load materials when component mounts or language/level changes
+    // Pass level for non-admins to filter server-side
+    getMaterials(language, userLevel);
+  }, [language, userLevel, getMaterials]);
 
   // Function to handle adding a new material
   const handleAddMaterial = () => {

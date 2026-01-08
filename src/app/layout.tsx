@@ -17,8 +17,48 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sign Language Recognition",
-  description: "Learn sign language with AI",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  title: {
+    default: "SignBridge - Learn ASL & MSL with AI-Powered Recognition",
+    template: "%s | SignBridge"
+  },
+  description: "Master American Sign Language (ASL) and Malaysian Sign Language (MSL) through AI-powered gesture recognition, interactive tutorials, and community-driven learning. Developed in collaboration with MyBIM.",
+  keywords: ["sign language", "ASL", "MSL", "gesture recognition", "AI learning", "deaf education", "MyBIM", "sign language learning", "accessibility"],
+  authors: [{ name: "SignBridge Team" }],
+  creator: "SignBridge",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "/",
+    siteName: "SignBridge",
+    title: "SignBridge - Learn ASL & MSL with AI-Powered Recognition",
+    description: "Master American Sign Language (ASL) and Malaysian Sign Language (MSL) through AI-powered gesture recognition and interactive learning.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "SignBridge - Sign Language Learning Platform"
+      }
+    ]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SignBridge - Learn ASL & MSL with AI",
+    description: "Master sign language with AI-powered gesture recognition and interactive tutorials.",
+    images: ["/og-image.png"]
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
 // Client-side Providers component

@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search as SearchIcon, PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Search as SearchIcon, PlusCircle, Edit, Trash2, Cuboid } from 'lucide-react';
 import { toast } from "sonner";
 import {
   Select,
@@ -35,24 +37,51 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { GestureForm } from '@/components/gesture-recognition/GestureForm';
+import { GestureContribution, GestureCategory } from '@/types/gestureContributions';
+import { GestureContributionService } from '@/lib/supabase/gestureContributions';
+import { AdminGestureForm } from '@/components/gesture-recognition/AdminGestureForm';
+import Avatar3DPlayer from '@/components/avatar/Avatar3DPlayer';
+import { Avatar3DRecording } from '@/types/hand';
 
-// Define database-driven types
-interface GestureCategory {
-  id: number;
-  name: string;
-  icon: string | null;
-  count?: number;
+// Extended type for gesture with joined avatar data
+interface GestureWithAvatar extends GestureContribution {
+  sign_avatars?: {
+    id: string;
+    recording_data: Avatar3DRecording;
+    frame_count: number;
+    duration_ms: number;
+  } | null;
 }
 
-interface Gesture {
-  id: number;
-  name: string;
-  description: string | null;
-  media_url: string;
-  media_type: 'image' | 'video';
-  language: 'ASL' | 'MSL';
-  category_id: number | null;
+// Grouped gesture type - combines multiple versions of the same word
+interface GroupedGesture {
+  key: string; // title-language
+  title: string;
+  language: string;
+  versions: GestureWithAvatar[];
+  hasAvatar: boolean;
+  hasMedia: boolean; // image or video
+}
+
+// Helper function to group gestures by title+language
+function groupGestures(gestures: GestureWithAvatar[]): GroupedGesture[] {
+  const grouped = new Map<string, GestureWithAvatar[]>();
+  
+  for (const gesture of gestures) {
+    const key = `${gesture.title.toLowerCase()}-${gesture.language}`;
+    const existing = grouped.get(key) || [];
+    existing.push(gesture);
+    grouped.set(key, existing);
+  }
+  
+  return Array.from(grouped.entries()).map(([key, versions]) => ({
+    key,
+    title: versions[0].title,
+    language: versions[0].language,
+    versions,
+    hasAvatar: versions.some(v => v.media_type === 'avatar'),
+    hasMedia: versions.some(v => v.media_type === 'image' || v.media_type === 'video'),
+  }));
 }
 
 const GestureRecognitionSearch: React.FC = () => {
@@ -62,88 +91,139 @@ const GestureRecognitionSearch: React.FC = () => {
   const isAdmin = user?.role === 'admin';
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [searchResults, setSearchResults] = useState<Gesture[]>([]);
+  const [searchResults, setSearchResults] = useState<GestureWithAvatar[]>([]);
   const [language, setLanguage] = useState<"ASL" | "MSL">("ASL");
   const [activeTab, setActiveTab] = useState("text");
   const [categories, setCategories] = useState<GestureCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<GestureCategory | null>(null);
-  const [categoryGestures, setCategoryGestures] = useState<Gesture[]>([]);
+  const [categoryGestures, setCategoryGestures] = useState<GestureWithAvatar[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingGesture, setEditingGesture] = useState<Gesture | null>(null);
+  const [editingGesture, setEditingGesture] = useState<GestureContribution | null>(null);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-  const [deletingGesture, setDeletingGesture] = useState<Gesture | null>(null);
+  const [deletingGesture, setDeletingGesture] = useState<GestureContribution | null>(null);
+  // Track which version (media or avatar) is selected for each grouped card
+  const [selectedVersions, setSelectedVersions] = useState<Record<string, 'media' | 'avatar'>>({});
 
+
+  // Fetch categories with counts from gesture_contributions
   const fetchCategories = useCallback(async () => {
-    const { data, error } = await supabase
+    const { data: categoriesData, error } = await supabase
       .from('gesture_categories')
-      .select('id, name, icon, gestures(count)');
+      .select('id, name, icon');
 
     if (error) {
-      toast.error("Failed to load categories", { description: error.message });
-    } else {
-      const categoriesWithCounts = data.map(c => ({
-        ...c,
-        count: (c.gestures as any)[0]?.count || 0
-      }));
-      setCategories(categoriesWithCounts);
+      toast.error("Failed to load categories", { 
+        description: error.message,
+        style: { color: 'black' }
+      });
+      return;
     }
-  }, [supabase]);
+
+    // Fetch gesture counts per category filtered by language (from approved contributions)
+    const categoriesWithCounts = await Promise.all(
+      (categoriesData || []).map(async (category) => {
+        const { count } = await supabase
+          .from('gesture_contributions')
+          .select('*', { count: 'exact', head: true })
+          .eq('category_id', category.id)
+          .eq('language', language)
+          .eq('status', 'approved');
+        
+        return {
+          ...category,
+          count: count || 0
+        };
+      })
+    );
+    setCategories(categoriesWithCounts);
+  }, [supabase, language]);
 
   useEffect(() => {
     fetchCategories();
-  }, [fetchCategories]);
+  }, [fetchCategories, language]);
 
-  const handleSearch = async () => {
+  // Search approved gestures by title (including avatars)
+  const handleSearch = useCallback(async () => {
     if (!searchTerm.trim()) {
-      toast.error("Search term required", { description: "Please enter a word to search for" });
+      toast.error("Search term required", { 
+        description: "Please enter a word to search for",
+        style: { color: 'black' }
+      });
       return;
     }
     setIsLoading(true);
     setSearchResults([]);
     try {
       const { data, error } = await supabase
-        .from('gestures')
-        .select('*')
-        .ilike('name', `%${searchTerm}%`)
-        .eq('language', language);
+        .from('gesture_contributions')
+        .select(`
+          *,
+          category:gesture_categories!category_id(id, name, icon),
+          sign_avatars!avatar_id(id, recording_data, frame_count, duration_ms)
+        `)
+        .ilike('title', `%${searchTerm}%`)
+        .eq('language', language)
+        .eq('status', 'approved');
 
       if (error) throw error;
 
-      setSearchResults(data || []);
-      toast.success(`Found ${data?.length || 0} gestures for "${searchTerm}"`);
-    } catch (error: any) {
-      toast.error("Search failed", { description: error.message });
+      setSearchResults((data || []) as GestureWithAvatar[]);
+      
+      if (data && data.length > 0) {
+        toast.success(`Found ${data.length} gesture${data.length > 1 ? 's' : ''} for "${searchTerm}"`, {
+          style: { color: 'black' }
+        });
+      } else {
+        toast.info(`No record for "${searchTerm}"`, {
+          style: { color: 'black' }
+        });
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      toast.error("Search failed", { 
+        description: errorMessage,
+        style: { color: 'black' }
+      });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [supabase, searchTerm, language]);
 
-  const handleCategorySelect = async (category: GestureCategory) => {
+  // Load gestures by category (including avatars)
+  const handleCategorySelect = useCallback(async (category: GestureCategory) => {
     setSelectedCategory(category);
     setIsLoading(true);
     setCategoryGestures([]);
     try {
       const { data, error } = await supabase
-        .from('gestures')
-        .select('*')
+        .from('gesture_contributions')
+        .select(`
+          *,
+          category:gesture_categories!category_id(id, name, icon),
+          sign_avatars!avatar_id(id, recording_data, frame_count, duration_ms)
+        `)
         .eq('category_id', category.id)
-        .eq('language', language);
+        .eq('language', language)
+        .eq('status', 'approved');
 
       if (error) throw error;
 
-      setCategoryGestures(data || []);
-      setActiveTab('category'); // Switch tab to show results
-    } catch (error: any) {
-      toast.error(`Failed to load gestures for ${category.name}`, { description: error.message });
+      setCategoryGestures((data || []) as GestureWithAvatar[]);
+      setActiveTab('category');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      toast.error(`Failed to load gestures for ${category.name}`, { 
+        description: errorMessage,
+        style: { color: 'black' }
+      });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [supabase, language]);
 
   const handleFormSuccess = () => {
     setIsFormOpen(false);
     setEditingGesture(null);
-    // Refresh data
     fetchCategories();
     if (activeTab === 'text' && searchTerm) {
       handleSearch();
@@ -152,12 +232,70 @@ const GestureRecognitionSearch: React.FC = () => {
     }
   };
 
-  const openEditForm = (gesture: Gesture) => {
+  // Silent background refresh (including avatars)
+  const silentRefresh = useCallback(async () => {
+    // Refresh categories
+    const { data: categoriesData } = await supabase
+      .from('gesture_categories')
+      .select('id, name, icon');
+
+    if (categoriesData) {
+      const categoriesWithCounts = await Promise.all(
+        categoriesData.map(async (category) => {
+          const { count } = await supabase
+            .from('gesture_contributions')
+            .select('*', { count: 'exact', head: true })
+            .eq('category_id', category.id)
+            .eq('language', language)
+            .eq('status', 'approved');
+          
+          return { ...category, count: count || 0 };
+        })
+      );
+      setCategories(categoriesWithCounts);
+    }
+
+    // Refresh current view
+    if (activeTab === 'text' && searchTerm.trim()) {
+      const { data } = await supabase
+        .from('gesture_contributions')
+        .select(`
+          *,
+          category:gesture_categories!category_id(id, name, icon),
+          sign_avatars!avatar_id(id, recording_data, frame_count, duration_ms)
+        `)
+        .ilike('title', `%${searchTerm}%`)
+        .eq('language', language)
+        .eq('status', 'approved');
+      
+      if (data) setSearchResults(data as GestureWithAvatar[]);
+    } else if (activeTab === 'category' && selectedCategory) {
+      const { data } = await supabase
+        .from('gesture_contributions')
+        .select(`
+          *,
+          category:gesture_categories!category_id(id, name, icon),
+          sign_avatars!avatar_id(id, recording_data, frame_count, duration_ms)
+        `)
+        .eq('category_id', selectedCategory.id)
+        .eq('language', language)
+        .eq('status', 'approved');
+      
+      if (data) setCategoryGestures(data as GestureWithAvatar[]);
+    }
+  }, [supabase, activeTab, searchTerm, selectedCategory, language]);
+
+  useEffect(() => {
+    const interval = setInterval(silentRefresh, 5000);
+    return () => clearInterval(interval);
+  }, [silentRefresh]);
+
+  const openEditForm = (gesture: GestureContribution) => {
     setEditingGesture(gesture);
     setIsFormOpen(true);
   };
 
-  const openDeleteAlert = (gesture: Gesture) => {
+  const openDeleteAlert = (gesture: GestureContribution) => {
     setDeletingGesture(gesture);
     setIsDeleteAlertOpen(true);
   };
@@ -166,58 +304,148 @@ const GestureRecognitionSearch: React.FC = () => {
     if (!deletingGesture) return;
 
     try {
-      // Delete from gestures table
-      const { error: dbError } = await supabase
-        .from('gestures')
-        .delete()
-        .eq('id', deletingGesture.id);
+      const { error } = await GestureContributionService.deleteContribution(deletingGesture.id);
+      if (error) throw error;
 
-      if (dbError) throw dbError;
-
-      // Delete from storage
-      const filePath = deletingGesture.media_url.split('/').pop();
-      if (filePath) {
-        await supabase.storage.from('gestures').remove([`public/${filePath}`]);
-      }
-
-      toast.success("Gesture deleted successfully!");
-      handleFormSuccess(); // Re-use success logic to refresh data
-    } catch (error: any) {
-      toast.error("Failed to delete gesture", { description: error.message });
+      toast.success("Gesture deleted successfully!", { style: { color: 'black' } });
+      handleFormSuccess();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      toast.error("Failed to delete gesture", { 
+        description: errorMessage,
+        style: { color: 'black' }
+      });
     } finally {
       setIsDeleteAlertOpen(false);
       setDeletingGesture(null);
     }
   };
 
-  const renderGestureCard = (gesture: Gesture) => (
-    <Card key={gesture.id} className="overflow-hidden">
-      <CardContent className="p-0">
-        {gesture.media_type === 'image' ? (
-          <img src={gesture.media_url} alt={gesture.name} className="w-full h-48 object-cover" />
-        ) : (
-          <video src={gesture.media_url} controls className="w-full h-48 object-cover" />
-        )}
-      </CardContent>
-      <CardHeader>
-        <CardTitle className="flex justify-between items-center">
-          {gesture.name}
-          {isAdmin && (
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => openEditForm(gesture)}><Edit className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="icon" onClick={() => openDeleteAlert(gesture)}><Trash2 className="h-4 w-4" /></Button>
+
+  // Get the selected version type for a grouped gesture
+  const getSelectedVersion = (group: GroupedGesture): 'media' | 'avatar' => {
+    const selected = selectedVersions[group.key];
+    if (selected) return selected;
+    // Default: prefer media if available, otherwise avatar
+    return group.hasMedia ? 'media' : 'avatar';
+  };
+
+  // Toggle version for a grouped gesture
+  const toggleVersion = (groupKey: string, version: 'media' | 'avatar') => {
+    setSelectedVersions(prev => ({ ...prev, [groupKey]: version }));
+  };
+
+  // Render a grouped gesture card with version toggle
+  const renderGroupedGestureCard = (group: GroupedGesture) => {
+    const selectedType = getSelectedVersion(group);
+    const hasMultipleVersions = group.hasAvatar && group.hasMedia;
+    
+    // Find the gesture to display based on selected type
+    const displayGesture = selectedType === 'avatar'
+      ? group.versions.find(v => v.media_type === 'avatar')
+      : group.versions.find(v => v.media_type === 'image' || v.media_type === 'video');
+    
+    // Fallback to first version if selected type not found
+    const gesture = displayGesture || group.versions[0];
+    const isAvatar = gesture.media_type === 'avatar';
+    const avatarData = gesture.sign_avatars?.recording_data;
+    
+    // Collect all unique categories from all versions
+    const allCategories = group.versions
+      .filter(v => v.category)
+      .map(v => v.category!)
+      .filter((cat, idx, arr) => arr.findIndex(c => c.id === cat.id) === idx);
+    
+    return (
+      <Card key={group.key} className="overflow-hidden">
+        <CardContent className="p-0 relative h-48">
+          {isAvatar && avatarData ? (
+            <div className="w-full h-full bg-muted">
+              <Avatar3DPlayer recording={avatarData} />
+            </div>
+          ) : gesture.media_type === 'image' && gesture.media_url ? (
+            <Image 
+              src={gesture.media_url} 
+              alt={gesture.title} 
+              fill
+              className="object-cover" 
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          ) : gesture.media_url ? (
+            <video src={gesture.media_url} controls className="w-full h-48 object-cover" />
+          ) : (
+            <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">
+              No preview available
             </div>
           )}
-        </CardTitle>
-        <CardDescription>{gesture.description || 'No description available.'}</CardDescription>
-      </CardHeader>
-    </Card>
-  );
+        </CardContent>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex justify-between items-center">
+            <span>{group.title}</span>
+            {isAdmin && !isAvatar && (
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" onClick={() => openEditForm(gesture)}>
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => openDeleteAlert(gesture)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </CardTitle>
+          <CardDescription className="line-clamp-2">{gesture.description || 'No description available.'}</CardDescription>
+          
+          {/* Version Toggle - only show if multiple versions exist */}
+          {hasMultipleVersions && (
+            <div className="flex gap-1 mt-3">
+              <Button
+                variant={selectedType === 'media' ? 'default' : 'outline'}
+                size="sm"
+                className="flex-1 h-8 text-xs"
+                onClick={() => toggleVersion(group.key, 'media')}
+              >
+                📷 Image/Video
+              </Button>
+              <Button
+                variant={selectedType === 'avatar' ? 'default' : 'outline'}
+                size="sm"
+                className="flex-1 h-8 text-xs"
+                onClick={() => toggleVersion(group.key, 'avatar')}
+              >
+                <Cuboid className="h-3 w-3 mr-1" />
+                3D Avatar
+              </Button>
+            </div>
+          )}
+          
+          {/* Single version badge (no toggle needed) */}
+          {!hasMultipleVersions && isAvatar && (
+            <Badge variant="outline" className="w-fit mt-2 text-xs">
+              <Cuboid className="h-3 w-3 mr-1" />
+              3D Avatar
+            </Badge>
+          )}
+          
+          {/* Categories */}
+          {allCategories.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {allCategories.map(cat => (
+                <Badge key={cat.id} variant="secondary" className="text-xs">
+                  {cat.icon && <span className="mr-1">{cat.icon}</span>}
+                  {cat.name}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </CardHeader>
+      </Card>
+    );
+  };
 
   return (
     <div className="max-w-5xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Sign Language Gestures</h1>
+        <h1 className="text-3xl font-bold">Sign Language Dictionary</h1>
         {isAdmin && (
           <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogTrigger asChild>
@@ -225,14 +453,14 @@ const GestureRecognitionSearch: React.FC = () => {
                 <PlusCircle className="mr-2 h-4 w-4" /> Add New Gesture
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>{editingGesture ? 'Edit' : 'Add'} Gesture</DialogTitle>
                 <DialogDescription>
-                  {editingGesture ? 'Update the details of the gesture.' : 'Fill out the form to add a new gesture to the database.'}
+                  {editingGesture ? 'Update the details of the gesture.' : 'Fill out the form to add a new gesture to the dictionary.'}
                 </DialogDescription>
               </DialogHeader>
-              <GestureForm
+              <AdminGestureForm
                 gesture={editingGesture}
                 onSuccess={handleFormSuccess}
                 onCancel={() => setIsFormOpen(false)}
@@ -268,9 +496,9 @@ const GestureRecognitionSearch: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="language">Sign Language</Label>
+                  <Label htmlFor="text-language">Sign Language</Label>
                   <Select value={language} onValueChange={(val: "ASL" | "MSL") => setLanguage(val)}>
-                    <SelectTrigger><SelectValue placeholder="Select language" /></SelectTrigger>
+                    <SelectTrigger id="text-language"><SelectValue placeholder="Select language" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ASL">American (ASL)</SelectItem>
                       <SelectItem value="MSL">Malaysian (MSL)</SelectItem>
@@ -287,9 +515,9 @@ const GestureRecognitionSearch: React.FC = () => {
           
           {searchResults.length > 0 && (
             <div className="mt-6">
-              <h2 className="text-2xl font-bold mb-4">Search Results</h2>
+              <h2 className="text-xl md:text-2xl font-bold mb-4">Search Results</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {searchResults.map(renderGestureCard)}
+                {groupGestures(searchResults).map(renderGroupedGestureCard)}
               </div>
             </div>
           )}
@@ -303,6 +531,18 @@ const GestureRecognitionSearch: React.FC = () => {
                 <CardDescription>Explore sign language gestures organized by categories</CardDescription>
               </CardHeader>
               <CardContent>
+                <div className="space-y-4 mb-6">
+                  <Label htmlFor="category-language">Select Sign Language</Label>
+                  <Select value={language} onValueChange={(val: "ASL" | "MSL") => setLanguage(val)}>
+                    <SelectTrigger id="category-language">
+                      <SelectValue placeholder="Select language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ASL">American Sign Language (ASL)</SelectItem>
+                      <SelectItem value="MSL">Malaysian Sign Language (MSL)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                   {categories.map(category => (
                     <Card key={category.id} className="hover:shadow-md hover:border-primary/50 transition-all cursor-pointer" onClick={() => handleCategorySelect(category)}>
@@ -321,13 +561,13 @@ const GestureRecognitionSearch: React.FC = () => {
               <Button variant="link" onClick={() => setSelectedCategory(null)} className="mb-4">
                 &larr; Back to Categories
               </Button>
-              <h2 className="text-2xl font-bold mb-4">{selectedCategory.name} Gestures</h2>
+              <h2 className="text-xl md:text-2xl font-bold mb-4">{selectedCategory.name} Gestures</h2>
               {isLoading ? (
                 <p>Loading gestures...</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {categoryGestures.length > 0 ? (
-                    categoryGestures.map(renderGestureCard)
+                    groupGestures(categoryGestures).map(renderGroupedGestureCard)
                   ) : (
                     <p>No gestures found in this category for the selected language.</p>
                   )}
@@ -344,7 +584,7 @@ const GestureRecognitionSearch: React.FC = () => {
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the gesture
-              "{deletingGesture?.name}" and its media file.
+              &quot;{deletingGesture?.title}&quot; and its media file.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

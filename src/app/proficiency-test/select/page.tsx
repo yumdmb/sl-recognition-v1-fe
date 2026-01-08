@@ -1,102 +1,71 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { getAllProficiencyTests } from '@/lib/services/proficiencyTestService';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Suspense } from 'react';
+import { getAllProficiencyTestsServer } from '@/lib/services/server/proficiencyTestService';
+import LanguageSelectionClient from '@/components/proficiency-test/LanguageSelectionClient';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import type { Database } from '@/types/database';
 
-type ProficiencyTest = Database['public']['Tables']['proficiency_tests']['Row'];
+// This page uses cookies() via Supabase auth, so it must be dynamically rendered
+export const dynamic = 'force-dynamic';
 
-const SelectProficiencyTestPage = () => {
-  const router = useRouter();
-  const [tests, setTests] = useState<ProficiencyTest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchTests = async () => {
-      try {
-        setIsLoading(true);
-        const availableTests = await getAllProficiencyTests();
-        setTests(availableTests);
-      } catch (err) {
-        setError('Failed to load available tests. Please try again later.');
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchTests();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-6">Select a Proficiency Test</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(2)].map((_, i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-6 w-3/4" />
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-5/6" />
-                <div className="pt-4">
-                  <Skeleton className="h-10 w-full" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <Alert variant="destructive" className="max-w-lg">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
+// Loading component for Suspense fallback
+function LanguageSelectionLoading() {
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6">Select a Proficiency Test</h1>
-      {tests.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tests.map((test) => (
-            <Card key={test.id} className="flex flex-col">
-              <CardHeader>
-                <CardTitle>{test.title}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex-grow">
-                <CardDescription>{test.description}</CardDescription>
-              </CardContent>
-              <div className="p-6 pt-0">
-                <Button className="w-full" onClick={() => router.push(`/proficiency-test/${test.id}`)}>
-                  Start Test
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <p>No proficiency tests are currently available.</p>
-      )}
+    <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 py-12">
+      <Skeleton className="w-16 h-16 rounded-full mb-6" />
+      <Skeleton className="h-10 w-80 mb-4" />
+      <Skeleton className="h-6 w-96 mb-12" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl w-full">
+        {[...Array(2)].map((_, i) => (
+          <Card key={i} className="p-8">
+            <CardHeader className="flex items-center">
+              <Skeleton className="h-16 w-16 rounded-full mb-4" />
+            </CardHeader>
+            <CardContent className="space-y-3 text-center">
+              <Skeleton className="h-6 w-48 mx-auto" />
+              <Skeleton className="h-4 w-24 mx-auto" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6 mx-auto" />
+              <Skeleton className="h-10 w-32 mx-auto mt-4" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
-};
+}
 
-export default SelectProficiencyTestPage;
+// Error component
+function LanguageSelectionError({ message }: { message: string }) {
+  return (
+    <div className="flex justify-center items-center min-h-[60vh]">
+      <Alert variant="destructive" className="max-w-lg">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{message}</AlertDescription>
+      </Alert>
+    </div>
+  );
+}
+
+// Server Component that fetches data
+async function LanguageSelectionContent() {
+  try {
+    const tests = await getAllProficiencyTestsServer();
+    return <LanguageSelectionClient tests={tests} />;
+  } catch (error) {
+    console.error('Failed to load tests:', error);
+    return <LanguageSelectionError message="Failed to load available tests. Please try again later." />;
+  }
+}
+
+// Main page component (Server Component)
+export default function SelectProficiencyTestPage() {
+  return (
+    <Suspense fallback={<LanguageSelectionLoading />}>
+      <LanguageSelectionContent />
+    </Suspense>
+  );
+}
+

@@ -31,11 +31,19 @@ export default function MessageList({
     const groups: { [key: string]: Message[] } = {};
     
     messages.forEach((message) => {
-      const date = new Date(message.created_at).toLocaleDateString();
-      if (!groups[date]) {
-        groups[date] = [];
+      // Validate date before creating Date object
+      if (!message.created_at) return;
+      
+      const dateObj = new Date(message.created_at);
+      // Check if date is valid
+      if (isNaN(dateObj.getTime())) return;
+      
+      // Use ISO date string (YYYY-MM-DD) as key for consistent grouping
+      const dateKey = dateObj.toISOString().split('T')[0];
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
       }
-      groups[date].push(message);
+      groups[dateKey].push(message);
     });
     
     return groups;
@@ -69,29 +77,51 @@ export default function MessageList({
               </div>
               <div className="relative flex justify-center">
                 <span className="bg-background px-2 text-xs text-muted-foreground">
-                  {new Date().toLocaleDateString() === date
-                    ? "Today"
-                    : new Date(date).toLocaleDateString(undefined, {
-                        weekday: "long",
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
+                  {(() => {
+                    const today = new Date().toISOString().split('T')[0];
+                    if (date === today) {
+                      return "Today";
+                    }
+                    
+                    const dateObj = new Date(date + 'T00:00:00');
+                    if (isNaN(dateObj.getTime())) {
+                      return date;
+                    }
+                    
+                    return dateObj.toLocaleDateString(undefined, {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    });
+                  })()}
                 </span>
               </div>
             </div>
 
             {dateMessages.map((message) => {
               const isCurrentUser = message.sender_id === currentUserId;
-              const time = format(new Date(message.created_at), "h:mm a");
+              
+              // Safely format time with validation
+              let time = "Unknown time";
+              if (message.created_at) {
+                const dateObj = new Date(message.created_at);
+                if (!isNaN(dateObj.getTime())) {
+                  time = format(dateObj, "h:mm a");
+                }
+              }
               
               return (
                 <div
                   key={message.id}
                   className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
                 >
-                  <div className="flex gap-2 max-w-[80%]">                    {!isCurrentUser && (
+                  <div className="flex gap-2 max-w-[85%] md:max-w-[80%]">                    {!isCurrentUser && (
                       <Avatar className="h-8 w-8">
+                        <AvatarImage 
+                          src={message.sender?.profile_picture_url || undefined} 
+                          alt={message.sender?.name || "User"} 
+                        />
                         <AvatarFallback>
                           {getInitials(message.sender?.name || "")}
                         </AvatarFallback>
@@ -133,6 +163,10 @@ export default function MessageList({
                       </div>
                     </div>                    {isCurrentUser && (
                       <Avatar className="h-8 w-8">
+                        <AvatarImage 
+                          src={message.sender?.profile_picture_url || undefined} 
+                          alt={message.sender?.name || "User"} 
+                        />
                         <AvatarFallback>
                           {getInitials(message.sender?.name || "")}
                         </AvatarFallback>

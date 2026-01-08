@@ -20,7 +20,7 @@ export default function QuizPage() {
   const { currentUser } = useAuth();
   const { getQuizSetWithQuestions, submitQuizAnswers } = useLearning();
   
-  const [quizSet, setQuizSet] = useState<any>(null);
+  const [quizSet, setQuizSet] = useState<{ title: string; language: string; questions: QuizQuestion[] } | null>(null);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedAnswers, setSelectedAnswers] = useState<{ [id: string]: string | null }>({});
@@ -158,7 +158,7 @@ export default function QuizPage() {
       >
         ← Back to Quiz List
       </Button>
-      <h1 className="text-3xl font-bold mb-2">Quiz: {formatQuizTitle()}</h1>
+      <h1 className="text-2xl md:text-3xl font-bold mb-2">Quiz: {formatQuizTitle()}</h1>
       <p className="mb-8 text-gray-600">
         Answer all questions below and submit to see your score and explanations.
       </p>
@@ -226,7 +226,7 @@ export default function QuizPage() {
           ) : (
             <div className="w-full space-y-6">
               <div className="p-6 bg-gray-50 rounded-lg border">
-                <h2 className="text-xl font-bold mb-2">Quiz Results</h2>
+                <h2 className="text-lg md:text-xl font-bold mb-2">Quiz Results</h2>
                 <p className="text-lg">
                   You scored{" "}
                   <span className="font-bold">

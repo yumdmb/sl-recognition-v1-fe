@@ -1,0 +1,9 @@
+{
+  "git": {
+    "deploymentEnabled": {
+      "with-supbase-v2": false,
+      "Add-chat": false,
+      "dockerized": true
+    }
+  }
+}

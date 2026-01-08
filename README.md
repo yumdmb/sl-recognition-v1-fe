@@ -6,57 +6,59 @@ This application is developed as a Final Year Project in collaboration with Dr. 
 
 ![SignBridge Logo](/public/MyBIM-Logo-transparent-bg-300x227.png)
 
-## 🌟 Features
+##  Features
 
-### 👋 Gesture Recognition
+###  Gesture Recognition
 
 - **Upload-based Recognition**: Upload images of sign language gestures for AI-powered recognition
 - **Camera-based Recognition**: Use your device's camera for real-time sign language recognition
 - **Search Functionality**: Search through a comprehensive database of recognized gestures
 - **Multi-language Support**: Recognition for both ASL and MSL
 
-### 📚 Learning Resources
+###  Learning Resources
 
 - **Interactive Tutorials**: Step-by-step video tutorials with YouTube integration and progress tracking
 - **Learning Materials**: Comprehensive collection of resources categorized by difficulty level with file storage
 - **Interactive Quizzes**: Test your knowledge with multi-choice quizzes and progress tracking
 - **Progress Tracking**: Monitor your learning journey across all modules
 
-### 🎯 Proficiency Assessment
+###  Proficiency Assessment & Learning Paths
 
 - **Proficiency Tests**: Comprehensive assessment system to evaluate sign language skills
 - **Skill Level Assignment**: Automatic proficiency level assignment based on test results
+- **AI-Powered Analysis**: Performance breakdown by category with strengths and weaknesses identification
+- **Personalized Learning Paths**: AI-generated recommendations for tutorials, quizzes, and materials based on test results
 - **Progress Monitoring**: Track improvement over time with detailed analytics
 
-### 👥 Community & Interaction
+###  Community & Interaction
 
 - **Gesture Contributions**: Submit new sign language words to expand the community database
 - **Community Forum**: Interactive discussion platform for learners and educators
 - **Real-time Chat**: Direct messaging system for peer-to-peer learning
 - **Content Moderation**: Admin-controlled approval system for community contributions
 
-### 👤 User Management
+###  User Management
 
 - **Comprehensive Profiles**: Detailed user profiles with learning progress and achievements
 - **Secure Authentication**: Email-based authentication with password reset functionality
 - **Role-based Access Control**: Differentiated access for deaf users, non-deaf users, and administrators
 - **Profile Customization**: Personalized learning preferences and settings
 
-### 🤖 Avatar Generation
+###  Avatar Generation
 
 - **3D Avatar Creation**: Generate custom 3D avatars from sign language gestures
 - **Camera Integration**: Real-time gesture capture for avatar generation
 - **Avatar Database**: Centralized storage and management of generated avatars
 - **Admin Controls**: Administrative oversight of avatar content
 
-### ⚙️ Administration
+###  Administration
 
 - **Comprehensive Admin Dashboard**: Full platform management with analytics and statistics
 - **Content Management System**: Manage tutorials, materials, quizzes, and user submissions
 - **User Management**: Admin tools for user oversight and role management
 - **Database Administration**: Direct access to avatar and gesture databases
 
-## 🛠️ Technology Stack
+##  Technology Stack
 
 ### Frontend
 
@@ -88,7 +90,7 @@ This application is developed as a Final Year Project in collaboration with Dr. 
 - **Development Server**: Next.js with Turbopack
 - **Version Control**: Git with comprehensive .gitignore
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -150,7 +152,7 @@ The project includes comprehensive database migrations in the `supabase/migratio
 
 Run the migrations using the Supabase CLI or apply them directly in the Supabase SQL Editor.
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 src/
@@ -199,26 +201,11 @@ supabase/                     # Supabase configuration
   └── migrations/             # Database schema migrations
 ```
 
-## 🔜 Future Roadmap
-
-- **AI Model Enhancement**: Improve gesture recognition accuracy and speed
-- **Video-based Recognition**: Extend recognition to support video input
-- **Mobile Application**: Develop native mobile apps for iOS and Android
-- **Expanded Language Support**: Add more sign languages beyond ASL and MSL
-- **Advanced Analytics**: Enhanced learning analytics and progress insights
-- **Offline Capabilities**: Enable offline learning and recognition features
-- **Community Features**: Enhanced social learning and collaboration tools
-- **Accessibility Improvements**: Better support for users with different abilities
-
-## 🤝 Contributing
+##  Contributing
 
 This project is developed as a Final Year Project in collaboration with MyBIM. For contribution guidelines and development setup, please refer to the project documentation.
 
-## 📄 License
-
-This project is developed for educational purposes as part of a Final Year Project.
-
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - **Dr. Anthony Chong** and **The Malaysian Sign Language and Deaf Studies National Organisation (MyBIM)** for their collaboration and expertise
 - The deaf and hard-of-hearing community for their valuable feedback and insights

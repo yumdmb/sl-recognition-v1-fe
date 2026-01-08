@@ -9,14 +9,12 @@ interface QuickAccessPanelProps {
   userRole: string;
 }
 
-export const AdminQuickAccessPanel: React.FC<QuickAccessPanelProps> = ({
-  userRole,
-}) => (
+export const AdminQuickAccessPanel: React.FC<QuickAccessPanelProps> = () => (
   <Card>
     <CardContent className="p-6">
       <h3 className="text-lg font-medium mb-4">Quick Access</h3>
       <div className="space-y-4">
-        <Link href="/gesture/view">
+        <Link href="/gesture/manage-contributions">
           <div className="flex items-center p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 ease-in-out transform hover:scale-105">
             <Upload className="h-6 w-6 mr-4 text-signlang-primary" />
             <div>

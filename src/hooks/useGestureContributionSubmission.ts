@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from "sonner";
 import { useAuth } from '@/context/AuthContext';
-import { GestureContributionFormData } from '@/types/gestureContributions';
+import { GestureContributionFormData, GestureCategory } from '@/types/gestureContributions';
 import { GestureContributionService } from '@/lib/supabase/gestureContributions';
 
 export function useGestureContributionSubmission() {
@@ -16,6 +16,8 @@ export function useGestureContributionSubmission() {
   const [description, setDescription] = useState('');
   const [language, setLanguage] = useState<'ASL' | 'MSL'>('ASL');
   const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
+  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [categories, setCategories] = useState<GestureCategory[]>([]);
   
   // Media state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -24,6 +26,17 @@ export function useGestureContributionSubmission() {
   
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Load categories on mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      const { data, error } = await GestureContributionService.getCategories();
+      if (!error && data) {
+        setCategories(data);
+      }
+    };
+    loadCategories();
+  }, []);
 
   const handleFileChange = (file: File) => {
     setSelectedFile(file);
@@ -74,10 +87,11 @@ export function useGestureContributionSubmission() {
         description: description.trim(),
         language,
         media_type: mediaType,
+        category_id: categoryId,
         file: selectedFile
       };
 
-      const { data, error } = await GestureContributionService.submitContribution(formData);
+      const { error } = await GestureContributionService.submitContribution(formData);
 
       if (error) {
         console.error("Detailed submission error from hook:", error); // Added for more client-side logging
@@ -98,15 +112,16 @@ export function useGestureContributionSubmission() {
       setDescription('');
       setLanguage('ASL');
       setMediaType('image');
+      setCategoryId(null);
       setSelectedFile(null);
       setPreviewUrl(null);
 
       // Redirect to view page
       router.push('/gesture/view');
       
-    } catch (err: any) { // Catch unexpected errors in the hook itself
+    } catch (err: unknown) { // Catch unexpected errors in the hook itself
       console.error("Unexpected error in handleSubmit:", err);
-      const errorMessage = err?.message || "An unexpected error occurred. Please try again.";
+      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred. Please try again.";
       toast.error("An unexpected error occurred", {
         description: errorMessage
       });
@@ -125,6 +140,9 @@ export function useGestureContributionSubmission() {
     setLanguage,
     mediaType,
     setMediaType,
+    categoryId,
+    setCategoryId,
+    categories,
     
     // Media state
     selectedFile,

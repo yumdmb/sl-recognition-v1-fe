@@ -42,7 +42,8 @@ export default function GestureCameraCapture({
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
-    } catch (error) {
+    } catch (err) {
+      console.error("Camera error:", err);
       toast.error("Camera Error", {
         description: "Failed to access camera. Please check permissions."
       });
@@ -162,7 +163,7 @@ export default function GestureCameraCapture({
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
+      <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
         <video
           ref={videoRef}
           className="w-full h-full object-cover"

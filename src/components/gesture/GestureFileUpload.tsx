@@ -18,13 +18,14 @@ export default function GestureFileUpload({ mediaType, onFileChange }: GestureFi
   };
 
   return (
-    <div className="grid w-full max-w-sm items-center gap-1.5">
+    <div className="grid w-full items-center gap-1.5">
       <Label htmlFor="media">Upload {mediaType === 'image' ? 'Image' : 'Video'}</Label>
       <Input
         id="media"
         type="file"
         accept={mediaType === 'image' ? 'image/*' : 'video/*'}
         onChange={handleFileChange}
+        className="min-h-[44px]"
       />
       <p className="text-sm text-muted-foreground">
         {mediaType === 'image' 

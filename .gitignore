@@ -42,3 +42,8 @@ next-env.d.ts
 src2/
 local-docs/
 .trae/
+.kilocode/
+.roo/
+.roomodes
+.vscode
+src/app/(main)/debug-jwt/

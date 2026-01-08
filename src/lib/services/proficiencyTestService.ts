@@ -1,11 +1,7 @@
-import { createBrowserClient } from '@supabase/ssr';
+import { createClient } from '@/utils/supabase/client';
 import { Database } from '@/types/database';
-
-// Initialize Supabase client
-const supabase = createBrowserClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { analyzeCategoryPerformance, identifyKnowledgeGaps } from './evaluationService';
+import { generateRecommendations } from './recommendationEngine';
 
 export type ProficiencyTest = Database['public']['Tables']['proficiency_tests']['Row'] & {
   questions: (Database['public']['Tables']['proficiency_test_questions']['Row'] & {
@@ -19,6 +15,7 @@ export type ProficiencyTest = Database['public']['Tables']['proficiency_tests'][
  * @returns The proficiency test data.
  */
 export const getProficiencyTest = async (testId: string): Promise<ProficiencyTest | null> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('proficiency_tests')
     .select(`
@@ -44,6 +41,7 @@ export const getProficiencyTest = async (testId: string): Promise<ProficiencyTes
  * @returns A list of proficiency tests.
  */
 export const getAllProficiencyTests = async (): Promise<Database['public']['Tables']['proficiency_tests']['Row'][]> => {
+  const supabase = createClient();
   const { data, error } = await supabase.from('proficiency_tests').select('*');
 
   if (error) {
@@ -61,6 +59,7 @@ export const getAllProficiencyTests = async (): Promise<Database['public']['Tabl
  * @returns The newly created test attempt.
  */
 export const createTestAttempt = async (userId: string, testId: string) => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('proficiency_test_attempts')
     .insert({ user_id: userId, test_id: testId })
@@ -84,6 +83,7 @@ export const createTestAttempt = async (userId: string, testId: string) => {
  * @returns The newly created answer record.
  */
 export const submitAnswer = async (attemptId: string, questionId: string, choiceId: string) => {
+  const supabase = createClient();
   // First, determine if the choice is correct
   const { data: choice, error: choiceError } = await supabase
     .from('proficiency_test_question_choices')
@@ -118,10 +118,12 @@ export const submitAnswer = async (attemptId: string, questionId: string, choice
 
 /**
  * Calculates the final score, updates the attempt, and assigns a proficiency level to the user.
+ * Also saves the test's language as the user's preferred language.
  * @param attemptId - The ID of the test attempt to finalize.
  * @param userId - The ID of the user to update.
  */
 export const calculateResultAndAssignProficiency = async (attemptId: string, userId: string) => {
+  const supabase = createClient();
   // 1. Get the test_id from the attempt
   const { data: attempt, error: attemptError } = await supabase
     .from('proficiency_test_attempts')
@@ -134,7 +136,21 @@ export const calculateResultAndAssignProficiency = async (attemptId: string, use
     throw attemptError || new Error('Attempt not found');
   }
 
-  // 2. Get total number of questions for the test
+  // 2. Get the test's language
+  const { data: test, error: testError } = await supabase
+    .from('proficiency_tests')
+    .select('language')
+    .eq('id', attempt.test_id)
+    .single();
+
+  if (testError || !test) {
+    console.error('Error fetching test:', testError);
+    throw testError || new Error('Test not found');
+  }
+
+  const preferredLanguage = test.language as 'ASL' | 'MSL';
+
+  // 3. Get total number of questions for the test
   const { count: totalQuestions, error: countError } = await supabase
     .from('proficiency_test_questions')
     .select('*', { count: 'exact', head: true })
@@ -145,7 +161,7 @@ export const calculateResultAndAssignProficiency = async (attemptId: string, use
     throw countError || new Error('Could not determine total questions');
   }
 
-  // 3. Get all correct answers for the attempt
+  // 4. Get all correct answers for the attempt
   const { count: correctAnswers, error: answersError } = await supabase
     .from('proficiency_test_attempt_answers')
     .select('*', { count: 'exact', head: true })
@@ -157,7 +173,7 @@ export const calculateResultAndAssignProficiency = async (attemptId: string, use
     throw answersError || new Error('Could not determine correct answers');
   }
 
-  // 4. Calculate score and determine proficiency level
+  // 5. Calculate score and determine proficiency level
   const score = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
   let proficiency_level: 'Beginner' | 'Intermediate' | 'Advanced';
 
@@ -169,7 +185,7 @@ export const calculateResultAndAssignProficiency = async (attemptId: string, use
     proficiency_level = 'Advanced';
   }
 
-  // 5. Update the proficiency_test_attempts table
+  // 6. Update the proficiency_test_attempts table
   const { error: updateAttemptError } = await supabase
     .from('proficiency_test_attempts')
     .update({ score, completed_at: new Date().toISOString() })
@@ -180,10 +196,24 @@ export const calculateResultAndAssignProficiency = async (attemptId: string, use
     throw updateAttemptError;
   }
 
-  // 6. Update the user_profiles table
+  // 7. Update the user_profiles table with language-specific proficiency level AND preferred language
+  // Determine which column to update based on test language
+  const updateData: Record<string, string> = {
+    preferred_language: preferredLanguage,
+    // Also update the legacy proficiency_level for backward compatibility
+    proficiency_level: proficiency_level,
+  };
+  
+  // Set the language-specific proficiency column
+  if (preferredLanguage === 'ASL') {
+    updateData.asl_proficiency_level = proficiency_level;
+  } else if (preferredLanguage === 'MSL') {
+    updateData.msl_proficiency_level = proficiency_level;
+  }
+
   const { error: updateUserProfileError } = await supabase
     .from('user_profiles')
-    .update({ proficiency_level })
+    .update(updateData)
     .eq('id', userId);
 
   if (updateUserProfileError) {
@@ -191,5 +221,129 @@ export const calculateResultAndAssignProficiency = async (attemptId: string, use
     throw updateUserProfileError;
   }
 
-  return { score, proficiency_level };
+  return { score, proficiency_level, preferred_language: preferredLanguage };
+};
+/**
+ * Gets comprehensive test results including performance analysis and recommendations.
+ * @param attemptId - The ID of the test attempt.
+ * @param userId - The ID of the user.
+ * @param recentQuizScore - Optional recent quiz score percentage for adaptive recommendations.
+ * @returns Complete test results with analysis and recommendations.
+ */
+export const getTestResultsWithAnalysis = async (
+  attemptId: string, 
+  userId: string,
+  recentQuizScore?: number
+) => {
+  const supabase = createClient();
+  // Get basic attempt data
+  const { data: attempt, error: attemptError } = await supabase
+    .from('proficiency_test_attempts')
+    .select('*')
+    .eq('id', attemptId)
+    .single();
+
+  if (attemptError || !attempt) {
+    console.error('Error fetching attempt:', attemptError);
+    throw attemptError || new Error('Attempt not found');
+  }
+
+  // Get user's proficiency level based on their preferred language
+  const { data: userProfile, error: profileError } = await supabase
+    .from('user_profiles')
+    .select('proficiency_level, preferred_language, asl_proficiency_level, msl_proficiency_level')
+    .eq('id', userId)
+    .single();
+
+  if (profileError || !userProfile) {
+    console.error('Error fetching user profile:', profileError);
+    throw profileError || new Error('User profile not found');
+  }
+
+  // Determine the correct proficiency level based on preferred language
+  let proficiencyLevel: 'Beginner' | 'Intermediate' | 'Advanced' = 'Beginner';
+  if (userProfile.preferred_language === 'ASL' && userProfile.asl_proficiency_level) {
+    proficiencyLevel = userProfile.asl_proficiency_level as 'Beginner' | 'Intermediate' | 'Advanced';
+  } else if (userProfile.preferred_language === 'MSL' && userProfile.msl_proficiency_level) {
+    proficiencyLevel = userProfile.msl_proficiency_level as 'Beginner' | 'Intermediate' | 'Advanced';
+  } else if (userProfile.proficiency_level) {
+    // Fallback to legacy proficiency_level
+    proficiencyLevel = userProfile.proficiency_level as 'Beginner' | 'Intermediate' | 'Advanced';
+  }
+
+  // Perform performance analysis
+  const performanceAnalysis = await analyzeCategoryPerformance(attemptId);
+
+  // Identify knowledge gaps
+  const knowledgeGaps = await identifyKnowledgeGaps(attemptId);
+
+  // Generate learning recommendations with adaptive logic
+  const recommendations = await generateRecommendations(
+    userId,
+    proficiencyLevel,
+    performanceAnalysis,
+    recentQuizScore
+  );
+
+  return {
+    attempt,
+    proficiencyLevel,
+    performanceAnalysis,
+    knowledgeGaps,
+    recommendations,
+  };
+};
+
+/**
+ * Fetches all test attempts for a user with test details.
+ * @param userId - The ID of the user.
+ * @returns A list of test attempts with test information.
+ */
+export const getUserTestHistory = async (userId: string) => {
+  const supabase = createClient();
+  // First, get all attempts
+  const { data: attempts, error: attemptsError } = await supabase
+    .from('proficiency_test_attempts')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (attemptsError) {
+    console.error('Error fetching test attempts:', attemptsError);
+    throw attemptsError;
+  }
+
+  if (!attempts || attempts.length === 0) {
+    return [];
+  }
+
+  // Get unique test IDs
+  const testIds = [...new Set(attempts.map(a => a.test_id))];
+
+  // Fetch test details
+  const { data: tests, error: testsError } = await supabase
+    .from('proficiency_tests')
+    .select('id, title, description, language')
+    .in('id', testIds);
+
+  if (testsError) {
+    console.error('Error fetching test details:', testsError);
+    throw testsError;
+  }
+
+  // Create a map of test details
+  const testMap = new Map(tests?.map(t => [t.id, t]) || []);
+
+  // Combine attempts with test details
+  const history = attempts.map(attempt => ({
+    ...attempt,
+    test: testMap.get(attempt.test_id) || {
+      id: attempt.test_id,
+      title: 'Unknown Test',
+      description: null,
+      language: 'MSL'
+    }
+  }));
+
+  return history;
 };

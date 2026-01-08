@@ -7,8 +7,12 @@ export interface Database {
           id: string;
           name: string;
           email: string;
-          role: 'admin' | 'deaf' | 'non-deaf';
-          proficiency_level: 'Beginner' | 'Intermediate' | 'Advanced' | null;
+          role: "admin" | "deaf" | "non-deaf";
+          proficiency_level: "Beginner" | "Intermediate" | "Advanced" | null;
+          asl_proficiency_level: "Beginner" | "Intermediate" | "Advanced" | null;
+          msl_proficiency_level: "Beginner" | "Intermediate" | "Advanced" | null;
+          preferred_language: "ASL" | "MSL" | null;
+          profile_picture_url: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -16,8 +20,12 @@ export interface Database {
           id: string;
           name: string;
           email: string;
-          role?: 'admin' | 'deaf' | 'non-deaf';
-          proficiency_level?: 'Beginner' | 'Intermediate' | 'Advanced' | null;
+          role?: "admin" | "deaf" | "non-deaf";
+          proficiency_level?: "Beginner" | "Intermediate" | "Advanced" | null;
+          asl_proficiency_level?: "Beginner" | "Intermediate" | "Advanced" | null;
+          msl_proficiency_level?: "Beginner" | "Intermediate" | "Advanced" | null;
+          preferred_language?: "ASL" | "MSL" | null;
+          profile_picture_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -25,8 +33,12 @@ export interface Database {
           id?: string;
           name?: string;
           email?: string;
-          role?: 'admin' | 'deaf' | 'non-deaf';
-          proficiency_level?: 'Beginner' | 'Intermediate' | 'Advanced' | null;
+          role?: "admin" | "deaf" | "non-deaf";
+          proficiency_level?: "Beginner" | "Intermediate" | "Advanced" | null;
+          asl_proficiency_level?: "Beginner" | "Intermediate" | "Advanced" | null;
+          msl_proficiency_level?: "Beginner" | "Intermediate" | "Advanced" | null;
+          preferred_language?: "ASL" | "MSL" | null;
+          profile_picture_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -38,8 +50,8 @@ export interface Database {
           description: string;
           thumbnail_url: string | null;
           video_url: string;
-          level: 'beginner' | 'intermediate' | 'advanced';
-          language: 'ASL' | 'MSL';
+          level: "beginner" | "intermediate" | "advanced";
+          language: "ASL" | "MSL";
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -50,8 +62,8 @@ export interface Database {
           description: string;
           thumbnail_url?: string | null;
           video_url: string;
-          level: 'beginner' | 'intermediate' | 'advanced';
-          language: 'ASL' | 'MSL';
+          level: "beginner" | "intermediate" | "advanced";
+          language: "ASL" | "MSL";
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -62,8 +74,8 @@ export interface Database {
           description?: string;
           thumbnail_url?: string | null;
           video_url?: string;
-          level?: 'beginner' | 'intermediate' | 'advanced';
-          language?: 'ASL' | 'MSL';
+          level?: "beginner" | "intermediate" | "advanced";
+          language?: "ASL" | "MSL";
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -78,8 +90,8 @@ export interface Database {
           file_size: number | null;
           download_url: string;
           file_path: string | null;
-          level: 'beginner' | 'intermediate' | 'advanced';
-          language: 'ASL' | 'MSL';
+          level: "beginner" | "intermediate" | "advanced";
+          language: "ASL" | "MSL";
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -92,8 +104,8 @@ export interface Database {
           file_size?: number | null;
           download_url: string;
           file_path?: string | null;
-          level: 'beginner' | 'intermediate' | 'advanced';
-          language: 'ASL' | 'MSL';
+          level: "beginner" | "intermediate" | "advanced";
+          language: "ASL" | "MSL";
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -106,8 +118,8 @@ export interface Database {
           file_size?: number | null;
           download_url?: string;
           file_path?: string | null;
-          level?: 'beginner' | 'intermediate' | 'advanced';
-          language?: 'ASL' | 'MSL';
+          level?: "beginner" | "intermediate" | "advanced";
+          language?: "ASL" | "MSL";
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -118,7 +130,8 @@ export interface Database {
           id: string;
           title: string;
           description: string;
-          language: 'ASL' | 'MSL';
+          level: "beginner" | "intermediate" | "advanced";
+          language: "ASL" | "MSL";
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -127,7 +140,8 @@ export interface Database {
           id?: string;
           title: string;
           description: string;
-          language: 'ASL' | 'MSL';
+          level?: "beginner" | "intermediate" | "advanced";
+          language: "ASL" | "MSL";
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -136,7 +150,8 @@ export interface Database {
           id?: string;
           title?: string;
           description?: string;
-          language?: 'ASL' | 'MSL';
+          level?: "beginner" | "intermediate" | "advanced";
+          language?: "ASL" | "MSL";
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -185,7 +200,7 @@ export interface Database {
           id: string;
           user_id: string;
           tutorial_id: string;
-          status: 'started' | 'completed';
+          status: "started" | "completed";
           last_watched_at: string;
           created_at: string;
           updated_at: string;
@@ -194,7 +209,7 @@ export interface Database {
           id?: string;
           user_id: string;
           tutorial_id: string;
-          status?: 'started' | 'completed';
+          status?: "started" | "completed";
           last_watched_at?: string;
           created_at?: string;
           updated_at?: string;
@@ -203,7 +218,7 @@ export interface Database {
           id?: string;
           user_id?: string;
           tutorial_id?: string;
-          status?: 'started' | 'completed';
+          status?: "started" | "completed";
           last_watched_at?: string;
           created_at?: string;
           updated_at?: string;
@@ -249,6 +264,7 @@ export interface Database {
           id: string;
           title: string;
           description: string | null;
+          language: "ASL" | "MSL";
           created_at: string;
           updated_at: string;
         };
@@ -256,6 +272,7 @@ export interface Database {
           id?: string;
           title: string;
           description?: string | null;
+          language: "ASL" | "MSL";
           created_at?: string;
           updated_at?: string;
         };
@@ -263,6 +280,7 @@ export interface Database {
           id?: string;
           title?: string;
           description?: string | null;
+          language?: "ASL" | "MSL";
           created_at?: string;
           updated_at?: string;
         };
@@ -373,29 +391,35 @@ export interface Database {
       [_ in never]: never;
     };
     Enums: {
-      proficiency_level: 'Beginner' | 'Intermediate' | 'Advanced';
+      proficiency_level: "Beginner" | "Intermediate" | "Advanced";
     };
   };
 }
 
 // Convenience types
-export type UserProfile = Database['public']['Tables']['user_profiles']['Row'];
-export type Tutorial = Database['public']['Tables']['tutorials']['Row'];
-export type Material = Database['public']['Tables']['materials']['Row'];
-export type QuizSet = Database['public']['Tables']['quiz_sets']['Row'];
-export type QuizQuestion = Database['public']['Tables']['quiz_questions']['Row'];
-export type TutorialProgress = Database['public']['Tables']['tutorial_progress']['Row'];
-export type QuizProgress = Database['public']['Tables']['quiz_progress']['Row'];
-export type ProficiencyTest = Database['public']['Tables']['proficiency_tests']['Row'];
-export type ProficiencyTestQuestion = Database['public']['Tables']['proficiency_test_questions']['Row'];
-export type ProficiencyTestQuestionChoice = Database['public']['Tables']['proficiency_test_question_choices']['Row'];
-export type ProficiencyTestAttempt = Database['public']['Tables']['proficiency_test_attempts']['Row'];
-export type ProficiencyTestAttemptAnswer = Database['public']['Tables']['proficiency_test_attempt_answers']['Row'];
-
+export type UserProfile = Database["public"]["Tables"]["user_profiles"]["Row"];
+export type Tutorial = Database["public"]["Tables"]["tutorials"]["Row"];
+export type Material = Database["public"]["Tables"]["materials"]["Row"];
+export type QuizSet = Database["public"]["Tables"]["quiz_sets"]["Row"];
+export type QuizQuestion =
+  Database["public"]["Tables"]["quiz_questions"]["Row"];
+export type TutorialProgress =
+  Database["public"]["Tables"]["tutorial_progress"]["Row"];
+export type QuizProgress = Database["public"]["Tables"]["quiz_progress"]["Row"];
+export type ProficiencyTest =
+  Database["public"]["Tables"]["proficiency_tests"]["Row"];
+export type ProficiencyTestQuestion =
+  Database["public"]["Tables"]["proficiency_test_questions"]["Row"];
+export type ProficiencyTestQuestionChoice =
+  Database["public"]["Tables"]["proficiency_test_question_choices"]["Row"];
+export type ProficiencyTestAttempt =
+  Database["public"]["Tables"]["proficiency_test_attempts"]["Row"];
+export type ProficiencyTestAttemptAnswer =
+  Database["public"]["Tables"]["proficiency_test_attempt_answers"]["Row"];
 
 // Extended types with additional computed properties
 export interface TutorialWithProgress extends Tutorial {
-  status?: 'not-started' | 'started' | 'completed';
+  status?: "not-started" | "started" | "completed";
   questionCount?: number;
 }
 

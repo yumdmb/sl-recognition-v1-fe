@@ -1,9 +1,11 @@
 'use client'
 
 import React from 'react';
+import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { GestureContribution } from '@/types/gestureContributions';
 import { Play, Image as ImageIcon } from 'lucide-react';
 import {
@@ -25,26 +27,32 @@ function GestureCard({ contribution }: { contribution: GestureContribution }) {
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <div className="relative aspect-video bg-gray-100">
-        {contribution.media_type === 'image' ? (
-          <img
-            src={contribution.media_url}
-            alt={contribution.title}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-100">
-            <video
+        {contribution.media_url ? (
+          contribution.media_type === 'image' ? (
+            <Image
               src={contribution.media_url}
-              className="w-full h-full object-cover"
-              muted
-              // Consider adding a poster attribute for videos if a thumbnail_url is available
-              // poster={contribution.thumbnail_url}
+              alt={contribution.title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="bg-black bg-opacity-50 rounded-full p-3">
-                <Play className="h-6 w-6 text-white" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gray-100">
+              <video
+                src={contribution.media_url}
+                className="w-full h-full object-cover"
+                muted
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="bg-black bg-opacity-50 rounded-full p-3">
+                  <Play className="h-6 w-6 text-white" />
+                </div>
               </div>
             </div>
+          )
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gray-200">
+            <ImageIcon className="h-12 w-12 text-gray-400" />
           </div>
         )}
         
@@ -61,11 +69,11 @@ function GestureCard({ contribution }: { contribution: GestureContribution }) {
         </div>
       </div>
       
-      <CardContent className="p-4">
-        <div className="space-y-3">
+      <CardContent className="p-3 md:p-4">
+        <div className="space-y-2 md:space-y-3">
           {/* Title and language */}
           <div className="space-y-1">
-            <h3 className="font-semibold text-lg line-clamp-2">{contribution.title}</h3>
+            <h3 className="font-semibold text-base md:text-lg line-clamp-2">{contribution.title}</h3>
             <Badge variant="outline" className="text-xs">
               {contribution.language}
             </Badge>
@@ -77,18 +85,18 @@ function GestureCard({ contribution }: { contribution: GestureContribution }) {
           </p>
           
           {/* Footer */}
-          <div className="flex justify-between items-center pt-2 border-t">
-            <div className="text-xs text-muted-foreground">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pt-2 border-t">
+            <div className="text-xs text-muted-foreground truncate max-w-full">
               By {contribution.submitter?.name || 'Unknown'}
             </div>
             
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="w-full sm:w-auto min-h-[44px] sm:min-h-0">
                   View Details
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>{contribution.title}</DialogTitle>
                   <DialogDescription>{contribution.description}</DialogDescription>
@@ -96,23 +104,33 @@ function GestureCard({ contribution }: { contribution: GestureContribution }) {
                 <div className="space-y-4">
                   {/* Media */}
                   <div className="mt-4">
-                    {contribution.media_type === 'image' ? (
-                      <img
-                        src={contribution.media_url}
-                        alt={contribution.title}
-                        className="w-full max-h-96 object-contain rounded-lg"
-                      />
+                    {contribution.media_url ? (
+                      contribution.media_type === 'image' ? (
+                        <div className="relative w-full max-h-[50vh] md:max-h-96 aspect-video">
+                          <Image
+                            src={contribution.media_url}
+                            alt={contribution.title}
+                            fill
+                            className="object-contain rounded-lg"
+                            sizes="(max-width: 768px) 95vw, 672px"
+                          />
+                        </div>
+                      ) : (
+                        <video
+                          src={contribution.media_url}
+                          controls
+                          className="w-full max-h-[50vh] md:max-h-96 rounded-lg"
+                        />
+                      )
                     ) : (
-                      <video
-                        src={contribution.media_url}
-                        controls
-                        className="w-full max-h-96 rounded-lg"
-                      />
+                      <div className="w-full h-64 flex items-center justify-center bg-gray-200 rounded-lg">
+                        <ImageIcon className="h-16 w-16 text-gray-400" />
+                      </div>
                     )}
                   </div>
                   
                   {/* Details */}
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 text-sm">
                     <div>
                       <span className="font-semibold">Language:</span> {contribution.language}
                     </div>
@@ -136,17 +154,17 @@ function GestureCard({ contribution }: { contribution: GestureContribution }) {
 // Loading skeleton component
 function LoadingSkeleton() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
       {Array.from({ length: 8 }).map((_, index) => (
         <Card key={index} className="overflow-hidden">
-          <div className="relative aspect-video bg-gray-200 animate-pulse"></div>
+          <Skeleton className="relative aspect-video" />
           <CardContent className="p-4 space-y-3">
-            <div className="h-6 bg-gray-200 rounded animate-pulse w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded animate-pulse w-1/4"></div>
-            <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-1/4" />
+            <Skeleton className="h-10 w-full" />
             <div className="flex justify-between items-center pt-2 border-t">
-              <div className="h-4 bg-gray-200 rounded animate-pulse w-1/3"></div>
-              <div className="h-8 bg-gray-200 rounded animate-pulse w-1/4"></div>
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-8 w-1/4" />
             </div>
           </CardContent>
         </Card>
@@ -183,7 +201,7 @@ export default function GestureBrowseGrid({ contributions, isLoading }: GestureB
   }
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
       {approvedContributions.map((contribution) => (
         <GestureCard key={contribution.id} contribution={contribution} />
       ))}

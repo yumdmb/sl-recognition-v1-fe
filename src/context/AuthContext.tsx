@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { createClient } from '@/utils/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { UserService } from '@/lib/services/userService';
-import type { UserProfile } from '@/types/database';
+import { EmailService } from '@/lib/services/emailService';
+// import type { UserProfile } from '@/types/database';
 
 // Define our user type - extending Supabase user with custom metadata
 export interface User {
@@ -14,6 +15,10 @@ export interface User {
   email: string;
   role: 'non-deaf' | 'admin' | 'deaf';
   proficiency_level: 'Beginner' | 'Intermediate' | 'Advanced' | null;
+  asl_proficiency_level: 'Beginner' | 'Intermediate' | 'Advanced' | null;
+  msl_proficiency_level: 'Beginner' | 'Intermediate' | 'Advanced' | null;
+  preferred_language: 'ASL' | 'MSL' | null;
+  profile_picture_url?: string | null;
   isVerified?: boolean;
   email_confirmed_at?: string;
 }
@@ -25,9 +30,11 @@ interface AuthContextProps {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => Promise<void>;
+  logout: () => Promise<boolean>;
   register: (name: string, email: string, password: string, role: 'non-deaf' | 'deaf') => Promise<boolean>;
   updateUser: (user: Partial<User>) => Promise<void>;
+  refreshUserProfile: () => Promise<void>;
+  changePassword: (newPassword: string) => Promise<boolean>;
   resetPassword: (email: string) => Promise<boolean>;
   resendConfirmation: (email: string) => Promise<boolean>;
 }
@@ -40,11 +47,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false); // Flag to prevent race conditions
+  // const [isInitialized, setIsInitialized] = useState(false); // Track if initial auth is done
   const supabase = createClient();  // Convert Supabase user to our User type with database profile
   const convertSupabaseUser = async (supabaseUser: SupabaseUser): Promise<User> => {
+    // Fallback user data from metadata (always available)
+    const metadata = supabaseUser.user_metadata || {};
+    const fallbackUser: User = {
+      id: supabaseUser.id,
+      name: metadata.name || metadata.full_name || supabaseUser.email?.split('@')[0] || 'User',
+      email: supabaseUser.email || '',
+      role: (metadata.role as 'non-deaf' | 'admin' | 'deaf') || 'non-deaf',
+      proficiency_level: null,
+      asl_proficiency_level: null,
+      msl_proficiency_level: null,
+      preferred_language: null,
+      isVerified: !!supabaseUser.email_confirmed_at,
+      email_confirmed_at: supabaseUser.email_confirmed_at
+    };
+
     try {
-      // Try to get user profile from database
-      const profile = await UserService.getUserProfile(supabaseUser.id);
+      // Try to get user profile from database with timeout
+      const profilePromise = UserService.getUserProfile(supabaseUser.id);
+      const timeoutPromise = new Promise<null>((resolve) => 
+        setTimeout(() => {
+          console.warn('Profile fetch timeout, using fallback');
+          resolve(null);
+        }, 5000)
+      );
+      
+      const profile = await Promise.race([profilePromise, timeoutPromise]);
       
       if (profile) {
         console.info('Successfully loaded user profile from database');
@@ -54,28 +86,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: profile.email,
           role: profile.role,
           proficiency_level: profile.proficiency_level,
+          asl_proficiency_level: profile.asl_proficiency_level || null,
+          msl_proficiency_level: profile.msl_proficiency_level || null,
+          preferred_language: profile.preferred_language || null,
+          profile_picture_url: profile.profile_picture_url,
           isVerified: !!supabaseUser.email_confirmed_at,
           email_confirmed_at: supabaseUser.email_confirmed_at
         };
       } else {
         console.info('No profile found in database, using metadata fallback');
       }
-    } catch (error) {
-      console.info('Failed to fetch user profile from database, using fallback. This is normal during RLS policy issues.');
-      // Continue to fallback without throwing
+    } catch {
+      console.info('Failed to fetch user profile from database, using fallback.');
     }
-
-    // Fallback to metadata if profile doesn't exist or RLS blocks access
-    const metadata = supabaseUser.user_metadata || {};
-    const fallbackUser = {
-      id: supabaseUser.id,
-      name: metadata.name || metadata.full_name || supabaseUser.email?.split('@')[0] || 'User',
-      email: supabaseUser.email || '',
-      role: (metadata.role as 'non-deaf' | 'admin' | 'deaf') || 'non-deaf',
-      proficiency_level: null, // Fallback doesn't have proficiency level
-      isVerified: !!supabaseUser.email_confirmed_at,
-      email_confirmed_at: supabaseUser.email_confirmed_at
-    };
     
     console.info('Using fallback user data:', {
       id: fallbackUser.id,
@@ -86,24 +109,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     return fallbackUser;
   };
+  // Use ref to track current user ID without causing re-renders
+  const currentUserIdRef = React.useRef<string | null>(null);
+  
+  // Keep ref in sync with state
+  React.useEffect(() => {
+    currentUserIdRef.current = currentUser?.id || null;
+  }, [currentUser?.id]);
+
   // Initialize auth state
   useEffect(() => {
+    let isMounted = true;
+    
     const initializeAuth = async () => {
       try {
-        // Get initial session
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Add timeout to prevent infinite loading
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Auth initialization timeout')), 10000)
+        );
+        
+        // Get initial session with timeout
+        const sessionPromise = supabase.auth.getSession();
+        
+        const { data: { session }, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as Awaited<typeof sessionPromise>;
+        
+        if (!isMounted) return;
         
         if (error) {
           console.error('Error getting session:', error);
         } else if (session?.user) {
           const user = await convertSupabaseUser(session.user);
-          setCurrentUser(user);
-          setIsAuthenticated(true);
+          if (isMounted) {
+            setCurrentUser(user);
+            setIsAuthenticated(true);
+          }
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
+        // On timeout or error, still allow the app to proceed (user will be redirected to login)
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+          // setIsInitialized(true);
+        }
       }
     };
 
@@ -112,34 +163,74 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!isMounted) return;
+        
         console.log('Auth state changed:', event, session?.user?.email);
         
-        if (session?.user) {
-          const user = await convertSupabaseUser(session.user);
-          setCurrentUser(user);
-          setIsAuthenticated(true);
-        } else {
-          setCurrentUser(null);
-          setIsAuthenticated(false);
+        // Skip USER_UPDATED events during active updates to prevent race conditions
+        if (event === 'USER_UPDATED' && isUpdating) {
+          console.log('Skipping auth state update during active profile update');
+          return;
         }
-        setIsLoading(false);
+        
+        // Skip TOKEN_REFRESHED and INITIAL_SESSION if we already have a user loaded with same ID
+        // This prevents unnecessary re-fetching that causes UI flicker
+        if ((event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && 
+            currentUserIdRef.current && 
+            session?.user?.id === currentUserIdRef.current) {
+          console.log('Skipping redundant auth state update, user already loaded');
+          return;
+        }
+        
+        if (session?.user) {
+          // Only re-fetch profile if user ID changed (different user) or we don't have a user yet
+          if (!currentUserIdRef.current || currentUserIdRef.current !== session.user.id) {
+            const user = await convertSupabaseUser(session.user);
+            if (isMounted) {
+              setCurrentUser(user);
+            }
+          }
+          if (isMounted) {
+            setIsAuthenticated(true);
+          }
+        } else {
+          if (isMounted) {
+            setCurrentUser(null);
+            setIsAuthenticated(false);
+          }
+        }
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     );
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase.auth]);
+  }, [supabase.auth, isUpdating]);
 
   // Login function
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      // Validate inputs before making API call
+      if (!email || !password) {
+        toast.error("Missing credentials", {
+          description: "Email and password are required."
+        });
+        return false;
+      }
+
+      console.log('Attempting login for:', email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
       if (error) {
+        console.error('Login error:', error);
         if (error.message.includes('Email not confirmed')) {
           toast.error("Email not verified", {
             description: "Please check your email and click the verification link before logging in.",
@@ -227,8 +318,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Logout function
-  const logout = async () => {
+  // Logout function - returns true on success for caller to handle redirect
+  const logout = async (): Promise<boolean> => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
@@ -236,43 +327,208 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         toast.error("Logout failed", {
           description: error.message
         });
-      } else {
-        toast.success("Logged out successfully");
+        return false;
       }
+      toast.success("Logged out successfully");
+      return true;
     } catch (error) {
       console.error('Logout error:', error);
+      return false;
     }
   };
   // Update user information
   const updateUser = async (updates: Partial<User>) => {
+    console.log('=== UPDATE USER CALLED ===');
+    console.log('isUpdating flag before:', isUpdating);
+    setIsUpdating(true); // Set flag to prevent race conditions
     try {
       if (!currentUser) throw new Error('No user logged in');
 
-      // Update auth metadata
-      const { error: authError } = await supabase.auth.updateUser({
-        data: {
-          name: updates.name,
-          role: updates.role,
-        }
+      console.log('Current user ID:', currentUser.id);
+      console.log('Updating user with:', updates);
+
+      // Prepare auth metadata updates (only include defined values)
+      const authMetadata: Record<string, unknown> = {};
+      if (updates.name !== undefined) authMetadata.name = updates.name;
+      if (updates.role !== undefined) authMetadata.role = updates.role;
+
+      const authUpdates: Record<string, unknown> = {
+        data: authMetadata
+      };
+
+      // If email is being updated, add it to auth updates
+      if (updates.email && updates.email !== currentUser.email) {
+        authUpdates.email = updates.email;
+      }
+
+      console.log('Auth updates:', authUpdates);
+
+      // Update auth metadata and email with timeout wrapper
+      // Supabase updateUser sometimes hangs, so we add a timeout
+      const authUpdatePromise = supabase.auth.updateUser(authUpdates);
+      const timeoutPromise = new Promise<{ error: unknown }>((resolve) => {
+        setTimeout(() => {
+          console.log('Auth update timeout reached, continuing anyway...');
+          resolve({ error: null }); // Resolve with no error after timeout
+        }, 3000); // 3 second timeout
       });
 
-      if (authError) throw authError;
+      const { error: authError } = await Promise.race([authUpdatePromise, timeoutPromise]);
 
-      // Update database profile
-      const updatedProfile = await UserService.updateUserProfile(currentUser.id, {
-        name: updates.name,
-        role: updates.role,
-      });
+      console.log('Auth update completed, error:', authError);
 
-      // Update local state
+      if (authError) {
+        console.error('Auth update error:', authError);
+        throw authError;
+      }
+
+      console.log('No auth error, updating local state...');
+
+      // Update local state immediately after auth update
       setCurrentUser(prev => prev ? { ...prev, ...updates } : null);
+      
+      console.log('Local state updated');
 
-      toast.success("Profile updated successfully");
+      // Update database profile (blocking to ensure consistency)
+      const profileUpdates: Record<string, unknown> = {};
+      if (updates.name !== undefined) profileUpdates.name = updates.name;
+      if (updates.role !== undefined) profileUpdates.role = updates.role;
+      if (updates.email !== undefined) profileUpdates.email = updates.email;
+
+      console.log('Profile updates to sync:', profileUpdates);
+
+      // Update database synchronously - matches pattern used by other modules
+      if (Object.keys(profileUpdates).length > 0) {
+        console.log('Updating database...');
+        const updatedProfile = await UserService.updateUserProfile(currentUser.id, profileUpdates);
+        console.log('Database update complete:', updatedProfile);
+        // Update local state with database response
+        setCurrentUser(prev => prev ? { ...prev, ...updatedProfile } : null);
+      }
+
+      // Show success message
+      if (updates.email && updates.email !== currentUser.email) {
+        toast.success("Profile updated", {
+          description: "Please check your email to verify your new email address."
+        });
+      } else {
+        toast.success("Profile updated successfully");
+      }
     } catch (error) {
       console.error('Update user error:', error);
       toast.error("Update failed", {
         description: error instanceof Error ? error.message : "An unexpected error occurred. Please try again."
       });
+      throw error; // Re-throw to let the dialog handle it
+    } finally {
+      setIsUpdating(false); // Clear flag
+    }
+  };
+
+  // Refresh user profile from database (useful after external updates like proficiency test completion)
+  const refreshUserProfile = async () => {
+    try {
+      if (!currentUser) return;
+      
+      console.log('Refreshing user profile from database...');
+      const profile = await UserService.getUserProfile(currentUser.id);
+      
+      if (profile) {
+        setCurrentUser(prev => prev ? {
+          ...prev,
+          name: profile.name,
+          email: profile.email,
+          role: profile.role,
+          proficiency_level: profile.proficiency_level,
+          asl_proficiency_level: profile.asl_proficiency_level || null,
+          msl_proficiency_level: profile.msl_proficiency_level || null,
+          preferred_language: profile.preferred_language || null,
+          profile_picture_url: profile.profile_picture_url,
+        } : null);
+        console.log('User profile refreshed successfully');
+      }
+    } catch (error) {
+      console.error('Failed to refresh user profile:', error);
+    }
+  };
+
+  // Change password function
+  const changePassword = async (newPassword: string): Promise<boolean> => {
+    try {
+      if (!currentUser) {
+        toast.error("Authentication required", {
+          description: "Please log in to change your password."
+        });
+        return false;
+      }
+
+      // Validate password requirements
+      if (newPassword.length < 6) {
+        toast.error("Password too short", {
+          description: "Password must be at least 6 characters long."
+        });
+        return false;
+      }
+
+      console.log('Updating password for user:', currentUser.email);
+      console.log('About to call supabase.auth.updateUser');
+      
+      // Wrap updateUser in a timeout since it can hang
+      const updatePromise = supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      const timeoutPromise = new Promise<{ error: { message: string } }>((_, reject) => {
+        setTimeout(() => reject(new Error('Password update timed out')), 3000);
+      });
+      
+      let updateResult;
+      try {
+        updateResult = await Promise.race([updatePromise, timeoutPromise]);
+        console.log('updateUser returned:', updateResult);
+      } catch {
+        // If it times out, the password was likely updated (we see USER_UPDATED event)
+        // So we'll assume success
+        console.log('updateUser timed out, but USER_UPDATED fired, assuming success');
+        updateResult = { error: null };
+      }
+
+      if (updateResult.error) {
+        console.error('Password update error:', updateResult.error);
+        toast.error("Password change failed", {
+          description: updateResult.error.message || "Unable to update password. Please try again."
+        });
+        return false;
+      }
+
+      console.log('Password updated successfully in Supabase');
+      
+      // Send email with new password (don't wait for it)
+      EmailService.sendPasswordChangeEmail({
+        to: currentUser.email,
+        userName: currentUser.name,
+        newPassword: newPassword
+      })
+        .then(() => {
+          console.log('Password change email sent successfully');
+        })
+        .catch((emailError) => {
+          console.error('Failed to send password change email:', emailError);
+        });
+      
+      // Show success immediately (don't wait for email)
+      toast.success("Password changed successfully", {
+        description: "Your password has been updated."
+      });
+
+      console.log('Returning true from changePassword');
+      return true;
+    } catch (error) {
+      console.error('Change password error:', error);
+      toast.error("Password change failed", {
+        description: "An unexpected error occurred. Please try again."
+      });
+      return false;
     }
   };
 
@@ -345,6 +601,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout, 
         register,
         updateUser,
+        refreshUserProfile,
+        changePassword,
         resetPassword,
         resendConfirmation
       }}

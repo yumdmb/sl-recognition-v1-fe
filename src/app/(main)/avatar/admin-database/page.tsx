@@ -1,31 +1,79 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trash2, Download, Eye, Plus, CheckCircle2, XCircle, User } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Trash2, Eye, CheckCircle2, XCircle, User, Search, Tag } from 'lucide-react';
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import Avatar3DPlayer from "@/components/avatar/Avatar3DPlayer";
+import AvatarViewDialog from "@/components/avatar/AvatarViewDialog";
+import { signAvatarService, SignAvatar } from "@/lib/services/signAvatarService";
+import { createClient } from "@/utils/supabase/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
-type Avatar = {
-  id: string;
+interface GestureCategory {
+  id: number;
   name: string;
-  date: string;
-  thumbnail: string | null;
-  video: string | null;
-  userId: string;
-  userName: string;
-  language: "ASL" | "MSL";
-  description?: string;
-  status: "verified" | "unverified";
-};
+  icon: string | null;
+}
 
 const AdminAvatarDatabasePage = () => {
-  const [avatars, setAvatars] = useState<Avatar[]>([]);
+  const [avatars, setAvatars] = useState<SignAvatar[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedAvatar, setSelectedAvatar] = useState<SignAvatar | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [languageFilter, setLanguageFilter] = useState<"all" | "ASL" | "MSL">("all");
+  const [categories, setCategories] = useState<GestureCategory[]>([]);
+  const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
+  const [editingAvatar, setEditingAvatar] = useState<SignAvatar | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const router = useRouter();
   const { currentUser, isAuthenticated } = useAuth();
+
+  // Filter avatars based on search and language
+  const filteredAvatars = useMemo(() => {
+    return avatars.filter(avatar => {
+      const matchesSearch = avatar.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesLanguage = languageFilter === "all" || avatar.language === languageFilter;
+      return matchesSearch && matchesLanguage;
+    });
+  }, [avatars, searchQuery, languageFilter]);
+
+  const fetchAvatars = useCallback(async () => {
+    try {
+      const data = await signAvatarService.getAll();
+      setAvatars(data);
+    } catch (error) {
+      console.error("Error fetching avatars:", error);
+      toast.error("Failed to load avatars", {
+        description: "Please try again later"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const fetchCategories = useCallback(async () => {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from('gesture_categories')
+      .select('id, name, icon')
+      .order('name');
+    setCategories(data || []);
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -44,50 +92,18 @@ const AdminAvatarDatabasePage = () => {
       return;
     }
     
-    fetchAvatars();
-  }, [isAuthenticated, currentUser, router]);
+    void fetchAvatars();
+    void fetchCategories();
+  }, [isAuthenticated, currentUser, router, fetchAvatars, fetchCategories]);
 
-  const fetchAvatars = () => {
+  const deleteAvatar = async (id: string) => {
     try {
-      // Get all avatars from localStorage
-      const storedAvatars = localStorage.getItem('avatars');
-      if (!storedAvatars) {
-        setAvatars([]);
-      } else {
-        // For admin, show all avatars
-        const allAvatars: Avatar[] = JSON.parse(storedAvatars);
-        setAvatars(allAvatars);
-      }
-    } catch (error) {
-      console.error("Error fetching avatars:", error);
-      toast.error("Failed to load avatars", {
-        description: "Please try again later"
+      await signAvatarService.delete(id);
+      setAvatars(avatars.filter(avatar => avatar.id !== id));
+      
+      toast.success("Avatar deleted", {
+        description: "The avatar has been removed from the database"
       });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const deleteAvatar = (id: string) => {
-    try {
-      // Get all avatars from localStorage
-      const storedAvatars = localStorage.getItem('avatars');
-      if (storedAvatars) {
-        const allAvatars: Avatar[] = JSON.parse(storedAvatars);
-        
-        // Filter out the deleted avatar
-        const updatedAvatars = allAvatars.filter(avatar => avatar.id !== id);
-        
-        // Save updated avatars back to localStorage
-        localStorage.setItem('avatars', JSON.stringify(updatedAvatars));
-        
-        // Update state to reflect deletion
-        setAvatars(avatars.filter(avatar => avatar.id !== id));
-        
-        toast.success("Avatar deleted", {
-          description: "The avatar has been removed from the database"
-        });
-      }
     } catch (error) {
       console.error("Error deleting avatar:", error);
       toast.error("Delete failed", {
@@ -96,29 +112,24 @@ const AdminAvatarDatabasePage = () => {
     }
   };
 
-  const toggleVerification = (id: string, currentStatus: "verified" | "unverified") => {
+  const toggleVerification = async (id: string, currentStatus: "verified" | "unverified") => {
+    if (!currentUser?.id) return;
+    
     try {
-      // Get all avatars from localStorage
-      const storedAvatars = localStorage.getItem('avatars');
-      if (storedAvatars) {
-        const allAvatars: Avatar[] = JSON.parse(storedAvatars);
-        const newStatus = currentStatus === "verified" ? "unverified" : "verified";
-        
-        // Update the status of the specific avatar
-        const updatedAvatars = allAvatars.map(avatar => 
-          avatar.id === id ? { ...avatar, status: newStatus } : avatar
-        );
-        
-        // Save updated avatars back to localStorage
-        localStorage.setItem('avatars', JSON.stringify(updatedAvatars));
-        
-        // Update state to reflect status change
-        setAvatars(avatars.map(avatar => 
-          avatar.id === id ? { ...avatar, status: newStatus } : avatar
-        ));
-        
-        toast.success("Status updated", {
-          description: `Avatar is now ${newStatus}`
+      const newStatus = currentStatus === "verified" ? "unverified" : "verified";
+      await signAvatarService.updateStatus(id, newStatus, currentUser.id);
+      
+      setAvatars(avatars.map(avatar => 
+        avatar.id === id ? { ...avatar, status: newStatus } : avatar
+      ));
+      
+      if (newStatus === "verified") {
+        toast.success("Avatar Verified", {
+          description: "Avatar has been verified and added to the Gesture Dictionary"
+        });
+      } else {
+        toast.success("Avatar Unverified", {
+          description: "Avatar has been unverified and removed from the Gesture Dictionary"
         });
       }
     } catch (error) {
@@ -129,28 +140,35 @@ const AdminAvatarDatabasePage = () => {
     }
   };
 
-  const exportAvatar = (avatar: Avatar) => {
-    if (avatar.thumbnail) {
-      const link = document.createElement('a');
-      link.href = avatar.thumbnail;
-      link.download = `sign_avatar_${avatar.id}_${avatar.userId}.jpg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+  const openEditCategoryDialog = (avatar: SignAvatar) => {
+    setEditingAvatar(avatar);
+    setSelectedCategoryId(avatar.category_id?.toString() || "");
+    setEditCategoryDialogOpen(true);
+  };
+
+  const handleUpdateCategory = async () => {
+    if (!editingAvatar) return;
+
+    try {
+      const categoryId = selectedCategoryId ? parseInt(selectedCategoryId) : null;
+      await signAvatarService.updateCategory(editingAvatar.id, categoryId);
       
-      toast.success("Avatar exported", {
-        description: "The avatar has been downloaded to your device"
+      // Update local state
+      const updatedCategory = categories.find(c => c.id === categoryId);
+      setAvatars(avatars.map(avatar => 
+        avatar.id === editingAvatar.id 
+          ? { ...avatar, category_id: categoryId, category: updatedCategory || undefined } 
+          : avatar
+      ));
+      
+      toast.success("Category Updated", {
+        description: "Avatar category has been updated"
       });
-    } else if (avatar.video) {
-      const link = document.createElement('a');
-      link.href = avatar.video;
-      link.download = `sign_video_${avatar.id}_${avatar.userId}.webm`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast.success("Video exported", {
-        description: "The video has been downloaded to your device"
+      setEditCategoryDialogOpen(false);
+    } catch (error) {
+      console.error("Error updating category:", error);
+      toast.error("Update failed", {
+        description: "Unable to update avatar category. Please try again."
       });
     }
   };
@@ -164,29 +182,50 @@ const AdminAvatarDatabasePage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <div>
+    <div className="h-[calc(100vh-4rem)] flex flex-col">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-10 bg-background border-b px-6 py-4">
+        <div className="container mx-auto">
+          <div className="mb-4">
             <h1 className="text-3xl font-bold tracking-tight">Avatar Database</h1>
             <p className="text-muted-foreground">View and manage all user-submitted avatars</p>
           </div>
-          <Button 
-            onClick={() => router.push('/avatar/generate')}
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Create New Avatar
-          </Button>
-        </div>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-10">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          {/* Search and Filter */}
+          <div className="flex gap-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select value={languageFilter} onValueChange={(v) => setLanguageFilter(v as "all" | "ASL" | "MSL")}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="ASL">ASL</SelectItem>
+                <SelectItem value="MSL">MSL</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        ) : avatars.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {avatars.map(avatar => (
+        </div>
+      </div>
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div className="container mx-auto">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-10">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : filteredAvatars.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filteredAvatars.map(avatar => (
               <Card key={avatar.id}>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
@@ -194,7 +233,7 @@ const AdminAvatarDatabasePage = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => toggleVerification(avatar.id, avatar.status)}
+                      onClick={() => void toggleVerification(avatar.id, avatar.status)}
                       className={avatar.status === "verified" ? "text-green-500" : "text-yellow-500"}
                     >
                       {avatar.status === "verified" ? (
@@ -206,23 +245,27 @@ const AdminAvatarDatabasePage = () => {
                   </CardTitle>
                   <CardDescription className="flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    {avatar.userName} • {avatar.language} • {new Date(avatar.date).toLocaleDateString()}
+                    {avatar.user_name || "Unknown"} • {avatar.language} • {new Date(avatar.created_at).toLocaleDateString()}
                   </CardDescription>
+                  {/* Category Badge */}
+                  <div className="flex items-center gap-2 mt-2">
+                    {avatar.category ? (
+                      <Badge variant="secondary" className="cursor-pointer" onClick={() => openEditCategoryDialog(avatar)}>
+                        {avatar.category.icon && <span className="mr-1">{avatar.category.icon}</span>}
+                        {avatar.category.name}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="cursor-pointer text-muted-foreground" onClick={() => openEditCategoryDialog(avatar)}>
+                        <Tag className="h-3 w-3 mr-1" />
+                        No category
+                      </Badge>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="aspect-square bg-muted rounded-lg mb-4 flex items-center justify-center overflow-hidden">
-                    {avatar.thumbnail ? (
-                      <img 
-                        src={avatar.thumbnail} 
-                        alt={avatar.name}
-                        className="w-full h-full object-cover" 
-                      />
-                    ) : avatar.video ? (
-                      <video
-                        src={avatar.video}
-                        controls
-                        className="w-full h-full object-cover"
-                      />
+                  <div className="aspect-square bg-muted rounded-lg mb-4 flex items-center justify-center overflow-hidden relative">
+                    {avatar.recording_data && avatar.recording_data.frames.length > 0 ? (
+                      <Avatar3DPlayer recording={avatar.recording_data} />
                     ) : (
                       <div className="text-muted-foreground text-sm">No Preview</div>
                     )}
@@ -231,54 +274,100 @@ const AdminAvatarDatabasePage = () => {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => deleteAvatar(avatar.id)}
+                      onClick={() => void deleteAvatar(avatar.id)}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete
                     </Button>
-                    <div className="space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          if (avatar.thumbnail) {
-                            window.open(avatar.thumbnail, '_blank');
-                          } else if (avatar.video) {
-                            window.open(avatar.video, '_blank');
-                          }
-                        }}
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        View
-                      </Button>
-                      <Button 
-                        className="bg-primary hover:bg-primary/90 text-white"
-                        size="sm"
-                        onClick={() => exportAvatar(avatar)}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Export
-                      </Button>
-                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setSelectedAvatar(avatar);
+                        setViewDialogOpen(true);
+                      }}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
-        ) : (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-10">
-              <p className="text-muted-foreground mb-4">No avatars in the database</p>
-              <Button 
-                className="bg-primary hover:bg-primary/90 text-white"
-                onClick={() => router.push('/avatar/generate')}
-              >
-                Create an Avatar
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+          ) : avatars.length > 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-10">
+                <p className="text-muted-foreground mb-4">No avatars match your search</p>
+                <Button 
+                  variant="outline"
+                  onClick={() => { setSearchQuery(""); setLanguageFilter("all"); }}
+                >
+                  Clear Filters
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-10">
+                <p className="text-muted-foreground mb-4">No avatars in the database</p>
+                <Button 
+                  className="bg-primary hover:bg-primary/90 text-white"
+                  onClick={() => router.push('/avatar/generate')}
+                >
+                  Create an Avatar
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
+
+      {/* View Dialog */}
+      <AvatarViewDialog
+        avatar={selectedAvatar}
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+      />
+
+      {/* Edit Category Dialog */}
+      <Dialog open={editCategoryDialogOpen} onOpenChange={setEditCategoryDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Category</DialogTitle>
+            <DialogDescription>
+              Change the category for &quot;{editingAvatar?.name}&quot;
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Select value={selectedCategoryId || "none"} onValueChange={(v) => setSelectedCategoryId(v === "none" ? "" : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No category</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.icon && <span className="mr-2">{category.icon}</span>}
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditCategoryDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => void handleUpdateCategory()}>
+                Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

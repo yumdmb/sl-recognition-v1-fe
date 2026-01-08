@@ -48,7 +48,7 @@ interface GestureFormProps {
 }
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+  name: z.string().min(1, { message: "Name must be at least 1 character." }),
   description: z.string().optional(),
   language: z.enum(["ASL", "MSL"]),
   category_id: z.string().refine(val => !isNaN(parseInt(val, 10)), { message: "Invalid category" }),
@@ -138,8 +138,9 @@ export const GestureForm: React.FC<GestureFormProps> = ({ gesture, onSuccess, on
         toast.success("Gesture created successfully!");
       }
       onSuccess();
-    } catch (error: any) {
-      toast.error("Submission failed", { description: error.message });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error("Submission failed", { description: errorMessage });
     } finally {
       setIsSubmitting(false);
     }
@@ -235,9 +236,9 @@ export const GestureForm: React.FC<GestureFormProps> = ({ gesture, onSuccess, on
           </div>
         )}
 
-        <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-          <Button type="submit" disabled={isSubmitting}>
+        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto min-h-[44px]">Cancel</Button>
+          <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto min-h-[44px]">
             {isSubmitting ? 'Saving...' : 'Save Gesture'}
           </Button>
         </div>

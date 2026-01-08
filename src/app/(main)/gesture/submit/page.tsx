@@ -1,9 +1,8 @@
 'use client'
 
 import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Toaster } from "@/components/ui/sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GestureSubmitHeader from '@/components/gesture/GestureSubmitHeader';
 import GestureFormFields from '@/components/gesture/GestureFormFields';
@@ -23,6 +22,9 @@ export default function GestureSubmit() {
     setLanguage,
     mediaType,
     setMediaType,
+    categoryId,
+    setCategoryId,
+    categories,
     
     // Media state
     previewUrl,
@@ -39,12 +41,17 @@ export default function GestureSubmit() {
   } = useGestureContributionSubmission();
 
   return (
-    <div className="container max-w-2xl py-6">
-      <Toaster />
+    <div className="max-w-5xl mx-auto p-4 md:p-6">
       <GestureSubmitHeader />
       
       <Card>
-        <CardContent className="pt-6">
+        <CardHeader>
+          <CardTitle className="text-xl md:text-2xl">Gesture Details</CardTitle>
+          <CardDescription>
+            Fill in the details about the gesture you want to contribute
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <GestureFormFields
               title={title}
@@ -55,23 +62,28 @@ export default function GestureSubmit() {
               setLanguage={setLanguage}
               mediaType={mediaType}
               setMediaType={setMediaType}
+              categoryId={categoryId}
+              setCategoryId={setCategoryId}
+              categories={categories}
             />
 
             <div className="space-y-4">
               <Tabs defaultValue="upload" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="upload">Upload File</TabsTrigger>
-                  <TabsTrigger value="capture">Capture {mediaType === 'image' ? 'Image' : 'Video'}</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="upload" className="py-2.5">Upload File</TabsTrigger>
+                  <TabsTrigger value="capture" className="py-2.5">
+                    Capture {mediaType === 'image' ? 'Image' : 'Video'}
+                  </TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="upload" className="space-y-4">
+                <TabsContent value="upload" className="mt-4">
                   <GestureFileUpload
                     mediaType={mediaType}
                     onFileChange={handleFileChange}
                   />
                 </TabsContent>
                 
-                <TabsContent value="capture" className="space-y-4">
+                <TabsContent value="capture" className="mt-4">
                   <GestureCameraCapture
                     mediaType={mediaType}
                     isRecording={isRecording}
@@ -89,10 +101,10 @@ export default function GestureSubmit() {
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full md:w-auto md:min-w-[200px]"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Submitting...' : 'Submit Gesture Contribution'}
+              {isSubmitting ? 'Submitting...' : 'Submit Contribution'}
             </Button>
           </form>
         </CardContent>

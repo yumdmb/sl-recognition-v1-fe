@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
 import { User } from '@/context/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -127,7 +125,6 @@ const UserVerification: React.FC = () => {
   );
 };
 
-// Word Verification Component (placeholder for now)
 const WordVerification: React.FC = () => {
   return (
     <Card>
@@ -148,22 +145,13 @@ const WordVerification: React.FC = () => {
 };
 
 // Main Admin Page Component
+// Note: Role-based access is enforced by middleware - no client-side check needed
 export default function AdminPage() {
-  const { currentUser } = useAuth();
-  const router = useRouter();
-
-  // Redirect if not admin
-  useEffect(() => {
-    if (currentUser?.role !== 'admin') {
-      router.push('/dashboard');
-    }
-  }, [currentUser, router]);
-
   return (
     <div className="max-w-6xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
       
-      <Tabs defaultValue="user-verification" className="space-y-6">
+      <Tabs defaultValue="user-verification" className="space-y-4 md:space-y-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="user-verification" className="flex items-center justify-center">
             <Users className="h-4 w-4 mr-2" /> User Verification

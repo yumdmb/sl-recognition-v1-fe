@@ -35,8 +35,8 @@ export default function Navigation({
           transition={{ duration: 0.2 }}
         >
           <Image
-            src="/MyBIM-Logo-transparent-bg-300x227.png"
-            alt="MyBIM Logo"
+            src="/signbridge-logo-no-word.PNG"
+            alt="SignBridge Logo"
             width={64}
             height={48}
             className="object-contain"
@@ -81,9 +81,6 @@ export default function Navigation({
               </motion.div>
             )}
           </div>
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Link href="/contact" className="text-gray-600 hover:text-gray-900">Contact</Link>
-          </motion.div>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button variant="ghost" asChild>
               <Link href="/auth/login">Login</Link>

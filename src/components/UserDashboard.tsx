@@ -4,13 +4,18 @@ import React from 'react';
 import { UserQuickAccessPanel } from '@/components/user/UserQuickAccessPanel';
 import LearningProgress from '@/components/user/LearningProgress';
 import QuizProgress from '@/components/user/QuizProgress';
+import LearningPathPanel from '@/components/user/LearningPathPanel';
 import { motion } from 'framer-motion';
 
 interface UserDashboardProps {
   userRole: 'non-deaf' | 'deaf';
+  userName?: string;
 }
 
-const UserDashboard: React.FC<UserDashboardProps> = ({ userRole }) => {
+const UserDashboard: React.FC<UserDashboardProps> = ({ 
+  userRole, // eslint-disable-line @typescript-eslint/no-unused-vars
+  userName 
+}) => {
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -34,20 +39,20 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ userRole }) => {
 
   return (
     <motion.div
-      className="space-y-6"
+      className="space-y-4 md:space-y-6"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
       <motion.h2
-        className="text-3xl font-bold"
+        className="text-2xl md:text-3xl font-bold"
         variants={itemVariants}
       >
-        {userRole === 'deaf' ? 'Deaf Person Dashboard' : 'Non-Deaf Person Dashboard'}
+        Hello, {userName || 'User'}!
       </motion.h2>
       
       <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6"
         variants={itemVariants}
       >
         <LearningProgress />
@@ -55,7 +60,11 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ userRole }) => {
       </motion.div>
       
       <motion.div variants={itemVariants}>
-        <UserQuickAccessPanel userRole={userRole} />
+        <LearningPathPanel />
+      </motion.div>
+      
+      <motion.div variants={itemVariants}>
+        <UserQuickAccessPanel />
       </motion.div>
     </motion.div>
   );

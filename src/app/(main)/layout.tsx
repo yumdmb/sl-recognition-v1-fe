@@ -1,25 +1,33 @@
 'use client';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { SidebarProvider } from "@/context/SidebarContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { AdminProvider } from "@/context/AdminContext";
-import { LearningProvider } from '@/context/LearningContext';
+import { useSidebar } from '@/context/SidebarContext';
 import AppSidebar from "@/components/AppSidebar";
+import MobileHeader from "@/components/MobileHeader";
 import { Loader2 } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { currentUser, isAuthenticated, isLoading } = useAuth();
-  const router = useRouter();
+  const { state, openSidebar } = useSidebar();
+  const pathname = usePathname();
 
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push('/auth/login');
-    }
-  }, [isAuthenticated, isLoading, router]);
+  // Get page title from pathname
+  const getPageTitle = (path: string): string => {
+    const segments = path.split('/').filter(Boolean);
+    if (segments.length === 0) return 'SignBridge';
+    
+    const lastSegment = segments[segments.length - 1];
+    // Convert kebab-case to Title Case
+    return lastSegment
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
 
   // Show loading spinner while checking authentication
+  // Note: Middleware handles redirects, this is just for UX during hydration
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
@@ -31,50 +39,41 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     );
   }
 
-  // If not authenticated, show nothing during redirect
+  // If not authenticated, show loading (middleware will redirect)
   if (!isAuthenticated) {
-    return null;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-signlang-primary mx-auto" />
+          <p className="text-gray-600">Redirecting...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <SidebarProvider>
-      <LanguageProvider>
-        <AdminProvider>
-          <LearningProvider>
-            <div className="flex min-h-screen w-full">
-              <AppSidebar userRole={currentUser?.role || 'non-deaf'} />
+    <LanguageProvider>
+      <AdminProvider>
+        <div className="flex min-h-screen w-full">
+          {/* Mobile Header - Only visible on mobile */}
+          {state.isMobile && (
+            <MobileHeader 
+              title={getPageTitle(pathname)}
+              onMenuClick={openSidebar}
+            />
+          )}
 
-              {/* Main Content */}
-            <div className="flex-1 transition-all duration-300">
-              {/* Top Bar */}
-              <div className="bg-white border-b border-gray-200 p-4 sticky top-0 z-30 h-[65px] flex items-center">
-                <div className="container mx-auto">
-                  <div className="flex items-center space-x-2">
-                    <img 
-                      src="/MyBIM-Logo-transparent-bg-300x227.png" 
-                      alt="MyBIM Logo" 
-                      className="h-10 w-auto"
-                    />
-                    <h1 className="text-2xl font-bold">SignBridge</h1>
-                    {currentUser && (
-                      <span className="ml-4 bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">
-                        {currentUser.role === 'admin' ? 'Admin' :
-                          currentUser.role === 'deaf' ? 'Deaf Person' : 'Non-Deaf Person'}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
+          <AppSidebar userRole={currentUser?.role || 'non-deaf'} />
 
-              {/* Page Content */}
-              <div className="container mx-auto p-6">
-                {children}
-              </div>
+          {/* Main Content */}
+          <div className="flex-1 transition-all duration-300 overflow-x-hidden">
+            {/* Page Content with mobile padding for fixed header */}
+            <div className={`container mx-auto px-4 py-4 md:p-6 overflow-x-hidden ${state.isMobile ? 'pt-14' : ''}`}>
+              {children}
             </div>
           </div>
-          </LearningProvider>
-        </AdminProvider>
-      </LanguageProvider>
-    </SidebarProvider>
+        </div>
+      </AdminProvider>
+    </LanguageProvider>
   );
 }
