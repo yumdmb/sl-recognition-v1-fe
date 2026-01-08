@@ -3,21 +3,18 @@
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Plus, GraduationCap } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 interface TutorialHeaderProps {
   onTabChange: (value: string) => void;
   isAdmin: boolean;
   onAddTutorial: () => void;
-  userLevel?: string; // User's proficiency level (for non-admins)
 }
 
 const TutorialHeader: React.FC<TutorialHeaderProps> = ({
   onTabChange,
   isAdmin,
-  onAddTutorial,
-  userLevel
+  onAddTutorial
 }) => {
   return (
     <div className="flex justify-between items-center mb-6">
