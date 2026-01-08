@@ -55,9 +55,9 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ isActive, language
       formData.append("language", language); // Add language to formData
 
       try {
-        // Use environment variable for API URL (localhost for dev, EC2 for production)
-        const apiUrl = process.env.NEXT_PUBLIC_ML_API_URL || "http://localhost";
-        const res = await fetch(`${apiUrl}/predict-image/`, {
+        // Call Vercel API proxy to avoid mixed content (HTTPS→HTTP) issues
+        // The proxy forwards to EC2 server-side
+        const res = await fetch("/api/ml/predict", {
           method: "POST",
           body: formData,
         });
