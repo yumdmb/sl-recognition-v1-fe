@@ -164,7 +164,6 @@ export default function TutorialsPage() {
         onTabChange={setActiveTab}
         isAdmin={isAdmin}
         onAddTutorial={handleAddTutorial}
-        userLevel={currentUser?.proficiency_level || undefined}
       />
       
       {tutorialsLoading ? (
