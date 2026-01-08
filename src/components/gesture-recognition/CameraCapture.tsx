@@ -65,7 +65,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ isActive, language
         const data = await res.json();
         // Handle response - check if prediction was successful
         if (data.success && data.label) {
-          setPrediction(`${data.label} (${(data.confidence * 100).toFixed(1)}%)`);
+          setPrediction(data.label);
         } else {
           setPrediction(null); // No hand detected
         }
@@ -112,7 +112,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ isActive, language
       </div>
       {prediction && (
         <div className="text-base md:text-lg lg:text-xl text-green-600 font-bold text-center p-3 md:p-4 bg-green-50 rounded-lg">
-          Prediction: {prediction}
+          You have successfully shown the &ldquo;{prediction}&rdquo; gesture!
         </div>
       )}
     </div>
