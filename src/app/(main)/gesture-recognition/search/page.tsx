@@ -42,6 +42,7 @@ import { GestureContributionService } from '@/lib/supabase/gestureContributions'
 import { AdminGestureForm } from '@/components/gesture-recognition/AdminGestureForm';
 import Avatar3DPlayer from '@/components/avatar/Avatar3DPlayer';
 import { Avatar3DRecording } from '@/types/hand';
+import { signAvatarService } from '@/lib/services/signAvatarService';
 
 // Extended type for gesture with joined avatar data
 interface GestureWithAvatar extends GestureContribution {
@@ -101,6 +102,7 @@ const GestureRecognitionSearch: React.FC = () => {
   const [editingGesture, setEditingGesture] = useState<GestureContribution | null>(null);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [deletingGesture, setDeletingGesture] = useState<GestureContribution | null>(null);
+  const [deletingAvatarId, setDeletingAvatarId] = useState<string | null>(null);
   // Track which version (media or avatar) is selected for each grouped card
   const [selectedVersions, setSelectedVersions] = useState<Record<string, 'media' | 'avatar'>>({});
 
@@ -321,6 +323,23 @@ const GestureRecognitionSearch: React.FC = () => {
     }
   };
 
+  // Handle delete for 3D avatars
+  const handleDeleteAvatar = async (avatarId: string) => {
+    try {
+      await signAvatarService.delete(avatarId);
+      toast.success("3D Avatar deleted successfully!", { style: { color: 'black' } });
+      handleFormSuccess();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      toast.error("Failed to delete avatar", { 
+        description: errorMessage,
+        style: { color: 'black' }
+      });
+    } finally {
+      setDeletingAvatarId(null);
+    }
+  };
+
 
   // Get the selected version type for a grouped gesture
   const getSelectedVersion = (group: GroupedGesture): 'media' | 'avatar' => {
@@ -388,6 +407,20 @@ const GestureRecognitionSearch: React.FC = () => {
                   <Edit className="h-4 w-4" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={() => openDeleteAlert(gesture)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+            {isAdmin && isAvatar && gesture.sign_avatars && (
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => {
+                    setDeletingAvatarId(gesture.sign_avatars!.id);
+                    setIsDeleteAlertOpen(true);
+                  }}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
@@ -589,7 +622,13 @@ const GestureRecognitionSearch: React.FC = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteGesture}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={() => {
+              if (deletingAvatarId) {
+                void handleDeleteAvatar(deletingAvatarId);
+              } else {
+                void handleDeleteGesture();
+              }
+            }}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
