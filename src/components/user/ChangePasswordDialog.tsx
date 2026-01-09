@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Check, X } from 'lucide-react';
+import { validatePassword, isPasswordValid } from '@/lib/utils';
 
 interface ChangePasswordDialogProps {
   open: boolean;
@@ -51,8 +52,8 @@ export function ChangePasswordDialog({
     
     if (!newPassword) {
       newErrors.newPassword = 'New password is required';
-    } else if (newPassword.length < 6) {
-      newErrors.newPassword = 'Password must be at least 6 characters';
+    } else if (!isPasswordValid(newPassword)) {
+      newErrors.newPassword = 'Password does not meet requirements';
     } else if (newPassword === currentPassword) {
       newErrors.newPassword = 'New password must be different from current password';
     }
@@ -186,9 +187,64 @@ export function ChangePasswordDialog({
               {errors.newPassword && (
                 <p id="new-password-error" className="text-sm text-red-500">{errors.newPassword}</p>
               )}
-              <p id="new-password-hint" className="text-xs text-gray-500">
-                Must be at least 6 characters
-              </p>
+              {/* Password requirements checklist */}
+              {newPassword.length > 0 && (
+                <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-xs font-medium text-gray-600 mb-2">Password Requirements:</p>
+                  <div className="grid grid-cols-1 gap-1">
+                    <div className="flex items-center gap-2">
+                      {validatePassword(newPassword).minLength ? (
+                        <Check className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <X className="h-3 w-3 text-red-500" />
+                      )}
+                      <span className={`text-xs ${validatePassword(newPassword).minLength ? 'text-green-600' : 'text-gray-500'}`}>
+                        At least 8 characters
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {validatePassword(newPassword).hasUppercase ? (
+                        <Check className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <X className="h-3 w-3 text-red-500" />
+                      )}
+                      <span className={`text-xs ${validatePassword(newPassword).hasUppercase ? 'text-green-600' : 'text-gray-500'}`}>
+                        1 uppercase (A-Z)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {validatePassword(newPassword).hasLowercase ? (
+                        <Check className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <X className="h-3 w-3 text-red-500" />
+                      )}
+                      <span className={`text-xs ${validatePassword(newPassword).hasLowercase ? 'text-green-600' : 'text-gray-500'}`}>
+                        1 lowercase (a-z)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {validatePassword(newPassword).hasDigit ? (
+                        <Check className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <X className="h-3 w-3 text-red-500" />
+                      )}
+                      <span className={`text-xs ${validatePassword(newPassword).hasDigit ? 'text-green-600' : 'text-gray-500'}`}>
+                        1 digit (0-9)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {validatePassword(newPassword).hasSymbol ? (
+                        <Check className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <X className="h-3 w-3 text-red-500" />
+                      )}
+                      <span className={`text-xs ${validatePassword(newPassword).hasSymbol ? 'text-green-600' : 'text-gray-500'}`}>
+                        1 symbol (!@#$...)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="grid gap-2">

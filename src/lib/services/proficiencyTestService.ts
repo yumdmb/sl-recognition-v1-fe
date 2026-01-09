@@ -54,12 +54,37 @@ export const getAllProficiencyTests = async (): Promise<Database['public']['Tabl
 
 /**
  * Creates a new entry in the proficiency_test_attempts table for a user starting a test.
+ * If an incomplete attempt already exists for this user and test, it will be reused.
  * @param userId - The ID of the user attempting the test.
  * @param testId - The ID of the test being attempted.
- * @returns The newly created test attempt.
+ * @returns The test attempt (existing incomplete one or newly created).
  */
 export const createTestAttempt = async (userId: string, testId: string) => {
   const supabase = createClient();
+  
+  // First, check for existing incomplete attempt for this user and test
+  const { data: existingAttempt, error: fetchError } = await supabase
+    .from('proficiency_test_attempts')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('test_id', testId)
+    .is('completed_at', null)  // Only get incomplete attempts
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (fetchError) {
+    console.error('Error checking for existing attempt:', fetchError);
+    throw fetchError;
+  }
+
+  // If an incomplete attempt exists, reuse it
+  if (existingAttempt) {
+    console.log('Reusing existing incomplete attempt:', existingAttempt.id);
+    return existingAttempt;
+  }
+
+  // Otherwise, create a new attempt
   const { data, error } = await supabase
     .from('proficiency_test_attempts')
     .insert({ user_id: userId, test_id: testId })
@@ -97,13 +122,18 @@ export const submitAnswer = async (attemptId: string, questionId: string, choice
   }
 
   // Now, submit the answer with the correctness flag
+  // Using upsert to handle duplicate submissions (network retries, re-clicks)
+  // This ensures idempotency - calling multiple times has the same effect as calling once
   const { data, error } = await supabase
     .from('proficiency_test_attempt_answers')
-    .insert({
+    .upsert({
       attempt_id: attemptId,
       question_id: questionId,
       choice_id: choiceId,
       is_correct: choice.is_correct,
+    }, {
+      onConflict: 'attempt_id,question_id',  // Update existing answer if already submitted
+      ignoreDuplicates: false  // Update the row with new values
     })
     .select()
     .single();

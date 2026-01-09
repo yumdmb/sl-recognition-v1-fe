@@ -24,6 +24,9 @@ const ProficiencyTestPage = () => {
     proficiencyTestLoading 
   } = useLearning();
   
+  // Track if we've already initialized this test to prevent duplicate calls
+  const hasInitializedRef = React.useRef<string | null>(null);
+  
   const router = useRouter();
   const params = useParams();
   const testId = typeof params.testId === 'string' ? params.testId : '';
@@ -66,12 +69,19 @@ const ProficiencyTestPage = () => {
         return;
       }
 
+      // Skip if we've already initialized this specific test
+      if (hasInitializedRef.current === testId) {
+        return;
+      }
+
       try {
         setError(null);
+        hasInitializedRef.current = testId; // Mark as initializing
         await startTest(testId);
         setRetryCount(0); // Reset retry count on success
       } catch (err: unknown) {
         console.error('Error loading test:', err);
+        hasInitializedRef.current = null; // Reset on error to allow retry
         
         // Log error for administrative review
         const errorLog = {

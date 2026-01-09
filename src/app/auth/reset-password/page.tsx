@@ -8,9 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Lock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Lock, CheckCircle2, AlertCircle, Check, X } from 'lucide-react';
 import Link from 'next/link';
 import AuthLayout from '@/components/auth/AuthLayout';
+import { validatePassword, isPasswordValid } from '@/lib/utils';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -126,9 +127,9 @@ export default function ResetPassword() {
       return;
     }
 
-    if (password.length < 6) {
+    if (!isPasswordValid(password)) {
       toast.error('Password reset failed', {
-        description: 'Password must be at least 6 characters long.'
+        description: 'Password must be at least 8 characters with uppercase, lowercase, digit, and symbol.'
       });
       setIsLoading(false);
       return;
@@ -261,7 +262,65 @@ export default function ResetPassword() {
                   )}
                 </Button>
               </div>
-              <p className="text-xs text-gray-500">Must be at least 6 characters</p>
+
+              {/* Password requirements checklist */}
+              {password.length > 0 && (
+                <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-xs font-medium text-gray-600 mb-2">Password Requirements:</p>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    <div className="flex items-center gap-2">
+                      {validatePassword(password).minLength ? (
+                        <Check className="h-3.5 w-3.5 text-green-500" />
+                      ) : (
+                        <X className="h-3.5 w-3.5 text-red-500" />
+                      )}
+                      <span className={`text-xs ${validatePassword(password).minLength ? 'text-green-600' : 'text-gray-500'}`}>
+                        At least 8 characters
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {validatePassword(password).hasUppercase ? (
+                        <Check className="h-3.5 w-3.5 text-green-500" />
+                      ) : (
+                        <X className="h-3.5 w-3.5 text-red-500" />
+                      )}
+                      <span className={`text-xs ${validatePassword(password).hasUppercase ? 'text-green-600' : 'text-gray-500'}`}>
+                        At least 1 uppercase letter (A-Z)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {validatePassword(password).hasLowercase ? (
+                        <Check className="h-3.5 w-3.5 text-green-500" />
+                      ) : (
+                        <X className="h-3.5 w-3.5 text-red-500" />
+                      )}
+                      <span className={`text-xs ${validatePassword(password).hasLowercase ? 'text-green-600' : 'text-gray-500'}`}>
+                        At least 1 lowercase letter (a-z)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {validatePassword(password).hasDigit ? (
+                        <Check className="h-3.5 w-3.5 text-green-500" />
+                      ) : (
+                        <X className="h-3.5 w-3.5 text-red-500" />
+                      )}
+                      <span className={`text-xs ${validatePassword(password).hasDigit ? 'text-green-600' : 'text-gray-500'}`}>
+                        At least 1 digit (0-9)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {validatePassword(password).hasSymbol ? (
+                        <Check className="h-3.5 w-3.5 text-green-500" />
+                      ) : (
+                        <X className="h-3.5 w-3.5 text-red-500" />
+                      )}
+                      <span className={`text-xs ${validatePassword(password).hasSymbol ? 'text-green-600' : 'text-gray-500'}`}>
+                        At least 1 symbol (!@#$%^&amp;*...)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             
             <div className="space-y-2">
