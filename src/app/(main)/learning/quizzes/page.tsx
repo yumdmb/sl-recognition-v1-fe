@@ -34,6 +34,8 @@ export default function QuizzesPage() {
         deleteQuizSet
     } = useLearning();
     
+    const [activeTab, setActiveTab] = useState<string>('all');
+    const [searchQuery, setSearchQuery] = useState<string>('');
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [currentQuizSet, setCurrentQuizSet] = useState<QuizSetWithProgress | null>(null);
 
@@ -58,8 +60,26 @@ export default function QuizzesPage() {
         getQuizSets(language, userLevel);
     }, [language, userLevel]); // Removed getQuizSets from dependencies to prevent infinite loop
 
-    // Filter quiz sets based on selected language (redundant now, but kept for safety)
-    const filteredQuizSets = quizSets.filter(set => set.language === language);
+    // Filter quiz sets by level (admin only) and search (all users)
+    const filteredQuizSets = useMemo(() => {
+        let filtered = quizSets;
+        
+        // Apply level filter for admins only
+        if (isAdmin && activeTab !== 'all') {
+            filtered = filtered.filter(set => set.level === activeTab);
+        }
+        
+        // Apply search filter for all users
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            filtered = filtered.filter(set =>
+                set.title.toLowerCase().includes(query) ||
+                set.description?.toLowerCase().includes(query)
+            );
+        }
+        
+        return filtered;
+    }, [quizSets, activeTab, searchQuery, isAdmin]);
 
     // Function to handle adding a new quiz set
     const handleAddQuizSet = () => {
@@ -145,6 +165,9 @@ export default function QuizzesPage() {
     return (
         <>
             <QuizHeader
+                onTabChange={setActiveTab}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
                 isAdmin={isAdmin}
                 onAddQuizSet={handleAddQuizSet}
             />

@@ -1,25 +1,56 @@
 'use client'
 
 import React from 'react';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { Plus, Search } from 'lucide-react';
 
 interface QuizHeaderProps {
+  onTabChange: (value: string) => void;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
   isAdmin: boolean;
   onAddQuizSet: () => void;
 }
 
 const QuizHeader: React.FC<QuizHeaderProps> = ({
+  onTabChange,
+  searchQuery,
+  onSearchChange,
   isAdmin,
   onAddQuizSet
 }) => {
-  if (!isAdmin) return null;
-
   return (
-    <div className="flex justify-end mb-6">
-      <Button onClick={onAddQuizSet}>
-        <Plus className="h-4 w-4 mr-2" /> Add Quiz Set
-      </Button>
+    <div className="sticky top-0 z-10 bg-background pb-4 space-y-4">
+      {/* Admin-only level tabs row */}
+      {isAdmin && (
+        <div className="flex justify-between items-center">
+          <Tabs defaultValue="all" onValueChange={onTabChange} className="flex-1">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="all">All Levels</TabsTrigger>
+              <TabsTrigger value="beginner">Beginner</TabsTrigger>
+              <TabsTrigger value="intermediate">Intermediate</TabsTrigger>
+              <TabsTrigger value="advanced">Advanced</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
+          <Button className="ml-4" onClick={onAddQuizSet}>
+            <Plus className="h-4 w-4 mr-2" /> Add Quiz Set
+          </Button>
+        </div>
+      )}
+      
+      {/* Search row - visible to all users */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search quizzes..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="pl-10"
+        />
+      </div>
     </div>
   );
 };

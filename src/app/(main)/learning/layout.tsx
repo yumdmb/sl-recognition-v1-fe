@@ -20,30 +20,36 @@ export default function LearningLayout({
   const currentPath = pathname ? pathname.split('/').pop() || '' : '';
   
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="flex flex-col space-y-4 md:space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl md:text-3xl font-bold">Learning {language}</h1>
-          <div className="flex items-center space-x-4">
-            <AdminModeToggle />
-            <LanguageSelector className="w-[300px]" />
+    <div className="max-w-5xl mx-auto h-[calc(100vh-6rem)] flex flex-col">
+      {/* Sticky header section */}
+      <div className="sticky top-0 z-20 bg-background pb-4 flex-shrink-0">
+        <div className="flex flex-col space-y-4 md:space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl md:text-3xl font-bold">Learning {language}</h1>
+            <div className="flex items-center space-x-4">
+              <AdminModeToggle />
+              <LanguageSelector className="w-[300px]" />
+            </div>
           </div>
+          
+          <Tabs value={currentPath}>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="tutorials" asChild>
+                <Link href="/learning/tutorials">Tutorials</Link>
+              </TabsTrigger>
+              <TabsTrigger value="quizzes" asChild>
+                <Link href="/learning/quizzes">Quizzes</Link>
+              </TabsTrigger>
+              <TabsTrigger value="materials" asChild>
+                <Link href="/learning/materials">Materials</Link>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
-        
-        <Tabs value={currentPath} className="mb-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="tutorials" asChild>
-              <Link href="/learning/tutorials">Tutorials</Link>
-            </TabsTrigger>
-            <TabsTrigger value="quizzes" asChild>
-              <Link href="/learning/quizzes">Quizzes</Link>
-            </TabsTrigger>
-            <TabsTrigger value="materials" asChild>
-              <Link href="/learning/materials">Materials</Link>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-        
+      </div>
+      
+      {/* Scrollable content area */}
+      <div className="flex-1 overflow-y-auto pb-6">
         {children}
       </div>
     </div>
