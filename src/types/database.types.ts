@@ -871,7 +871,7 @@ export type Database = {
           description: string
           id: string
           language: string
-          level: string | null
+          level: string
           recommended_for_role: string | null
           title: string
           updated_at: string | null
@@ -882,7 +882,7 @@ export type Database = {
           description: string
           id?: string
           language: string
-          level?: string | null
+          level?: string
           recommended_for_role?: string | null
           title: string
           updated_at?: string | null
@@ -893,7 +893,7 @@ export type Database = {
           description?: string
           id?: string
           language?: string
-          level?: string | null
+          level?: string
           recommended_for_role?: string | null
           title?: string
           updated_at?: string | null

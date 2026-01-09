@@ -54,7 +54,7 @@ export const generateRecommendations = async (
   // Fallback to generic recommendations for admin or unknown roles
   const [tutorials, quizzes, materials] = await Promise.all([
     fetchTutorials(proficiencyLevel, preferredLanguage),
-    fetchQuizzes(preferredLanguage),
+    fetchQuizzes(preferredLanguage, proficiencyLevel),
     fetchMaterials(proficiencyLevel, preferredLanguage),
   ]);
 
@@ -84,7 +84,7 @@ export const generateRecommendations = async (
       type: 'quiz',
       title: quiz.title,
       description: quiz.description,
-      level: proficiencyLevel,
+      level: quiz.level,
       language: quiz.language,
       priority: 2,
       reason: 'Practice to reinforce your learning',
@@ -137,12 +137,13 @@ const fetchTutorials = async (level: string, language: 'ASL' | 'MSL') => {
  * @param language - The preferred sign language (ASL or MSL).
  * @returns Array of quiz sets.
  */
-const fetchQuizzes = async (language: 'ASL' | 'MSL') => {
+const fetchQuizzes = async (language: 'ASL' | 'MSL', level: string) => {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('quiz_sets')
     .select('*')
-    .eq('language', language);
+    .eq('language', language)
+    .eq('level', level.toLowerCase());
 
   if (error) {
     console.error('Error fetching quizzes:', error);
@@ -276,7 +277,7 @@ export const generateDeafUserPath = async (
   // Fetch all available learning content using adjusted level and language
   const [tutorials, quizzes, materials] = await Promise.all([
     fetchTutorials(adjustedLevel, preferredLanguage),
-    fetchQuizzes(preferredLanguage),
+    fetchQuizzes(preferredLanguage, adjustedLevel),
     fetchMaterials(adjustedLevel, preferredLanguage),
   ]);
 
@@ -327,7 +328,7 @@ export const generateDeafUserPath = async (
       type: 'quiz',
       title: quiz.title,
       description: quiz.description,
-      level: proficiencyLevel,
+      level: quiz.level,
       language: quiz.language,
       priority: quiz.recommended_for_role === 'deaf' ? 2 : 3,
       reason: 'Practice with visual sign language content',
@@ -374,7 +375,7 @@ export const generateNonDeafUserPath = async (
   // Fetch all available learning content using adjusted level and language
   const [tutorials, quizzes, materials] = await Promise.all([
     fetchTutorials(adjustedLevel, preferredLanguage),
-    fetchQuizzes(preferredLanguage),
+    fetchQuizzes(preferredLanguage, adjustedLevel),
     fetchMaterials(adjustedLevel, preferredLanguage),
   ]);
 
@@ -425,7 +426,7 @@ export const generateNonDeafUserPath = async (
       type: 'quiz',
       title: quiz.title,
       description: quiz.description,
-      level: proficiencyLevel,
+      level: quiz.level,
       language: quiz.language,
       priority: quiz.recommended_for_role === 'non-deaf' ? 2 : 3,
       reason: 'Practice with pronunciation and context explanations',
@@ -471,7 +472,7 @@ export const getSimpleRecommendationsForLanguage = async (
   // Fetch content for this specific language and level
   const [tutorials, quizzes, materials] = await Promise.all([
     fetchTutorials(level, language),
-    fetchQuizzes(language),
+    fetchQuizzes(language, level),
     fetchMaterials(level, language),
   ]);
 
@@ -499,7 +500,7 @@ export const getSimpleRecommendationsForLanguage = async (
       type: 'quiz',
       title: quiz.title,
       description: quiz.description,
-      level: quiz.level || level,
+      level: quiz.level,
       language: quiz.language,
       priority: 2,
       reason: `${language} quiz to test your knowledge`,

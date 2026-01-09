@@ -112,13 +112,15 @@ export default function QuizzesPage() {
                 await createQuizSet({
                     title: quizSet.title,
                     description: quizSet.description,
-                    language: quizSet.language
+                    language: quizSet.language,
+                    level: quizSet.level || 'beginner'
                 });
             } else {
                 await updateQuizSet(quizSet.id, {
                     title: quizSet.title,
                     description: quizSet.description,
-                    language: quizSet.language
+                    language: quizSet.language,
+                    level: quizSet.level || 'beginner'
                 });
             }
             
