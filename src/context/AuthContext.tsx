@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { UserService } from '@/lib/services/userService';
 import { EmailService } from '@/lib/services/emailService';
+import { isPasswordValid } from '@/lib/utils';
 // import type { UserProfile } from '@/types/database';
 
 // Define our user type - extending Supabase user with custom metadata
@@ -462,10 +463,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
 
-      // Validate password requirements
-      if (newPassword.length < 6) {
-        toast.error("Password too short", {
-          description: "Password must be at least 6 characters long."
+      // Validate password requirements (must match registration requirements)
+      if (!isPasswordValid(newPassword)) {
+        toast.error("Password too weak", {
+          description: "Password must be at least 8 characters with uppercase, lowercase, digit, and symbol."
         });
         return false;
       }

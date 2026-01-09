@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { UserPlus, User, Mail, Lock } from 'lucide-react';
+import { UserPlus, User, Mail, Lock, Check, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import AuthLayout from '@/components/auth/AuthLayout';
+import { validatePassword, isPasswordValid } from '@/lib/utils';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -23,6 +24,10 @@ export default function Register() {
   const { register } = useAuth();
   const router = useRouter();
 
+  // Memoized password validation
+  const passwordValidation = useMemo(() => validatePassword(password), [password]);
+  const passwordIsValid = useMemo(() => isPasswordValid(password), [password]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -31,6 +36,15 @@ export default function Register() {
     if (!name || !email || !password) {
       toast.error("Registration failed", {
         description: "All fields are required."
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    // Password strength validation
+    if (!passwordIsValid) {
+      toast.error("Registration failed", {
+        description: "Password does not meet the requirements."
       });
       setIsLoading(false);
       return;
@@ -126,6 +140,65 @@ export default function Register() {
                   required 
                 />
               </div>
+              
+              {/* Password requirements checklist */}
+              {password.length > 0 && (
+                <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-xs font-medium text-gray-600 mb-2">Password Requirements:</p>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    <div className="flex items-center gap-2">
+                      {passwordValidation.minLength ? (
+                        <Check className="h-3.5 w-3.5 text-green-500" />
+                      ) : (
+                        <X className="h-3.5 w-3.5 text-red-500" />
+                      )}
+                      <span className={`text-xs ${passwordValidation.minLength ? 'text-green-600' : 'text-gray-500'}`}>
+                        At least 8 characters
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {passwordValidation.hasUppercase ? (
+                        <Check className="h-3.5 w-3.5 text-green-500" />
+                      ) : (
+                        <X className="h-3.5 w-3.5 text-red-500" />
+                      )}
+                      <span className={`text-xs ${passwordValidation.hasUppercase ? 'text-green-600' : 'text-gray-500'}`}>
+                        At least 1 uppercase letter (A-Z)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {passwordValidation.hasLowercase ? (
+                        <Check className="h-3.5 w-3.5 text-green-500" />
+                      ) : (
+                        <X className="h-3.5 w-3.5 text-red-500" />
+                      )}
+                      <span className={`text-xs ${passwordValidation.hasLowercase ? 'text-green-600' : 'text-gray-500'}`}>
+                        At least 1 lowercase letter (a-z)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {passwordValidation.hasDigit ? (
+                        <Check className="h-3.5 w-3.5 text-green-500" />
+                      ) : (
+                        <X className="h-3.5 w-3.5 text-red-500" />
+                      )}
+                      <span className={`text-xs ${passwordValidation.hasDigit ? 'text-green-600' : 'text-gray-500'}`}>
+                        At least 1 digit (0-9)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {passwordValidation.hasSymbol ? (
+                        <Check className="h-3.5 w-3.5 text-green-500" />
+                      ) : (
+                        <X className="h-3.5 w-3.5 text-red-500" />
+                      )}
+                      <span className={`text-xs ${passwordValidation.hasSymbol ? 'text-green-600' : 'text-gray-500'}`}>
+                        At least 1 symbol (!@#$%^&amp;*...)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             
             <div className="space-y-2">
