@@ -230,18 +230,9 @@ const AdminAvatarDatabasePage = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span>{avatar.name}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => void toggleVerification(avatar.id, avatar.status)}
-                      className={avatar.status === "verified" ? "text-green-500" : "text-yellow-500"}
-                    >
-                      {avatar.status === "verified" ? (
-                        <CheckCircle2 className="h-5 w-5" />
-                      ) : (
-                        <XCircle className="h-5 w-5" />
-                      )}
-                    </Button>
+                    <Badge variant={avatar.status === "verified" ? "default" : "secondary"} className={avatar.status === "verified" ? "bg-green-500 hover:bg-green-600 text-white" : ""}>
+                      {avatar.status === "verified" ? "Verified" : "Unverified"}
+                    </Badge>
                   </CardTitle>
                   <CardDescription className="flex items-center gap-2">
                     <User className="h-4 w-4" />
@@ -271,14 +262,40 @@ const AdminAvatarDatabasePage = () => {
                     )}
                   </div>
                   <div className="flex justify-between">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => void deleteAvatar(avatar.id)}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
+                    <div className="flex gap-2">
+                      {avatar.status !== "verified" && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          onClick={() => void toggleVerification(avatar.id, avatar.status)}
+                        >
+                          <CheckCircle2 className="h-4 w-4 mr-1" />
+                          Verify
+                        </Button>
+                      )}
+                      
+                      {avatar.status === "verified" && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="text-amber-500 hover:text-amber-700 hover:bg-amber-50"
+                          onClick={() => void toggleVerification(avatar.id, avatar.status)}
+                        >
+                          <XCircle className="h-4 w-4 mr-1" />
+                          Unverify
+                        </Button>
+                      )}
+
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => void deleteAvatar(avatar.id)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    </div>
                     <Button 
                       variant="outline" 
                       size="sm"
