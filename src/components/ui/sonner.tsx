@@ -13,10 +13,16 @@ const Toaster = ({ ...props }: ToasterProps) => {
       style={
         {
           "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
+          "--normal-text": "#000000",
           "--normal-border": "var(--border)",
         } as React.CSSProperties
       }
+      toastOptions={{
+        classNames: {
+          title: "!font-bold !text-base",
+          description: "!text-gray-500 dark:!text-gray-400",
+        },
+      }}
       {...props}
     />
   )
