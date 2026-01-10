@@ -77,6 +77,19 @@ const QuizDialog: React.FC<QuizDialogProps> = ({
               </SelectContent>
             </Select>
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+            <Label htmlFor="level" className="sm:text-right">Level</Label>
+            <Select value={quizSet.level || 'beginner'} onValueChange={(value) => handleFieldChange('level', value)}>
+              <SelectTrigger className="sm:col-span-3">
+                <SelectValue placeholder="Select level" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="beginner">Beginner</SelectItem>
+                <SelectItem value="intermediate">Intermediate</SelectItem>
+                <SelectItem value="advanced">Advanced</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <DialogFooter className="flex-col sm:flex-row gap-3">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Cancel</Button>

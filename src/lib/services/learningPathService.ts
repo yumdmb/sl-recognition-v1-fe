@@ -127,7 +127,8 @@ export const fetchContentByLevel = async (
   const { data: quizzes, error: quizzesError } = await supabase
     .from('quiz_sets')
     .select('*')
-    .eq('language', language);
+    .eq('language', language)
+    .eq('level', level.toLowerCase());
 
   if (quizzesError) {
     console.error('Error fetching quizzes:', quizzesError);

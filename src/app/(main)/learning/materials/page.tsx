@@ -20,6 +20,8 @@ const toLowerLevel = (level: string | null | undefined): 'beginner' | 'intermedi
 };
 
 export default function MaterialsPage() {
+  const [activeTab, setActiveTab] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [currentMaterial, setCurrentMaterial] = useState<Material | null>(null);
   
@@ -55,6 +57,27 @@ export default function MaterialsPage() {
     // Pass level for non-admins to filter server-side
     getMaterials(language, userLevel);
   }, [language, userLevel, getMaterials]);
+
+  // Filter materials by level (admin only) and search (all users)
+  const filteredMaterials = useMemo(() => {
+    let filtered = materials;
+    
+    // Apply level filter for admins only
+    if (isAdmin && activeTab !== 'all') {
+      filtered = filtered.filter(material => material.level === activeTab);
+    }
+    
+    // Apply search filter for all users
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(material =>
+        material.title.toLowerCase().includes(query) ||
+        material.description?.toLowerCase().includes(query)
+      );
+    }
+    
+    return filtered;
+  }, [materials, activeTab, searchQuery, isAdmin]);
 
   // Function to handle adding a new material
   const handleAddMaterial = () => {
@@ -129,15 +152,18 @@ export default function MaterialsPage() {
   return (
     <>
       <MaterialHeader
+        onTabChange={setActiveTab}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
         isAdmin={isAdmin}
         onAddMaterial={handleAddMaterial}
       />
       
       {isLoading ? (
         <MaterialLoadingState />
-      ) : materials.length > 0 ? (
+      ) : filteredMaterials.length > 0 ? (
         <MaterialGrid
-          materials={materials}
+          materials={filteredMaterials}
           isAdmin={isAdmin}
           onEditMaterial={handleEditMaterial}
           onDeleteMaterial={handleDeleteMaterial}

@@ -21,6 +21,7 @@ const toLowerLevel = (level: string | null | undefined): 'beginner' | 'intermedi
 
 export default function TutorialsPage() {
   const [activeTab, setActiveTab] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [currentTutorial, setCurrentTutorial] = useState<TutorialWithProgress | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -65,13 +66,26 @@ export default function TutorialsPage() {
     }
   }, [tutorialsLoading, isSaving]);
 
-  // Filter tutorials by level (only used by admins with level tabs)
+  // Filter tutorials by level (admin only) and search (all users)
   const filteredTutorials = useMemo(() => {
-    if (!isAdmin) return tutorials; // Non-admins already get filtered from server
-    return tutorials.filter(tutorial => 
-      activeTab === 'all' || tutorial.level === activeTab
-    );
-  }, [tutorials, activeTab, isAdmin]);  // Function to handle adding a new tutorial
+    let filtered = tutorials;
+    
+    // Apply level filter for admins only
+    if (isAdmin && activeTab !== 'all') {
+      filtered = filtered.filter(tutorial => tutorial.level === activeTab);
+    }
+    
+    // Apply search filter for all users
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(tutorial =>
+        tutorial.title.toLowerCase().includes(query) ||
+        tutorial.description?.toLowerCase().includes(query)
+      );
+    }
+    
+    return filtered;
+  }, [tutorials, activeTab, searchQuery, isAdmin]);  // Function to handle adding a new tutorial
   const handleAddTutorial = () => {    setCurrentTutorial({
       id: '',
       title: '',
@@ -162,6 +176,8 @@ export default function TutorialsPage() {
     <>
       <TutorialHeader
         onTabChange={setActiveTab}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
         isAdmin={isAdmin}
         onAddTutorial={handleAddTutorial}
       />
