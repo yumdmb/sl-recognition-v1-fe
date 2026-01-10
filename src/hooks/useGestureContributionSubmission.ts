@@ -55,6 +55,15 @@ export function useGestureContributionSubmission() {
     setIsRecording(recording);
   };
 
+  const handleClearMedia = () => {
+    // Clean up the preview URL to avoid memory leaks
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setSelectedFile(null);
+    setPreviewUrl(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -156,6 +165,7 @@ export function useGestureContributionSubmission() {
     handleFileChange,
     handleMediaCaptured,
     handleRecordingStateChange,
+    handleClearMedia,
     handleSubmit
   };
 }
