@@ -6,7 +6,8 @@ export interface SignAvatar {
   name: string;
   description: string | null;
   language: "ASL" | "MSL";
-  status: "verified" | "unverified";
+  status: "pending" | "approved" | "rejected";
+  rejection_reason: string | null;
   recording_data: Avatar3DRecording;
   frame_count: number;
   duration_ms: number;
@@ -31,7 +32,8 @@ interface SignAvatarRow {
   name: string;
   description: string | null;
   language: "ASL" | "MSL";
-  status: "verified" | "unverified";
+  status: "pending" | "approved" | "rejected";
+  rejection_reason: string | null;
   recording_data: Avatar3DRecording;
   frame_count: number;
   duration_ms: number;
@@ -170,12 +172,14 @@ export const signAvatarService = {
 
   /**
    * Update avatar status (admin only)
-   * When verifying, automatically creates a gesture_contributions entry for the dictionary
+   * When approving, automatically creates a gesture_contributions entry for the dictionary
+   * When rejecting, removes from dictionary if it was previously added
    */
   async updateStatus(
     id: string,
-    status: "verified" | "unverified",
-    reviewerId: string
+    status: "approved" | "rejected",
+    reviewerId: string,
+    rejectionReason?: string
   ): Promise<SignAvatar> {
     const supabase = createClient();
 
@@ -196,6 +200,7 @@ export const signAvatarService = {
       .from("sign_avatars")
       .update({
         status,
+        rejection_reason: status === "rejected" ? (rejectionReason || null) : null,
         reviewed_by: reviewerId,
         reviewed_at: new Date().toISOString(),
       })
@@ -208,13 +213,13 @@ export const signAvatarService = {
       throw new Error(error.message);
     }
 
-    // If verifying, auto-create gesture_contributions entry for dictionary
-    if (status === "verified") {
+    // If approving, auto-create gesture_contributions entry for dictionary
+    if (status === "approved") {
       await this.addToDictionary(avatar as SignAvatar, reviewerId);
     }
 
-    // If unverifying, remove from dictionary
-    if (status === "unverified") {
+    // If rejecting, remove from dictionary (in case it was previously approved)
+    if (status === "rejected") {
       await this.removeFromDictionary(id);
     }
 
@@ -303,9 +308,9 @@ export const signAvatarService = {
   },
 
   /**
-   * Get verified avatars (public)
+   * Get approved avatars (public)
    */
-  async getVerified(language?: "ASL" | "MSL"): Promise<SignAvatar[]> {
+  async getApproved(language?: "ASL" | "MSL"): Promise<SignAvatar[]> {
     const supabase = createClient();
 
     let query = supabase
@@ -315,7 +320,7 @@ export const signAvatarService = {
         user_profiles!sign_avatars_user_id_fkey(name),
         gesture_categories!category_id(id, name, icon)
       `)
-      .eq("status", "verified")
+      .eq("status", "approved")
       .order("created_at", { ascending: false });
 
     if (language) {
@@ -325,7 +330,7 @@ export const signAvatarService = {
     const { data, error } = await query;
 
     if (error) {
-      console.error("Error fetching verified avatars:", error);
+      console.error("Error fetching approved avatars:", error);
       throw new Error(error.message);
     }
 

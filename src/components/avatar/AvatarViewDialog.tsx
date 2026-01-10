@@ -35,8 +35,17 @@ export const AvatarViewDialog: React.FC<AvatarViewDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {avatar.name}
-            <Badge variant={avatar.status === "verified" ? "default" : "secondary"}>
-              {avatar.status}
+            <Badge 
+              variant={avatar.status === "approved" ? "default" : "secondary"}
+              className={
+                avatar.status === "approved" 
+                  ? "bg-green-500 text-white" 
+                  : avatar.status === "rejected"
+                  ? "bg-red-500 text-white"
+                  : "bg-yellow-500 text-white"
+              }
+            >
+              {avatar.status === "approved" ? "Approved" : avatar.status === "rejected" ? "Rejected" : "Pending"}
             </Badge>
           </DialogTitle>
         </DialogHeader>

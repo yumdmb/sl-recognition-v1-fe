@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Eye, Plus, CheckCircle2, XCircle, Search } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Trash2, Eye, Plus, Search, Tag } from 'lucide-react';
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
@@ -142,15 +143,36 @@ const MyAvatarsPage = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span>{avatar.name}</span>
-                    {avatar.status === "verified" ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-yellow-500" />
-                    )}
+                    <Badge 
+                      variant={avatar.status === "approved" ? "default" : "secondary"} 
+                      className={
+                        avatar.status === "approved" 
+                          ? "bg-green-500 hover:bg-green-600 text-white" 
+                          : avatar.status === "rejected"
+                          ? "bg-red-500 hover:bg-red-600 text-white"
+                          : "bg-yellow-500 hover:bg-yellow-600 text-white"
+                      }
+                    >
+                      {avatar.status === "approved" ? "Approved" : avatar.status === "rejected" ? "Rejected" : "Pending"}
+                    </Badge>
                   </CardTitle>
                   <CardDescription>
                     {avatar.language} • {new Date(avatar.created_at).toLocaleDateString()}
                   </CardDescription>
+                  {/* Category Badge */}
+                  <div className="flex items-center gap-2 mt-2">
+                    {avatar.category ? (
+                      <Badge variant="secondary">
+                        {avatar.category.icon && <span className="mr-1">{avatar.category.icon}</span>}
+                        {avatar.category.name}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground">
+                        <Tag className="h-3 w-3 mr-1" />
+                        No category
+                      </Badge>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="aspect-square bg-muted rounded-lg mb-4 flex items-center justify-center overflow-hidden relative">

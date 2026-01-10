@@ -63,18 +63,18 @@ export default function SaveForm({
   return (
     <Card>
       <CardHeader className="px-3 md:px-6">
-        <CardTitle className="text-lg md:text-xl">Save Gesture</CardTitle>
+        <CardTitle className="text-lg md:text-xl">Submit Gesture</CardTitle>
         <CardDescription className="text-xs md:text-sm">Provide details about your sign language gesture</CardDescription>
       </CardHeader>
       <CardContent className="px-3 md:px-6">
         <div className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="name" className="text-sm">Name</Label>
+            <Label htmlFor="name" className="text-sm">Title</Label>
             <Input
               id="name"
               value={signName}
               onChange={(e) => setSignName(e.target.value)}
-              placeholder="Enter gesture name"
+              placeholder="Enter gesture title"
               className="h-10"
             />
           </div>
@@ -125,7 +125,7 @@ export default function SaveForm({
               Cancel
             </Button>
             <Button onClick={onSave} disabled={isLoading} className="w-full md:w-auto order-1 md:order-2">
-              {isLoading ? "Saving..." : "Save"}
+              {isLoading ? "Submitting..." : "Submit for Review"}
             </Button>
           </div>
         </div>
