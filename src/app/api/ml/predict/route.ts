@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// EC2 ML API URL (server-side, no CORS/mixed content issues)
-const ML_API_URL = process.env.ML_API_URL || 'http://54.169.39.128';
+// EC2 ML API URLs (server-side, no CORS/mixed content issues)
+const ASL_API_URL = process.env.ML_API_URL;
+const MSL_API_URL = process.env.MSL_API_URL; 
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
+    const language = formData.get('language')?.toString() || 'ASL';
     
-    // Forward the request to EC2 ML API
-    const response = await fetch(`${ML_API_URL}/predict-image/`, {
+    // Select API URL based on language
+    const apiUrl = language === 'MSL' ? MSL_API_URL : ASL_API_URL;
+    
+    // Forward the request to appropriate EC2 ML API
+    const response = await fetch(`${apiUrl}/predict-image/`, {
       method: 'POST',
       body: formData,
     });
