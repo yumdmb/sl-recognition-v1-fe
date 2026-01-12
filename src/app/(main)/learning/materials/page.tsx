@@ -11,6 +11,7 @@ import MaterialGrid from '@/components/learning/MaterialGrid';
 import MaterialEmptyState from '@/components/learning/MaterialEmptyState';
 import MaterialLoadingState from '@/components/learning/MaterialLoadingState';
 import MaterialDialog from '@/components/learning/MaterialDialog';
+import MaterialPreviewDialog from '@/components/learning/MaterialPreviewDialog';
 import type { Material } from '@/types/database';
 
 // Helper to convert proficiency level to lowercase
@@ -24,6 +25,8 @@ export default function MaterialsPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [currentMaterial, setCurrentMaterial] = useState<Material | null>(null);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null);
   
   const { language } = useLanguage();
   const { isAdmin } = useAdmin();
@@ -117,6 +120,12 @@ export default function MaterialsPage() {
     }
   };
 
+  // Function to handle previewing a material
+  const handlePreviewMaterial = (material: Material) => {
+    setPreviewMaterial(material);
+    setPreviewDialogOpen(true);
+  };
+
   // Function to save material (add or update)
   const handleSaveMaterial = async (material: Material, file?: File) => {
     // Form validation
@@ -167,6 +176,7 @@ export default function MaterialsPage() {
           isAdmin={isAdmin}
           onEditMaterial={handleEditMaterial}
           onDeleteMaterial={handleDeleteMaterial}
+          onPreviewMaterial={handlePreviewMaterial}
         />
       ) : (
         <MaterialEmptyState language={language} />
@@ -178,6 +188,12 @@ export default function MaterialsPage() {
         material={currentMaterial}
         onMaterialChange={setCurrentMaterial}
         onSave={handleSaveMaterial}
+      />
+
+      <MaterialPreviewDialog
+        open={previewDialogOpen}
+        onOpenChange={setPreviewDialogOpen}
+        material={previewMaterial}
       />
     </>
   );

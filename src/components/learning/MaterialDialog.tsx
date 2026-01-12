@@ -82,6 +82,7 @@ const MaterialDialog: React.FC<MaterialDialogProps> = ({
             <Input
               id="file"
               type="file"
+              accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.webp,.svg,.mp4,.webm,.ogg,.mov"
               onChange={handleFileChange}
               className="col-span-3"
             />

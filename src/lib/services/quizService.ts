@@ -265,6 +265,8 @@ export class QuizService {
           total_questions: totalQuestions,
           last_attempted_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,quiz_set_id'
         });
 
       if (progressError) throw progressError;
@@ -309,6 +311,43 @@ export class QuizService {
       return data;
     } catch (error) {
       console.error('Error fetching quiz progress:', error);
+      throw error;
+    }
+  }
+
+  // Reset quiz progress for quizzes matching a specific level and language
+  // Called when user retakes proficiency test and gets the same level
+  static async resetQuizProgressByLevelAndLanguage(
+    userId: string,
+    level: string,
+    language: 'ASL' | 'MSL'
+  ): Promise<void> {
+    const supabase = createClient();
+    try {
+      // 1. Get all quiz set IDs matching the level and language
+      const { data: quizSets, error: quizSetsError } = await supabase
+        .from('quiz_sets')
+        .select('id')
+        .eq('level', level.toLowerCase())
+        .eq('language', language);
+
+      if (quizSetsError) throw quizSetsError;
+      if (!quizSets || quizSets.length === 0) return;
+
+      const quizSetIds = quizSets.map(qs => qs.id);
+
+      // 2. Delete quiz progress for those quiz sets
+      const { error: deleteError } = await supabase
+        .from('quiz_progress')
+        .delete()
+        .eq('user_id', userId)
+        .in('quiz_set_id', quizSetIds);
+
+      if (deleteError) throw deleteError;
+      
+      console.log(`Reset quiz progress for ${quizSetIds.length} quizzes at ${level} level for ${language}`);
+    } catch (error) {
+      console.error('Error resetting quiz progress:', error);
       throw error;
     }
   }
