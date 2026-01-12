@@ -3,28 +3,28 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useLearning } from '@/context/LearningContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, FileText, Brain, ArrowRight, Loader2, Sparkles } from 'lucide-react';
+import { BookOpen, FileText, Brain, ChevronRight, Loader2, Sparkles, PlayCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { LearningRecommendation, getSimpleRecommendationsForLanguage } from '@/lib/services/recommendationEngine';
 
-type LanguageTab = 'ASL' | 'MSL';
+interface LearningPathPanelProps {
+  language: 'ASL' | 'MSL';
+}
 
-const LearningPathPanel: React.FC = () => {
+const LearningPathPanel: React.FC<LearningPathPanelProps> = ({ language }) => {
   const { currentUser } = useAuth();
   const { hasNewRecommendations, lastUpdateTrigger, clearNewRecommendationsFlag } = useLearning();
   const router = useRouter();
   
-  const [activeTab, setActiveTab] = useState<LanguageTab>('ASL');
-  const [aslRecommendations, setAslRecommendations] = useState<LearningRecommendation[]>([]);
-  const [mslRecommendations, setMslRecommendations] = useState<LearningRecommendation[]>([]);
+  const [recommendations, setRecommendations] = useState<LearningRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Get proficiency levels
-  const aslLevel = currentUser?.asl_proficiency_level;
-  const mslLevel = currentUser?.msl_proficiency_level;
+  // Get language-specific proficiency level
+  const proficiencyLevel = language === 'ASL' 
+    ? currentUser?.asl_proficiency_level 
+    : currentUser?.msl_proficiency_level;
   const userId = currentUser?.id;
 
   useEffect(() => {
@@ -36,15 +36,10 @@ const LearningPathPanel: React.FC = () => {
 
       try {
         setLoading(true);
-        
-        // Fetch recommendations for both languages in parallel
-        const [aslRecs, mslRecs] = await Promise.all([
-          aslLevel ? getSimpleRecommendationsForLanguage('ASL', aslLevel) : Promise.resolve([]),
-          mslLevel ? getSimpleRecommendationsForLanguage('MSL', mslLevel) : Promise.resolve([]),
-        ]);
-        
-        setAslRecommendations(aslRecs);
-        setMslRecommendations(mslRecs);
+        const recs = proficiencyLevel 
+          ? await getSimpleRecommendationsForLanguage(language, proficiencyLevel)
+          : [];
+        setRecommendations(recs);
       } catch (err) {
         console.error('Error fetching recommendations:', err);
       } finally {
@@ -53,18 +48,18 @@ const LearningPathPanel: React.FC = () => {
     };
 
     fetchRecommendations();
-  }, [userId, aslLevel, mslLevel]);
+  }, [userId, proficiencyLevel, language]);
 
   const getIcon = (type: string) => {
     switch (type) {
       case 'tutorial':
-        return <BookOpen className="h-5 w-5" />;
+        return <PlayCircle size={16} className="text-blue-500" />;
       case 'quiz':
-        return <Brain className="h-5 w-5" />;
+        return <Brain size={16} className="text-amber-500" />;
       case 'material':
-        return <FileText className="h-5 w-5" />;
+        return <FileText size={16} className="text-purple-500" />;
       default:
-        return <BookOpen className="h-5 w-5" />;
+        return <BookOpen size={16} className="text-slate-500" />;
     }
   };
 
@@ -82,201 +77,155 @@ const LearningPathPanel: React.FC = () => {
     }
   };
 
-  // Check if user has any proficiency level set
-  const hasAnyProficiency = aslLevel || mslLevel;
-
-  if (!hasAnyProficiency) {
+  // No proficiency level for this language
+  if (!proficiencyLevel) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5" />
-            Your Learning Path
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <p className="text-gray-600 mb-4">
-              Take a proficiency test to get personalized learning recommendations
-            </p>
-            <Button onClick={() => router.push('/proficiency-test/select')}>
-              Take Proficiency Test
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-700">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <BookOpen size={20} className="text-signlang-primary" />
+            {language} Learning Path
+          </h2>
+        </div>
+        <div className="p-8 text-center">
+          <p className="text-slate-600 dark:text-slate-400 mb-4">
+            Take the {language} proficiency test to get personalized learning recommendations
+          </p>
+          <Button onClick={() => router.push('/proficiency-test/select')}>
+            Take {language} Proficiency Test
+          </Button>
+        </div>
+      </div>
     );
   }
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5" />
-            Your Learning Path
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-700">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <BookOpen size={20} className="text-signlang-primary" />
+            {language} Learning Path
+          </h2>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-signlang-primary" />
+        </div>
+      </div>
     );
   }
 
-  const activeRecommendations = activeTab === 'ASL' ? aslRecommendations : mslRecommendations;
-  const activeLevel = activeTab === 'ASL' ? aslLevel : mslLevel;
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5" />
-            Your Learning Path
-            {hasNewRecommendations && (
-              <Badge 
-                variant="default" 
-                className="bg-green-500 hover:bg-green-600 text-white animate-pulse"
-                onClick={() => clearNewRecommendationsFlag()}
-              >
-                <Sparkles className="h-3 w-3 mr-1" />
-                New
-              </Badge>
-            )}
-          </div>
-        </CardTitle>
-        {hasNewRecommendations && lastUpdateTrigger && (
-          <p className="text-sm text-muted-foreground mt-2">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+      {/* Header */}
+      <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <BookOpen size={20} className="text-signlang-primary" />
+            {language} Learning Path
+          </h2>
+          <span className="text-xs px-2 py-0.5 bg-signlang-accent dark:bg-signlang-primary/20 text-signlang-dark dark:text-signlang-primary rounded font-bold capitalize">
+            {proficiencyLevel}
+          </span>
+          {hasNewRecommendations && (
+            <Badge 
+              variant="default" 
+              className="bg-green-500 hover:bg-green-600 text-white animate-pulse cursor-pointer"
+              onClick={() => clearNewRecommendationsFlag()}
+            >
+              <Sparkles className="h-3 w-3 mr-1" />
+              New
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      {/* Update Trigger Message */}
+      {hasNewRecommendations && lastUpdateTrigger && (
+        <div className="px-6 py-2 bg-green-50 dark:bg-green-900/20 border-b border-green-100 dark:border-green-800">
+          <p className="text-sm text-green-700 dark:text-green-400">
             {lastUpdateTrigger}
           </p>
-        )}
-      </CardHeader>
-      <CardContent>
-        {/* Language Tabs */}
-        <div className="flex gap-2 mb-4 border-b">
-          <button
-            onClick={() => setActiveTab('ASL')}
-            className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-              activeTab === 'ASL'
-                ? 'border-blue-500 text-blue-600 font-medium'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
+        </div>
+      )}
+
+      {/* Content Area */}
+      {recommendations.length === 0 ? (
+        <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/50">
+          <p className="text-slate-600 dark:text-slate-400 mb-3">
+            No {language} content available for {proficiencyLevel} level yet
+          </p>
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={() => router.push('/learning/tutorials')}
           >
-            <span>🇺🇸</span>
-            <span>ASL</span>
-            {aslLevel && (
-              <Badge variant="outline" className="capitalize text-xs">
-                {aslLevel}
-              </Badge>
-            )}
-            {!aslLevel && (
-              <Badge variant="outline" className="text-xs text-gray-400">
-                Not Set
-              </Badge>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('MSL')}
-            className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-              activeTab === 'MSL'
-                ? 'border-green-500 text-green-600 font-medium'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
+            Browse All Tutorials
+          </Button>
+        </div>
+      ) : (
+        <div className="divide-y divide-slate-50 dark:divide-slate-700/50">
+          {recommendations.slice(0, 5).map((item, idx) => (
+            <div 
+              key={item.id} 
+              className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group flex items-center gap-4 relative"
+            >
+              {/* Timeline connector */}
+              {idx !== Math.min(recommendations.length - 1, 4) && (
+                <div className="absolute left-9 top-14 bottom-0 w-0.5 bg-slate-100 dark:bg-slate-700 -z-10 group-hover:bg-slate-200 dark:group-hover:bg-slate-600 transition-colors" />
+              )}
+
+              {/* Status Icon */}
+              <div className={`
+                w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 z-10 ring-4 ring-white dark:ring-slate-800
+                ${item.type === 'quiz' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400' : 
+                  item.type === 'tutorial' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 
+                  'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'}
+              `}>
+                {getIcon(item.type)}
+              </div>
+              
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-white truncate group-hover:text-signlang-primary transition-colors">
+                  {item.title}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate flex items-center gap-2 mt-0.5">
+                  <Badge variant="outline" className="text-[10px] capitalize px-1.5 py-0">
+                    {item.type}
+                  </Badge>
+                  <span className="truncate">{item.reason}</span>
+                </p>
+              </div>
+
+              {/* Action Button */}
+              <button 
+                onClick={() => handleStartLearning(item)}
+                className="p-2 text-slate-300 dark:text-slate-600 hover:text-signlang-primary dark:hover:text-signlang-primary transition-colors bg-white dark:bg-slate-700 rounded-full hover:bg-signlang-accent dark:hover:bg-signlang-primary/10 shadow-sm"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Footer */}
+      {recommendations.length > 0 && (
+        <div className="p-3 bg-slate-50 dark:bg-slate-700/30 border-t border-slate-100 dark:border-slate-700 text-center">
+          <button 
+            onClick={() => router.push('/learning/tutorials')}
+            className="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-signlang-primary dark:hover:text-signlang-primary uppercase tracking-wide flex items-center justify-center gap-1 mx-auto transition-colors"
           >
-            <span>🇲🇾</span>
-            <span>MSL</span>
-            {mslLevel && (
-              <Badge variant="outline" className="capitalize text-xs">
-                {mslLevel}
-              </Badge>
-            )}
-            {!mslLevel && (
-              <Badge variant="outline" className="text-xs text-gray-400">
-                Not Set
-              </Badge>
-            )}
+            View All {language} Content
+            <ChevronRight size={14} />
           </button>
         </div>
-
-        {/* Content Area */}
-        {!activeLevel ? (
-          <div className="text-center py-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <p className="text-gray-600 dark:text-gray-400 mb-3">
-              Take the {activeTab} proficiency test to unlock learning content
-            </p>
-            <Button 
-              size="sm" 
-              onClick={() => router.push('/proficiency-test/select')}
-            >
-              Take {activeTab} Test
-            </Button>
-          </div>
-        ) : activeRecommendations.length === 0 ? (
-          <div className="text-center py-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <p className="text-gray-600 dark:text-gray-400 mb-3">
-              No {activeTab} content available for {activeLevel} level yet
-            </p>
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => router.push('/learning/tutorials')}
-            >
-              Browse All Tutorials
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {activeRecommendations.slice(0, 5).map((item) => (
-              <div
-                key={item.id}
-                className="flex items-start gap-3 p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                <div className="mt-1 text-gray-600">
-                  {getIcon(item.type)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-medium text-sm truncate">{item.title}</h4>
-                    <Badge variant="outline" className="text-xs capitalize shrink-0">
-                      {item.type}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-gray-500 line-clamp-2">
-                    {item.reason}
-                  </p>
-                </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="shrink-0"
-                  onClick={() => handleStartLearning(item)}
-                >
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* View All Button */}
-        {activeRecommendations.length > 0 && (
-          <div className="mt-4 pt-4 border-t">
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => router.push('/learning/tutorials')}
-            >
-              View All {activeTab} Content
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 };
 
 export default LearningPathPanel;
+
+

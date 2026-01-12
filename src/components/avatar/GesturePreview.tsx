@@ -35,7 +35,7 @@ const GesturePreview: React.FC<GesturePreviewProps> = ({
           <div>
             <CardTitle className="text-lg md:text-xl">Recorded Gesture Preview</CardTitle>
             <CardDescription className="text-xs md:text-sm">
-              Review and save your recorded 3D gesture
+              Review and submit your recorded 3D gesture
             </CardDescription>
           </div>
           {hasContent && (
@@ -67,7 +67,7 @@ const GesturePreview: React.FC<GesturePreviewProps> = ({
               Discard & Reset
             </Button>
             <Button onClick={onSave} disabled={isLoading} size="lg" className="w-full md:w-auto order-1 md:order-2">
-              {isLoading ? "Saving..." : "Save to Signbank"}
+              {isLoading ? "Loading..." : "Continue"}
             </Button>
           </div>
         )}

@@ -36,6 +36,7 @@ const AdminAvatarDatabasePage = () => {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [languageFilter, setLanguageFilter] = useState<"all" | "ASL" | "MSL">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
   const [categories, setCategories] = useState<GestureCategory[]>([]);
   const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
   const [editingAvatar, setEditingAvatar] = useState<SignAvatar | null>(null);
@@ -43,14 +44,15 @@ const AdminAvatarDatabasePage = () => {
   const router = useRouter();
   const { currentUser, isAuthenticated } = useAuth();
 
-  // Filter avatars based on search and language
+  // Filter avatars based on search, language, and status
   const filteredAvatars = useMemo(() => {
     return avatars.filter(avatar => {
       const matchesSearch = avatar.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesLanguage = languageFilter === "all" || avatar.language === languageFilter;
-      return matchesSearch && matchesLanguage;
+      const matchesStatus = statusFilter === "all" || avatar.status === statusFilter;
+      return matchesSearch && matchesLanguage && matchesStatus;
     });
-  }, [avatars, searchQuery, languageFilter]);
+  }, [avatars, searchQuery, languageFilter, statusFilter]);
 
   const fetchAvatars = useCallback(async () => {
     try {
@@ -112,30 +114,44 @@ const AdminAvatarDatabasePage = () => {
     }
   };
 
-  const toggleVerification = async (id: string, currentStatus: "verified" | "unverified") => {
+  const approveAvatar = async (id: string) => {
     if (!currentUser?.id) return;
     
     try {
-      const newStatus = currentStatus === "verified" ? "unverified" : "verified";
-      await signAvatarService.updateStatus(id, newStatus, currentUser.id);
+      await signAvatarService.updateStatus(id, "approved", currentUser.id);
       
       setAvatars(avatars.map(avatar => 
-        avatar.id === id ? { ...avatar, status: newStatus } : avatar
+        avatar.id === id ? { ...avatar, status: "approved" as const, rejection_reason: null } : avatar
       ));
       
-      if (newStatus === "verified") {
-        toast.success("Avatar Verified", {
-          description: "Avatar has been verified and added to the Gesture Dictionary"
-        });
-      } else {
-        toast.success("Avatar Unverified", {
-          description: "Avatar has been unverified and removed from the Gesture Dictionary"
-        });
-      }
+      toast.success("Avatar Approved", {
+        description: "Avatar has been approved and added to the Gesture Dictionary"
+      });
     } catch (error) {
-      console.error("Error updating avatar status:", error);
+      console.error("Error approving avatar:", error);
       toast.error("Update failed", {
-        description: "Unable to update avatar status. Please try again."
+        description: "Unable to approve avatar. Please try again."
+      });
+    }
+  };
+
+  const rejectAvatar = async (id: string, reason?: string) => {
+    if (!currentUser?.id) return;
+    
+    try {
+      await signAvatarService.updateStatus(id, "rejected", currentUser.id, reason);
+      
+      setAvatars(avatars.map(avatar => 
+        avatar.id === id ? { ...avatar, status: "rejected" as const, rejection_reason: reason || null } : avatar
+      ));
+      
+      toast.success("Avatar Rejected", {
+        description: "Avatar has been rejected"
+      });
+    } catch (error) {
+      console.error("Error rejecting avatar:", error);
+      toast.error("Update failed", {
+        description: "Unable to reject avatar. Please try again."
       });
     }
   };
@@ -212,6 +228,17 @@ const AdminAvatarDatabasePage = () => {
                 <SelectItem value="MSL">MSL</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "all" | "pending" | "approved" | "rejected")}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -230,8 +257,17 @@ const AdminAvatarDatabasePage = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span>{avatar.name}</span>
-                    <Badge variant={avatar.status === "verified" ? "default" : "secondary"} className={avatar.status === "verified" ? "bg-green-500 hover:bg-green-600 text-white" : ""}>
-                      {avatar.status === "verified" ? "Verified" : "Unverified"}
+                    <Badge 
+                      variant={avatar.status === "approved" ? "default" : "secondary"} 
+                      className={
+                        avatar.status === "approved" 
+                          ? "bg-green-500 hover:bg-green-600 text-white" 
+                          : avatar.status === "rejected"
+                          ? "bg-red-500 hover:bg-red-600 text-white"
+                          : "bg-yellow-500 hover:bg-yellow-600 text-white"
+                      }
+                    >
+                      {avatar.status === "approved" ? "Approved" : avatar.status === "rejected" ? "Rejected" : "Pending"}
                     </Badge>
                   </CardTitle>
                   <CardDescription className="flex items-center gap-2">
@@ -261,44 +297,43 @@ const AdminAvatarDatabasePage = () => {
                       <div className="text-muted-foreground text-sm">No Preview</div>
                     )}
                   </div>
-                  <div className="flex justify-between">
-                    <div className="flex gap-2">
-                      {avatar.status !== "verified" && (
+                  <div className="flex flex-wrap gap-2 items-center pt-2">
+                    {avatar.status === "pending" && (
+                      <>
                         <Button 
                           variant="outline" 
                           size="sm"
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                          onClick={() => void toggleVerification(avatar.id, avatar.status)}
+                          className="flex-1 min-w-[80px] text-green-600 hover:text-green-700 hover:bg-green-50"
+                          onClick={() => void approveAvatar(avatar.id)}
                         >
                           <CheckCircle2 className="h-4 w-4 mr-1" />
-                          Verify
+                          Approve
                         </Button>
-                      )}
-                      
-                      {avatar.status === "verified" && (
                         <Button 
                           variant="outline" 
                           size="sm"
-                          className="text-amber-500 hover:text-amber-700 hover:bg-amber-50"
-                          onClick={() => void toggleVerification(avatar.id, avatar.status)}
+                          className="flex-1 min-w-[80px] text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => void rejectAvatar(avatar.id)}
                         >
                           <XCircle className="h-4 w-4 mr-1" />
-                          Unverify
+                          Reject
                         </Button>
-                      )}
+                      </>
+                    )}
 
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => void deleteAvatar(avatar.id)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </Button>
-                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className={avatar.status === "pending" ? "flex-1 min-w-[80px]" : "flex-1"}
+                      onClick={() => void deleteAvatar(avatar.id)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
+                      className={avatar.status === "pending" ? "flex-1 min-w-[80px]" : "flex-1"}
                       onClick={() => {
                         setSelectedAvatar(avatar);
                         setViewDialogOpen(true);
