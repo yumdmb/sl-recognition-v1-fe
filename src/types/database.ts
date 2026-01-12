@@ -201,6 +201,7 @@ export interface Database {
           user_id: string;
           tutorial_id: string;
           status: "started" | "completed";
+          watch_position: number | null;
           last_watched_at: string;
           created_at: string;
           updated_at: string;
@@ -210,6 +211,7 @@ export interface Database {
           user_id: string;
           tutorial_id: string;
           status?: "started" | "completed";
+          watch_position?: number | null;
           last_watched_at?: string;
           created_at?: string;
           updated_at?: string;
@@ -219,6 +221,7 @@ export interface Database {
           user_id?: string;
           tutorial_id?: string;
           status?: "started" | "completed";
+          watch_position?: number | null;
           last_watched_at?: string;
           created_at?: string;
           updated_at?: string;
@@ -420,6 +423,7 @@ export type ProficiencyTestAttemptAnswer =
 // Extended types with additional computed properties
 export interface TutorialWithProgress extends Tutorial {
   status?: "not-started" | "started" | "completed";
+  watch_position?: number | null;
   questionCount?: number;
 }
 

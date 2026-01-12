@@ -30,21 +30,25 @@ export class TutorialService {
 
       if (!tutorials) return [];
 
-      // If userId provided, get status for each tutorial
+      // If userId provided, get status and watch_position for each tutorial
       if (userId) {
         const { data: progressData } = await supabase
           .from('tutorial_progress')
-          .select('tutorial_id, status')
+          .select('tutorial_id, status, watch_position')
           .eq('user_id', userId);
 
-        const statusMap = new Map(
-          progressData?.map(p => [p.tutorial_id, p.status]) || []
+        const progressMap = new Map(
+          progressData?.map(p => [p.tutorial_id, { status: p.status, watch_position: p.watch_position }]) || []
         );
 
-        return tutorials.map(tutorial => ({
-          ...tutorial,
-          status: statusMap.get(tutorial.id) || 'not-started'
-        }));
+        return tutorials.map(tutorial => {
+          const progress = progressMap.get(tutorial.id);
+          return {
+            ...tutorial,
+            status: progress?.status || 'not-started',
+            watch_position: progress?.watch_position || 0
+          };
+        });
       }
 
       return tutorials.map(tutorial => ({ ...tutorial, status: 'not-started' as const }));} catch (error) {
@@ -77,22 +81,23 @@ export class TutorialService {
       if (error) throw error;
       if (!tutorial) return null;
 
-      // Get status if userId provided
+      // Get status and watch_position if userId provided
       if (userId) {
         const { data: progress } = await supabase
           .from('tutorial_progress')
-          .select('status')
+          .select('status, watch_position')
           .eq('user_id', userId)
           .eq('tutorial_id', id)
           .single();
 
         return {
           ...tutorial,
-          status: progress?.status || 'not-started'
+          status: progress?.status || 'not-started',
+          watch_position: progress?.watch_position || 0
         };
       }
 
-      return { ...tutorial, status: 'not-started' as const };
+      return { ...tutorial, status: 'not-started' as const, watch_position: 0 };
     } catch (error) {
       console.error('Error fetching tutorial:', error);
       throw error;
@@ -250,6 +255,31 @@ export class TutorialService {
       throw error;
     }
   }
+
+  // Update watch position for video resume
+  static async updateWatchPosition(
+    userId: string,
+    tutorialId: string,
+    watchPosition: number
+  ): Promise<void> {
+    const supabase = createClient();
+    try {
+      const { error } = await supabase
+        .from('tutorial_progress')
+        .update({
+          watch_position: watchPosition,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId)
+        .eq('tutorial_id', tutorialId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating watch position:', error);
+      // Don't throw - this is not critical, just log the error
+    }
+  }
+
 
   // Get overall tutorial progress for a user
   static async getOverallProgress(userId: string): Promise<{ 
