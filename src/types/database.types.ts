@@ -1018,6 +1018,7 @@ export type Database = {
           tutorial_id: string | null
           updated_at: string | null
           user_id: string | null
+          watch_position: number | null
         }
         Insert: {
           created_at?: string | null
@@ -1027,6 +1028,7 @@ export type Database = {
           tutorial_id?: string | null
           updated_at?: string | null
           user_id?: string | null
+          watch_position?: number | null
         }
         Update: {
           created_at?: string | null
@@ -1036,6 +1038,7 @@ export type Database = {
           tutorial_id?: string | null
           updated_at?: string | null
           user_id?: string | null
+          watch_position?: number | null
         }
         Relationships: [
           {

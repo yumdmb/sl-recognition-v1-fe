@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/client';
 import { Database } from '@/types/database';
 import { analyzeCategoryPerformance, identifyKnowledgeGaps } from './evaluationService';
 import { generateRecommendations } from './recommendationEngine';
+import { QuizService } from './quizService';
 
 export type ProficiencyTest = Database['public']['Tables']['proficiency_tests']['Row'] & {
   questions: (Database['public']['Tables']['proficiency_test_questions']['Row'] & {
@@ -180,6 +181,22 @@ export const calculateResultAndAssignProficiency = async (attemptId: string, use
 
   const preferredLanguage = test.language as 'ASL' | 'MSL';
 
+  // 2b. Get user's current proficiency level for this language (to compare later)
+  const { data: currentProfile, error: profileFetchError } = await supabase
+    .from('user_profiles')
+    .select('asl_proficiency_level, msl_proficiency_level')
+    .eq('id', userId)
+    .single();
+
+  if (profileFetchError) {
+    console.error('Error fetching current profile:', profileFetchError);
+    // Don't throw - this might be a new user without a level yet
+  }
+
+  const currentProficiencyLevel = preferredLanguage === 'ASL' 
+    ? currentProfile?.asl_proficiency_level 
+    : currentProfile?.msl_proficiency_level;
+
   // 3. Get total number of questions for the test
   const { count: totalQuestions, error: countError } = await supabase
     .from('proficiency_test_questions')
@@ -249,6 +266,23 @@ export const calculateResultAndAssignProficiency = async (attemptId: string, use
   if (updateUserProfileError) {
     console.error('Error updating user profile:', updateUserProfileError);
     throw updateUserProfileError;
+  }
+
+  // 8. Reset quiz progress if user got the same proficiency level
+  // This allows users to retake quizzes when they refresh their proficiency test
+  if (currentProficiencyLevel && 
+      currentProficiencyLevel.toLowerCase() === proficiency_level.toLowerCase()) {
+    try {
+      await QuizService.resetQuizProgressByLevelAndLanguage(
+        userId, 
+        proficiency_level, 
+        preferredLanguage
+      );
+      console.log(`Reset quiz progress for ${preferredLanguage} ${proficiency_level} level`);
+    } catch (resetError) {
+      // Log but don't throw - quiz reset is not critical to the main flow
+      console.error('Error resetting quiz progress:', resetError);
+    }
   }
 
   return { score, proficiency_level, preferred_language: preferredLanguage };

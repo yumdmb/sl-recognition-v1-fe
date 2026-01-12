@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { BookOpen, Loader2 } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import { useLearning } from '@/context/LearningContext';
+import { LearningRecommendation, getSimpleRecommendationsForLanguage } from '@/lib/services/recommendationEngine';
 
 interface LearningProgressProps {
   language: 'ASL' | 'MSL';
@@ -13,6 +14,12 @@ const LearningProgress: React.FC<LearningProgressProps> = ({ language }) => {
   const { currentUser } = useAuth();
   const { tutorials, getTutorials } = useLearning();
   const [isLoading, setIsLoading] = useState(true);
+  const [tutorialRecommendations, setTutorialRecommendations] = useState<LearningRecommendation[]>([]);
+
+  // Get language-specific proficiency level
+  const proficiencyLevel = language === 'ASL' 
+    ? currentUser?.asl_proficiency_level 
+    : currentUser?.msl_proficiency_level;
 
   useEffect(() => {
     if (!currentUser) {
@@ -22,29 +29,53 @@ const LearningProgress: React.FC<LearningProgressProps> = ({ language }) => {
     
     const loadData = async () => {
       try {
+        setIsLoading(true);
+        
+        // Load tutorials to get progress data
         if (getTutorials) {
-          await getTutorials(language); // Filter by language
+          await getTutorials(language);
+        }
+        
+        // Fetch learning path recommendations
+        if (proficiencyLevel) {
+          const recs = await getSimpleRecommendationsForLanguage(language, proficiencyLevel);
+          // Filter to only tutorial type recommendations
+          const tutorialRecs = recs.filter(rec => rec.type === 'tutorial');
+          setTutorialRecommendations(tutorialRecs);
+        } else {
+          setTutorialRecommendations([]);
         }
       } catch (error) {
-        console.error('Error loading tutorials:', error);
+        console.error('Error loading learning progress:', error);
       } finally {
         setIsLoading(false);
       }
     };
     
     loadData();
-  }, [currentUser?.id, language]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentUser?.id, language, proficiencyLevel]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Filter by language (in case context doesn't filter)
-  const languageFilteredTutorials = tutorials.filter(t => t.language === language);
+  // Create a map of tutorial progress
+  const tutorialProgressMap = new Map(
+    tutorials.map(t => [t.id, t.status || 'not-started'])
+  );
+
+  // Calculate progress metrics based on learning path tutorials
+  const notStarted = tutorialRecommendations.filter(
+    rec => !tutorialProgressMap.has(rec.id) || tutorialProgressMap.get(rec.id) === 'not-started'
+  );
   
-  // Calculate progress metrics
-  const startedTutorials = languageFilteredTutorials.filter(t => t.status === 'started' || t.status === 'completed');
-  const inProgressTutorials = languageFilteredTutorials.filter(t => t.status === 'started');
-  const completedTutorials = languageFilteredTutorials.filter(t => t.status === 'completed');
+  const inProgress = tutorialRecommendations.filter(
+    rec => tutorialProgressMap.get(rec.id) === 'started'
+  );
+  
+  const completed = tutorialRecommendations.filter(
+    rec => tutorialProgressMap.get(rec.id) === 'completed'
+  );
 
-  const totalProgress = startedTutorials.length > 0 
-    ? Math.round((completedTutorials.length / startedTutorials.length) * 100)
+  const totalTutorials = tutorialRecommendations.length;
+  const totalProgress = totalTutorials > 0 
+    ? Math.round((completed.length / totalTutorials) * 100)
     : 0;
 
   if (isLoading) {
@@ -64,7 +95,7 @@ const LearningProgress: React.FC<LearningProgressProps> = ({ language }) => {
       <div className="z-10 relative">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-            {language} Learning
+            {language} Learning Path
           </span>
           <BookOpen size={20} className="text-signlang-primary" />
         </div>
@@ -74,22 +105,22 @@ const LearningProgress: React.FC<LearningProgressProps> = ({ language }) => {
           {totalProgress}%
         </div>
         <p className="text-xs text-slate-400 dark:text-slate-500">
-          {completedTutorials.length} of {startedTutorials.length} tutorials completed
+          {completed.length} of {totalTutorials} tutorials completed
         </p>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-3 gap-3 mt-4 z-10 relative">
         <div className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-xl text-center">
-          <div className="text-lg font-bold text-slate-900 dark:text-white">{startedTutorials.length}</div>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Started</p>
+          <div className="text-lg font-bold text-slate-900 dark:text-white">{notStarted.length}</div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Not Started</p>
         </div>
         <div className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-xl text-center">
-          <div className="text-lg font-bold text-slate-900 dark:text-white">{inProgressTutorials.length}</div>
+          <div className="text-lg font-bold text-slate-900 dark:text-white">{inProgress.length}</div>
           <p className="text-xs text-slate-500 dark:text-slate-400">In Progress</p>
         </div>
         <div className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-xl text-center">
-          <div className="text-lg font-bold text-slate-900 dark:text-white">{completedTutorials.length}</div>
+          <div className="text-lg font-bold text-slate-900 dark:text-white">{completed.length}</div>
           <p className="text-xs text-slate-500 dark:text-slate-400">Completed</p>
         </div>
       </div>

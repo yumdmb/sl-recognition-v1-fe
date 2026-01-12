@@ -58,7 +58,7 @@ export default function QuizzesPage() {
         // Get quiz sets from Supabase via our service
         // Pass level for non-admins to filter server-side
         getQuizSets(language, userLevel);
-    }, [language, userLevel]); // Removed getQuizSets from dependencies to prevent infinite loop
+    }, [language, userLevel, getQuizSets]);
 
     // Filter quiz sets by level (admin only) and search (all users)
     const filteredQuizSets = useMemo(() => {

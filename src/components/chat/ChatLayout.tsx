@@ -261,16 +261,19 @@ export default function ChatLayout() {
     }
   };
 
-  const handleSendFile = async (file: File) => {
+  const handleSendFile = async (file: File, message?: string) => {
     if (!user || !selectedChat) return;
     
     try {
       const fileUrl = await ChatService.uploadFile(file, user.id);
       
+      // Use the provided message or fallback to file name
+      const content = message?.trim() || file.name;
+      
       const newMessage = await ChatService.sendMessage({
         chat_id: selectedChat.id,
         sender_id: user.id,
-        content: file.name,
+        content,
         file_url: fileUrl,
       });
       

@@ -66,7 +66,7 @@ const LearningPathPanel: React.FC<LearningPathPanelProps> = ({ language }) => {
   const handleStartLearning = (item: LearningRecommendation) => {
     switch (item.type) {
       case 'tutorial':
-        router.push('/learning/tutorials');
+        router.push(`/learning/tutorials/${item.id}`);
         break;
       case 'quiz':
         router.push(`/learning/quizzes/${item.id}`);

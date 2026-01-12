@@ -32,7 +32,9 @@ interface LearningContextProps {
   deleteTutorial: (id: string) => Promise<void>;
   startTutorial: (tutorialId: string) => Promise<void>;
   markTutorialDone: (tutorialId: string) => Promise<void>;
+  updateWatchPosition: (tutorialId: string, watchPosition: number) => Promise<void>;
   getOverallProgress: () => Promise<{ totalStarted: number; totalCompleted: number; completionPercentage: number; }>;
+  getTutorial: (id: string) => Promise<TutorialWithProgress | null>;
   
   // Materials
   materials: Material[];
@@ -252,10 +254,31 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
+  const updateWatchPosition = async (tutorialId: string, watchPosition: number) => {
+    try {
+      if (!currentUser) return;
+      await TutorialService.updateWatchPosition(currentUser.id, tutorialId, watchPosition);
+    } catch (error) {
+      // Silent fail - not critical
+      console.error('Error updating watch position:', error);
+    }
+  };
+
   const getOverallProgress = async () => {
     if (!currentUser) return { totalStarted: 0, totalCompleted: 0, completionPercentage: 0 };
     return await TutorialService.getOverallProgress(currentUser.id);
-  };  // Materials
+  };
+
+  const getTutorial = useCallback(async (id: string): Promise<TutorialWithProgress | null> => {
+    try {
+      return await TutorialService.getTutorial(id, currentUser?.id);
+    } catch (error) {
+      handleError(error, 'fetch tutorial');
+      return null;
+    }
+  }, [currentUser?.id]);
+
+  // Materials
   const getMaterials = useCallback(async (language: 'ASL' | 'MSL' = 'MSL', level?: 'beginner' | 'intermediate' | 'advanced') => {
     try {
       setMaterialsLoading(true);
@@ -967,7 +990,9 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
         deleteTutorial,
         startTutorial,
         markTutorialDone,
+        updateWatchPosition,
         getOverallProgress,
+        getTutorial,
         materials,
         getMaterials,
         createMaterial,

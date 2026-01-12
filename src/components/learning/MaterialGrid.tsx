@@ -9,13 +9,15 @@ interface MaterialGridProps {
   isAdmin: boolean;
   onEditMaterial: (material: Material) => void;
   onDeleteMaterial: (id: string) => void;
+  onPreviewMaterial?: (material: Material) => void;
 }
 
 const MaterialGrid: React.FC<MaterialGridProps> = ({ 
   materials, 
   isAdmin, 
   onEditMaterial, 
-  onDeleteMaterial 
+  onDeleteMaterial,
+  onPreviewMaterial
 }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -26,6 +28,7 @@ const MaterialGrid: React.FC<MaterialGridProps> = ({
           isAdmin={isAdmin}
           onEdit={onEditMaterial}
           onDelete={onDeleteMaterial}
+          onPreview={onPreviewMaterial}
         />
       ))}
     </div>
@@ -33,3 +36,4 @@ const MaterialGrid: React.FC<MaterialGridProps> = ({
 };
 
 export default MaterialGrid;
+

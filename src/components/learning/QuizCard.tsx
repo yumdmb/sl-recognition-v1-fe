@@ -56,7 +56,15 @@ const QuizCard: React.FC<QuizCardProps> = ({
             </Button>
           </>
         )}
-        <Button size="sm" onClick={() => onStartQuiz(quizSet.id)} className="w-full sm:w-auto min-h-[44px]">Start Quiz</Button>
+        {quizSet.progress ? (
+          <Button size="sm" disabled className="w-full sm:w-auto min-h-[44px] opacity-60">
+            {quizSet.progress.completed ? 'Completed ✓' : `Score: ${quizSet.progress.score}/${quizSet.progress.total_questions}`}
+          </Button>
+        ) : (
+          <Button size="sm" onClick={() => onStartQuiz(quizSet.id)} className="w-full sm:w-auto min-h-[44px]">
+            Start Quiz
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

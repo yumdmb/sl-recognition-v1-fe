@@ -1,8 +1,16 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
+import ReactPlayer from 'react-player';
 import { Play, ExternalLink, Loader2 } from 'lucide-react';
 import { extractVideoId } from '@/lib/utils/youtube';
+
+// Progress state type for video tracking
+export interface VideoProgressState {
+  played: number; // 0 to 1
+  playedSeconds: number;
+  duration: number;
+}
 
 interface YouTubeVideoPreviewProps {
   videoUrl: string;
@@ -10,6 +18,10 @@ interface YouTubeVideoPreviewProps {
   thumbnailUrl?: string | null;
   className?: string;
   autoPlay?: boolean;
+  startTime?: number; // Resume position in seconds
+  onVideoPlay?: () => void;
+  onVideoProgress?: (state: VideoProgressState) => void;
+  onVideoEnded?: () => void;
 }
 
 const YouTubeVideoPreview: React.FC<YouTubeVideoPreviewProps> = ({
@@ -17,12 +29,31 @@ const YouTubeVideoPreview: React.FC<YouTubeVideoPreviewProps> = ({
   title,
   thumbnailUrl,
   className = '',
-  autoPlay = false
+  autoPlay = false,
+  startTime = 0,
+  onVideoPlay,
+  onVideoProgress,
+  onVideoEnded
 }) => {
   const [showVideo, setShowVideo] = useState(autoPlay);
   const [isLoading, setIsLoading] = useState(false);
+  const playerRef = useRef<HTMLVideoElement>(null);
+  const [hasSeeked, setHasSeeked] = useState(false);
   
   const videoId = extractVideoId(videoUrl);
+
+  // Use onTimeUpdate for tracking progress (native HTML5 video event)
+  // Must be defined before early return to follow React hooks rules
+  const handleTimeUpdate = useCallback((event: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = event.currentTarget;
+    if (video.duration && onVideoProgress) {
+      onVideoProgress({
+        played: video.currentTime / video.duration,
+        playedSeconds: video.currentTime,
+        duration: video.duration
+      });
+    }
+  }, [onVideoProgress]);
 
   if (!videoId) {
     return (
@@ -46,6 +77,23 @@ const YouTubeVideoPreview: React.FC<YouTubeVideoPreviewProps> = ({
     return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
   };
 
+  const handleReady = () => {
+    setIsLoading(false);
+    // Seek to start time if specified and haven't seeked yet
+    if (startTime > 0 && playerRef.current && !hasSeeked) {
+      playerRef.current.currentTime = startTime;
+      setHasSeeked(true);
+    }
+  };
+
+  const handlePlay = () => {
+    onVideoPlay?.();
+  };
+
+  const handleEnded = () => {
+    onVideoEnded?.();
+  };
+
   if (showVideo) {
     return (
       <div className={`relative w-full aspect-video ${className}`}>
@@ -54,16 +102,23 @@ const YouTubeVideoPreview: React.FC<YouTubeVideoPreviewProps> = ({
             <Loader2 className="h-8 w-8 animate-spin text-white" />
           </div>
         )}
-        <iframe
+        <ReactPlayer
+          ref={playerRef}
+          src={videoUrl}
           width="100%"
           height="100%"
-          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
-          title={title}
-          frameBorder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          className="rounded-lg absolute inset-0"
-          onLoad={() => setIsLoading(false)}
+          playing={true}
+          controls
+          onReady={handleReady}
+          onPlay={handlePlay}
+          onTimeUpdate={handleTimeUpdate}
+          onEnded={handleEnded}
+          config={{
+            youtube: {
+              rel: 0
+            }
+          }}
+          style={{ position: 'absolute', top: 0, left: 0, borderRadius: '0.5rem' }}
         />
         <button
           onClick={() => setShowVideo(false)}
@@ -77,12 +132,12 @@ const YouTubeVideoPreview: React.FC<YouTubeVideoPreviewProps> = ({
 
   return (
     <div className={`relative group cursor-pointer ${className}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={getThumbnailUrl()}
         alt={title}
-        className="w-full h-full object-cover rounded-lg"
+        className="absolute inset-0 w-full h-full object-cover rounded-lg"
         onError={(e) => {
-          // Fallback to standard YouTube thumbnail if maxres fails
           e.currentTarget.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
         }}
       />
@@ -105,14 +160,6 @@ const YouTubeVideoPreview: React.FC<YouTubeVideoPreviewProps> = ({
             <ExternalLink className="h-5 w-5 md:h-6 md:w-6" />
           </button>
         </div>
-      </div>      {/* Duration badge removed */}
-
-      {/* YouTube logo */}
-      <div className="absolute bottom-2 left-2 bg-red-600 text-white text-xs px-2 py-1 rounded flex items-center">
-        <svg className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-        </svg>
-        YouTube
       </div>
     </div>
   );

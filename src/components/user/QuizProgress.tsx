@@ -128,23 +128,24 @@ const QuizProgress: React.FC<QuizProgressProps> = ({ language }) => {
       ) : (
         <div className="max-h-40 overflow-y-auto mt-4 space-y-2 z-10 relative pr-1">
           {languageFilteredQuizzes.slice(0, 4).map(quizSet => {
-            const progress = quizSet.progress;
-            const progressPercentage = progress ? (progress.score / progress.total_questions) * 100 : 0;
+            const hasProgress = !!quizSet.progress;
             
             return (
               <div 
                 key={quizSet.id}
                 className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
               >
-                <div className="flex justify-between items-center mb-1.5">
+                <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate pr-2">{quizSet.title}</span>
-                  <span className="text-xs font-bold text-signlang-primary flex-shrink-0">{Math.round(progressPercentage)}%</span>
-                </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-600 rounded-full h-1.5">
-                  <div 
-                    className="bg-signlang-primary h-1.5 rounded-full transition-all duration-300" 
-                    style={{ width: `${progressPercentage}%` }}
-                  />
+                  {hasProgress ? (
+                    <span className="text-xs font-bold text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full flex-shrink-0">
+                      Completed
+                    </span>
+                  ) : (
+                    <span className="text-xs font-medium text-slate-400 dark:text-slate-500 bg-slate-200 dark:bg-slate-600 px-2 py-0.5 rounded-full flex-shrink-0">
+                      Not Started
+                    </span>
+                  )}
                 </div>
               </div>
             );

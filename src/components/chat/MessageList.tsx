@@ -143,15 +143,49 @@ export default function MessageList({
                         }`}
                       >
                         {message.file_url ? (
-                          <a
-                            href={message.file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2"
-                          >
-                            <FileText className="h-4 w-4" />
-                            <span>{message.content}</span>
-                          </a>
+                          (() => {
+                            // Check if it's an image by URL extension or content
+                            const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(message.file_url) ||
+                              message.file_url.includes('/image/') ||
+                              message.file_url.includes('image%2F');
+                            
+                            if (isImage) {
+                              return (
+                                <div className="space-y-2">
+                                  <a
+                                    href={message.file_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block"
+                                  >
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                      src={message.file_url}
+                                      alt={message.content || "Image"}
+                                      className="max-w-[300px] max-h-[300px] rounded-md object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                                      loading="lazy"
+                                    />
+                                  </a>
+                                  {message.content && message.content !== message.file_url.split('/').pop() && (
+                                    <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                                  )}
+                                </div>
+                              );
+                            }
+                            
+                            // Non-image file
+                            return (
+                              <a
+                                href={message.file_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 hover:underline"
+                              >
+                                <FileText className="h-4 w-4 flex-shrink-0" />
+                                <span className="break-all">{message.content}</span>
+                              </a>
+                            );
+                          })()
                         ) : (
                           <p className="whitespace-pre-wrap break-words">{message.content}</p>
                         )}
