@@ -134,6 +134,39 @@ export type Database = {
           },
         ]
       }
+      daily_challenges: {
+        Row: {
+          challenge_text: string
+          created_at: string | null
+          difficulty: string | null
+          hint: string | null
+          id: number
+          is_active: boolean | null
+          language: string
+          updated_at: string | null
+        }
+        Insert: {
+          challenge_text: string
+          created_at?: string | null
+          difficulty?: string | null
+          hint?: string | null
+          id?: number
+          is_active?: boolean | null
+          language: string
+          updated_at?: string | null
+        }
+        Update: {
+          challenge_text?: string
+          created_at?: string | null
+          difficulty?: string | null
+          hint?: string | null
+          id?: number
+          is_active?: boolean | null
+          language?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       forum_attachments: {
         Row: {
           comment_id: string | null
@@ -911,6 +944,7 @@ export type Database = {
           language: string
           name: string
           recording_data: Json
+          rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
@@ -927,6 +961,7 @@ export type Database = {
           language: string
           name: string
           recording_data: Json
+          rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
@@ -943,6 +978,7 @@ export type Database = {
           language?: string
           name?: string
           recording_data?: Json
+          rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
