@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Edit, Trash } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash, Image as ImageIcon, Video } from "lucide-react";
 import { useAdmin } from '@/context/AdminContext';
 import { useLearning } from '@/context/LearningContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from 'sonner';
 import { QuizQuestion } from '@/types/database';
+import { ImageUploadField } from '@/components/ui/image-upload-field';
 
 interface QuizQuestionEditorProps {
   setId: string;
@@ -246,6 +247,22 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
               <div className="mt-4 text-gray-600">
                 <p><span className="font-medium">Explanation:</span> {question.explanation}</p>
               </div>
+              {(question.image_url || question.video_url) && (
+                <div className="mt-4 flex gap-2 items-center text-sm text-muted-foreground">
+                  {question.image_url && (
+                    <div className="flex items-center gap-1">
+                      <ImageIcon className="h-4 w-4" />
+                      <span>Image attached</span>
+                    </div>
+                  )}
+                  {question.video_url && (
+                    <div className="flex items-center gap-1">
+                      <Video className="h-4 w-4" />
+                      <span>Video attached</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         ))
@@ -300,8 +317,25 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
                 placeholder="Explain the correct answer"
               />
             </div>
-            
-            {/* Difficulty level field has been removed as it doesn't exist in the database schema */}
+
+            <ImageUploadField
+              value={currentQuestion?.image_url || ''}
+              onChange={(url) => handleQuestionChange('image_url', url)}
+              folder="quiz-questions"
+              label="Question Image"
+            />
+
+            <div className="space-y-2">
+              <Label htmlFor="video_url" className="flex items-center gap-2">
+                <Video className="h-4 w-4" /> Video URL (optional)
+              </Label>
+              <Input
+                id="video_url"
+                value={currentQuestion?.video_url || ''}
+                onChange={(e) => handleQuestionChange('video_url', e.target.value)}
+                placeholder="https://youtube.com/watch?v=..."
+              />
+            </div>
           </div>
 
           <DialogFooter>

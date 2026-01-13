@@ -294,6 +294,7 @@ export interface Database {
           test_id: string;
           question_text: string;
           order_index: number;
+          image_url: string | null;
           created_at: string;
         };
         Insert: {
@@ -301,6 +302,7 @@ export interface Database {
           test_id: string;
           question_text: string;
           order_index: number;
+          image_url?: string | null;
           created_at?: string;
         };
         Update: {
@@ -308,6 +310,7 @@ export interface Database {
           test_id?: string;
           question_text?: string;
           order_index?: number;
+          image_url?: string | null;
           created_at?: string;
         };
       };
@@ -317,6 +320,7 @@ export interface Database {
           question_id: string;
           choice_text: string;
           is_correct: boolean;
+          image_url: string | null;
           created_at: string;
         };
         Insert: {
@@ -324,6 +328,7 @@ export interface Database {
           question_id: string;
           choice_text: string;
           is_correct?: boolean;
+          image_url?: string | null;
           created_at?: string;
         };
         Update: {
@@ -331,6 +336,7 @@ export interface Database {
           question_id?: string;
           choice_text?: string;
           is_correct?: boolean;
+          image_url?: string | null;
           created_at?: string;
         };
       };
