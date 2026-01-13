@@ -720,6 +720,7 @@ export type Database = {
           choice_text: string
           created_at: string
           id: string
+          image_url: string | null
           is_correct: boolean
           question_id: string
         }
@@ -727,6 +728,7 @@ export type Database = {
           choice_text: string
           created_at?: string
           id?: string
+          image_url?: string | null
           is_correct?: boolean
           question_id: string
         }
@@ -734,6 +736,7 @@ export type Database = {
           choice_text?: string
           created_at?: string
           id?: string
+          image_url?: string | null
           is_correct?: boolean
           question_id?: string
         }
@@ -751,6 +754,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          image_url: string | null
           order_index: number
           question_text: string
           test_id: string
@@ -758,6 +762,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          image_url?: string | null
           order_index: number
           question_text: string
           test_id: string
@@ -765,6 +770,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          image_url?: string | null
           order_index?: number
           question_text?: string
           test_id?: string

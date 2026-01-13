@@ -21,14 +21,15 @@ export default function Dashboard() {
     // Check if the user has taken the test. We assume proficiency_level is null if not taken.
     // We also add a check to see if we've already shown the prompt to avoid showing it again.
     // Using localStorage for persistence across sessions
-    if (!userId) return;
+    // Admin users don't need to take the proficiency test
+    if (!userId || isAdmin) return;
     
     const promptKey = `proficiencyPromptShown_${userId}`;
     
     if (proficiencyLevel === null && !localStorage.getItem(promptKey)) {
       setIsPromptOpen(true);
     }
-  }, [userId, proficiencyLevel]);
+  }, [userId, proficiencyLevel, isAdmin]);
 
   const handleClosePrompt = () => {
     setIsPromptOpen(false);

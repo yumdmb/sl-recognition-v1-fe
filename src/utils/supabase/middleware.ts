@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // Define protected routes by role
-const ADMIN_ROUTES = ['/admin']
+const ADMIN_ROUTES = ['/admin', '/manage-proficiency-test']
 const PROTECTED_ROUTES = [
   '/dashboard',
   '/profile',
