@@ -15,7 +15,7 @@ interface LearningPathPanelProps {
 
 const LearningPathPanel: React.FC<LearningPathPanelProps> = ({ language }) => {
   const { currentUser } = useAuth();
-  const { hasNewRecommendations, lastUpdateTrigger, clearNewRecommendationsFlag } = useLearning();
+  const { hasNewRecommendations, lastUpdateTrigger, clearNewRecommendationsFlag, tutorials, quizSets, getTutorials, getQuizSets } = useLearning();
   const router = useRouter();
   
   const [recommendations, setRecommendations] = useState<LearningRecommendation[]>([]);
@@ -36,6 +36,13 @@ const LearningPathPanel: React.FC<LearningPathPanelProps> = ({ language }) => {
 
       try {
         setLoading(true);
+        
+        // Load tutorials and quizzes to get progress
+        await Promise.all([
+          getTutorials(language),
+          getQuizSets(language)
+        ]);
+        
         const recs = proficiencyLevel 
           ? await getSimpleRecommendationsForLanguage(language, proficiencyLevel)
           : [];
@@ -48,7 +55,37 @@ const LearningPathPanel: React.FC<LearningPathPanelProps> = ({ language }) => {
     };
 
     fetchRecommendations();
-  }, [userId, proficiencyLevel, language]);
+  }, [userId, proficiencyLevel, language]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Create maps for progress status
+  const tutorialProgressMap = new Map(tutorials.map(t => [t.id, t.status]));
+  const quizProgressMap = new Map(quizSets.map(q => [q.id, q.progress?.score !== undefined]));
+
+  // Filter out completed items for dynamic feel
+  const incompleteRecommendations = recommendations.filter(rec => {
+    if (rec.type === 'tutorial') {
+      return tutorialProgressMap.get(rec.id) !== 'completed';
+    }
+    if (rec.type === 'quiz') {
+      return !quizProgressMap.get(rec.id);
+    }
+    return true; // Keep materials
+  });
+
+  // Shuffle and limit to show only 3-4 items at a time for progressive feel
+  // Use a seeded shuffle based on user ID to keep consistent during session
+  const shuffleWithSeed = (array: LearningRecommendation[]) => {
+    const seed = userId ? userId.charCodeAt(0) : 42;
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor((Math.abs(Math.sin(seed * i)) * (i + 1)));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  // Limit to first 4 incomplete items (shuffled)
+  const filteredRecommendations = shuffleWithSeed(incompleteRecommendations).slice(0, 4);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -150,10 +187,13 @@ const LearningPathPanel: React.FC<LearningPathPanelProps> = ({ language }) => {
       )}
 
       {/* Content Area */}
-      {recommendations.length === 0 ? (
+      {filteredRecommendations.length === 0 ? (
         <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/50">
           <p className="text-slate-600 dark:text-slate-400 mb-3">
-            No {language} content available for {proficiencyLevel} level yet
+            {recommendations.length > 0 
+              ? `🎉 Great job! You've completed all ${language} content for ${proficiencyLevel} level!`
+              : `No ${language} content available for ${proficiencyLevel} level yet`
+            }
           </p>
           <Button 
             size="sm" 
@@ -165,13 +205,13 @@ const LearningPathPanel: React.FC<LearningPathPanelProps> = ({ language }) => {
         </div>
       ) : (
         <div className="divide-y divide-slate-50 dark:divide-slate-700/50">
-          {recommendations.slice(0, 5).map((item, idx) => (
+          {filteredRecommendations.slice(0, 5).map((item, idx) => (
             <div 
               key={item.id} 
               className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group flex items-center gap-4 relative"
             >
               {/* Timeline connector */}
-              {idx !== Math.min(recommendations.length - 1, 4) && (
+              {idx !== Math.min(filteredRecommendations.length - 1, 4) && (
                 <div className="absolute left-9 top-14 bottom-0 w-0.5 bg-slate-100 dark:bg-slate-700 -z-10 group-hover:bg-slate-200 dark:group-hover:bg-slate-600 transition-colors" />
               )}
 
@@ -211,7 +251,7 @@ const LearningPathPanel: React.FC<LearningPathPanelProps> = ({ language }) => {
       )}
 
       {/* Footer */}
-      {recommendations.length > 0 && (
+      {filteredRecommendations.length > 0 && (
         <div className="p-3 bg-slate-50 dark:bg-slate-700/30 border-t border-slate-100 dark:border-slate-700 text-center">
           <button 
             onClick={() => router.push('/learning/tutorials')}

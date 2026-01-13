@@ -478,8 +478,8 @@ export const getSimpleRecommendationsForLanguage = async (
 
   const recommendations: LearningRecommendation[] = [];
 
-  // Add tutorials
-  tutorials.slice(0, 3).forEach((tutorial) => {
+  // Add all tutorials
+  tutorials.forEach((tutorial) => {
     recommendations.push({
       id: tutorial.id,
       type: 'tutorial',
@@ -488,13 +488,13 @@ export const getSimpleRecommendationsForLanguage = async (
       level: tutorial.level,
       language: tutorial.language,
       priority: 1,
-      reason: `${language} tutorial at ${proficiencyLevel} level`,
+      reason: `Recommended for you • ${proficiencyLevel} level`,
       recommended_for_role: 'all',
     });
   });
 
-  // Add quizzes
-  quizzes.slice(0, 2).forEach((quiz) => {
+  // Add all quizzes
+  quizzes.forEach((quiz) => {
     recommendations.push({
       id: quiz.id,
       type: 'quiz',
@@ -503,13 +503,13 @@ export const getSimpleRecommendationsForLanguage = async (
       level: quiz.level,
       language: quiz.language,
       priority: 2,
-      reason: `${language} quiz to test your knowledge`,
+      reason: `Recommended quiz to test your knowledge`,
       recommended_for_role: 'all',
     });
   });
 
-  // Add materials
-  materials.slice(0, 2).forEach((material) => {
+  // Add all materials
+  materials.forEach((material) => {
     recommendations.push({
       id: material.id,
       type: 'material',
@@ -518,7 +518,7 @@ export const getSimpleRecommendationsForLanguage = async (
       level: material.level,
       language: material.language,
       priority: 3,
-      reason: `${language} learning resource`,
+      reason: `Recommended learning resource`,
       recommended_for_role: 'all',
     });
   });

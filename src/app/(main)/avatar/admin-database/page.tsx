@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Eye, CheckCircle2, XCircle, User, Search, Tag } from 'lucide-react';
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import Avatar3DPlayer from "@/components/avatar/Avatar3DPlayer";
@@ -30,18 +30,21 @@ interface GestureCategory {
 }
 
 const AdminAvatarDatabasePage = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialStatus = searchParams.get("status") as "all" | "pending" | "approved" | "rejected" | null;
+  
   const [avatars, setAvatars] = useState<SignAvatar[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedAvatar, setSelectedAvatar] = useState<SignAvatar | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [languageFilter, setLanguageFilter] = useState<"all" | "ASL" | "MSL">("all");
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">(initialStatus || "all");
   const [categories, setCategories] = useState<GestureCategory[]>([]);
   const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
   const [editingAvatar, setEditingAvatar] = useState<SignAvatar | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
-  const router = useRouter();
   const { currentUser, isAuthenticated } = useAuth();
 
   // Filter avatars based on search, language, and status

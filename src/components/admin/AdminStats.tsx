@@ -1,8 +1,9 @@
 "use client";
 
 import React from 'react';
+import Link from 'next/link';
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, Ear, EarOff, Clock, GraduationCap, BookOpen, TrendingUp, AlertCircle } from "lucide-react";
+import { Users, Ear, EarOff, Clock, GraduationCap, BookOpen, TrendingUp, AlertCircle, Hand, User, ArrowRight } from "lucide-react";
 
 interface ProficiencyDistribution {
   beginner: number;
@@ -15,7 +16,8 @@ interface AdminStatsProps {
   totalUsers: number;
   deafUsers: number;
   nonDeafUsers: number;
-  pendingContributions: number;
+  pendingGestureContributions: number;
+  pendingAvatarContributions: number;
   proficiencyDistribution: ProficiencyDistribution;
   activeLearners: number;
 }
@@ -24,10 +26,12 @@ export const AdminStats: React.FC<AdminStatsProps> = ({
   totalUsers,
   deafUsers,
   nonDeafUsers,
-  pendingContributions,
+  pendingGestureContributions,
+  pendingAvatarContributions,
   proficiencyDistribution,
   activeLearners,
 }) => {
+  const totalPendingContributions = pendingGestureContributions + pendingAvatarContributions;
   const totalAssessed = proficiencyDistribution.beginner + proficiencyDistribution.intermediate + proficiencyDistribution.advanced;
   
   return (
@@ -71,11 +75,11 @@ export const AdminStats: React.FC<AdminStatsProps> = ({
       {/* Engagement & Actions Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Pending Contributions - Actionable */}
-        <Card className={pendingContributions > 0 ? "border-amber-300 bg-amber-50/50" : ""}>
+        <Card className={totalPendingContributions > 0 ? "border-amber-300 bg-amber-50/50" : ""}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium">Pending Contributions</h3>
-              {pendingContributions > 0 && (
+              {totalPendingContributions > 0 && (
                 <span className="flex items-center gap-1 text-amber-600 text-sm font-medium">
                   <AlertCircle className="h-4 w-4" />
                   Requires Action
@@ -83,16 +87,53 @@ export const AdminStats: React.FC<AdminStatsProps> = ({
               )}
             </div>
             <div className="flex items-center space-x-4 mt-4">
-              <div className={`p-3 rounded-full ${pendingContributions > 0 ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+              <div className={`p-3 rounded-full ${totalPendingContributions > 0 ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
                 <Clock className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-3xl font-bold">{pendingContributions}</p>
+                <p className="text-3xl font-bold">{totalPendingContributions}</p>
                 <p className="text-sm font-medium text-muted-foreground">
-                  {pendingContributions === 0 ? 'All caught up!' : 'Awaiting review'}
+                  {totalPendingContributions === 0 ? 'All caught up!' : 'Awaiting review'}
                 </p>
               </div>
             </div>
+            
+            {/* Breakdown by type */}
+            {totalPendingContributions > 0 && (
+              <div className="mt-4 pt-4 border-t border-amber-200 grid grid-cols-2 gap-4">
+                <Link 
+                  href="/gesture/manage-contributions"
+                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-amber-100 transition-colors group cursor-pointer"
+                >
+                  <div className="p-2 rounded-full bg-orange-100 text-orange-600 group-hover:bg-orange-200 transition-colors">
+                    <Hand className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-lg font-semibold">{pendingGestureContributions}</p>
+                      <ArrowRight className="h-4 w-4 text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:translate-x-1" />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Gesture</p>
+                  </div>
+                </Link>
+                
+                <Link 
+                  href="/avatar/admin-database?status=pending"
+                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-amber-100 transition-colors group cursor-pointer"
+                >
+                  <div className="p-2 rounded-full bg-indigo-100 text-indigo-600 group-hover:bg-indigo-200 transition-colors">
+                    <User className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-lg font-semibold">{pendingAvatarContributions}</p>
+                      <ArrowRight className="h-4 w-4 text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:translate-x-1" />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Avatar</p>
+                  </div>
+                </Link>
+              </div>
+            )}
           </CardContent>
         </Card>
 

@@ -10,7 +10,8 @@ const AdminDashboard: React.FC = () => {
   const [totalUsers, setTotalUsers] = useState(0);
   const [deafUsers, setDeafUsers] = useState(0);
   const [nonDeafUsers, setNonDeafUsers] = useState(0);
-  const [pendingContributions, setPendingContributions] = useState(0);
+  const [pendingGestureContributions, setPendingGestureContributions] = useState(0);
+  const [pendingAvatarContributions, setPendingAvatarContributions] = useState(0);
   const [proficiencyDistribution, setProficiencyDistribution] = useState({
     beginner: 0,
     intermediate: 0,
@@ -51,7 +52,7 @@ const AdminDashboard: React.FC = () => {
       });
     };
 
-    const fetchPendingContributions = async () => {
+    const fetchPendingGestureContributions = async () => {
       const supabase = createClient();
       const { count, error } = await supabase
         .from('gesture_contributions')
@@ -59,11 +60,26 @@ const AdminDashboard: React.FC = () => {
         .eq('status', 'pending');
 
       if (error) {
-        console.error('Error fetching pending contributions:', error);
+        console.error('Error fetching pending gesture contributions:', error);
         return;
       }
 
-      setPendingContributions(count || 0);
+      setPendingGestureContributions(count || 0);
+    };
+
+    const fetchPendingAvatarContributions = async () => {
+      const supabase = createClient();
+      const { count, error } = await supabase
+        .from('sign_avatars')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+
+      if (error) {
+        console.error('Error fetching pending avatar contributions:', error);
+        return;
+      }
+
+      setPendingAvatarContributions(count || 0);
     };
 
     const fetchActiveLearners = async () => {
@@ -94,7 +110,8 @@ const AdminDashboard: React.FC = () => {
     };
 
     fetchUserStats();
-    fetchPendingContributions();
+    fetchPendingGestureContributions();
+    fetchPendingAvatarContributions();
     fetchActiveLearners();
   }, []);
 
@@ -138,7 +155,8 @@ const AdminDashboard: React.FC = () => {
           totalUsers={totalUsers}
           deafUsers={deafUsers}
           nonDeafUsers={nonDeafUsers}
-          pendingContributions={pendingContributions}
+          pendingGestureContributions={pendingGestureContributions}
+          pendingAvatarContributions={pendingAvatarContributions}
           proficiencyDistribution={proficiencyDistribution}
           activeLearners={activeLearners}
         />
