@@ -132,8 +132,29 @@ const ProficiencyTestPage = () => {
     }
   };
 
+  // Check if all questions are answered
+  const getUnansweredCount = () => {
+    if (!currentTest) return 0;
+    return currentTest.questions.filter(q => !userAnswers[q.id]).length;
+  };
+
   const handleFinish = async (isRetry: boolean = false) => {
     if (!testAttempt || !currentTest) return;
+
+    // Validate all questions are answered
+    const unansweredQuestions = currentTest.questions.filter(
+      q => !userAnswers[q.id]
+    );
+    
+    if (unansweredQuestions.length > 0 && !isRetry) {
+      setError(`Please answer all questions before submitting. You have ${unansweredQuestions.length} unanswered question(s).`);
+      // Navigate to first unanswered question
+      const firstUnansweredIndex = currentTest.questions.findIndex(
+        q => !userAnswers[q.id]
+      );
+      setCurrentQuestionIndex(firstUnansweredIndex);
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
@@ -282,8 +303,42 @@ const ProficiencyTestPage = () => {
           <p className="text-sm text-muted-foreground">
             Question {currentQuestionIndex + 1} of {currentTest.questions.length}
           </p>
+          
+          {/* Question Navigation Bar */}
+          <div className="flex flex-wrap gap-2 justify-center mt-4 pt-4 border-t">
+            {currentTest.questions.map((question, index) => (
+              <button
+                key={question.id}
+                onClick={() => setCurrentQuestionIndex(index)}
+                disabled={isSubmitting}
+                className={`w-10 h-10 rounded-full font-medium text-sm transition-all border-2 ${
+                  index === currentQuestionIndex
+                    ? 'bg-signlang-primary border-signlang-primary text-white shadow-md scale-110'
+                    : userAnswers[question.id]
+                      ? 'bg-green-500 border-green-500 text-white hover:bg-green-600'
+                      : 'bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-signlang-primary hover:text-signlang-primary'
+                }`}
+                title={userAnswers[question.id] ? `Question ${index + 1} (Answered)` : `Question ${index + 1} (Not answered)`}
+              >
+                {index + 1}
+              </button>
+            ))}
+          </div>
+          
+          {/* Progress Indicator */}
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            {Object.keys(userAnswers).length} of {currentTest.questions.length} answered
+          </p>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Validation Error Alert */}
+          {error && !showManualRetry && submissionRetryCount === 0 && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Incomplete Test</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
           {showManualRetry && (
             <Alert>
               <AlertCircle className="h-4 w-4" />
@@ -320,8 +375,15 @@ const ProficiencyTestPage = () => {
           {currentQuestionIndex < currentTest.questions.length - 1 ? (
             <Button onClick={handleNext} disabled={isSubmitting}>Next</Button>
           ) : (
-            <Button onClick={() => handleFinish()} disabled={isSubmitting || showManualRetry}>
-              {isSubmitting ? 'Submitting...' : 'Finish Test'}
+            <Button 
+              onClick={() => handleFinish()} 
+              disabled={isSubmitting || showManualRetry}
+              variant={getUnansweredCount() === 0 ? 'default' : 'outline'}
+            >
+              {isSubmitting ? 'Submitting...' : 
+               getUnansweredCount() > 0 
+                 ? `Finish (${getUnansweredCount()} unanswered)` 
+                 : 'Finish Test'}
             </Button>
           )}
         </CardFooter>
