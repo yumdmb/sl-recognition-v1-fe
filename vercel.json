@@ -3,7 +3,8 @@
     "deploymentEnabled": {
       "with-supbase-v2": false,
       "Add-chat": false,
-      "dockerized": true
+      "dockerized": true,
+      "docker-sme": false
     }
   }
 }

@@ -1,0 +1,304 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 2.23kB 0.0s done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for docker.io/library/node:20-alpine
+#2 ...
+
+#3 [auth] library/node:pull token for registry-1.docker.io
+#3 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:20-alpine
+#2 DONE 6.3s
+
+#4 [internal] load .dockerignore
+#4 transferring context:
+#4 transferring context: 607B 0.1s done
+#4 DONE 0.3s
+
+#5 [internal] load build context
+#5 DONE 0.0s
+
+#6 [deps 1/5] FROM docker.io/library/node:20-alpine@sha256:3960ed74dfe320a67bf8da9555b6bade25ebda2b22b6081d2f60fd7d5d430e9c
+#6 resolve docker.io/library/node:20-alpine@sha256:3960ed74dfe320a67bf8da9555b6bade25ebda2b22b6081d2f60fd7d5d430e9c 0.1s done
+#6 sha256:41b3afaea3b1b1ab04a268431e10dcace7883019a5da7d326aa35dc9713fcbb5 0B / 445B 0.2s
+#6 sha256:3dcec91425079e7b455efc5f2a18d026450c47c9382c41897620afc6b1424e44 0B / 1.26MB 0.2s
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 0B / 42.78MB 0.2s
+#6 sha256:41b3afaea3b1b1ab04a268431e10dcace7883019a5da7d326aa35dc9713fcbb5 445B / 445B 0.6s done
+#6 ...
+
+#5 [internal] load build context
+#5 transferring context: 18.89MB done
+#5 DONE -7.8s
+
+#6 [deps 1/5] FROM docker.io/library/node:20-alpine@sha256:3960ed74dfe320a67bf8da9555b6bade25ebda2b22b6081d2f60fd7d5d430e9c
+#6 sha256:3dcec91425079e7b455efc5f2a18d026450c47c9382c41897620afc6b1424e44 1.26MB / 1.26MB
+#6 sha256:3dcec91425079e7b455efc5f2a18d026450c47c9382c41897620afc6b1424e44 1.26MB / 1.26MB done
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 3.15MB / 42.78MB
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 5.24MB / 42.78MB 2.4s
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 5.24MB / 42.78MB 7.5s
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 5.24MB / 42.78MB 12.6s
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 5.24MB / 42.78MB 17.7s
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 5.24MB / 42.78MB 32.4s
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 5.24MB / 42.78MB 37.5s
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 8.39MB / 42.78MB 40.8s
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 12.58MB / 42.78MB 41.4s
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 15.73MB / 42.78MB 41.8s
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 18.87MB / 42.78MB 42.1s
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 22.02MB / 42.78MB 42.4s
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 25.17MB / 42.78MB 42.7s
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 28.31MB / 42.78MB 43.0s
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 31.46MB / 42.78MB 43.3s
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 34.60MB / 42.78MB 43.8s
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 37.75MB / 42.78MB 44.1s
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 40.89MB / 42.78MB 44.4s
+#6 sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 42.78MB / 42.78MB 44.6s done
+#6 extracting sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9
+#6 extracting sha256:c2b4197efb6ccd7f8b482ae7800f1c9c78c044ea192587887300080bcff6b2c9 2.3s done
+#6 DONE 47.9s
+
+#6 [deps 1/5] FROM docker.io/library/node:20-alpine@sha256:3960ed74dfe320a67bf8da9555b6bade25ebda2b22b6081d2f60fd7d5d430e9c
+#6 extracting sha256:3dcec91425079e7b455efc5f2a18d026450c47c9382c41897620afc6b1424e44 0.1s done
+#6 extracting sha256:41b3afaea3b1b1ab04a268431e10dcace7883019a5da7d326aa35dc9713fcbb5 0.0s done
+#6 DONE 48.0s
+
+#7 [deps 2/5] WORKDIR /app
+#7 DONE 0.4s
+
+#8 [deps 3/5] RUN apk add --no-cache libc6-compat
+#8 ...
+
+#9 [runner 3/9] RUN addgroup --system --gid 1001 nodejs
+#9 DONE 0.5s
+
+#10 [runner 4/9] RUN adduser --system --uid 1001 nextjs
+#10 DONE 0.4s
+
+#8 [deps 3/5] RUN apk add --no-cache libc6-compat
+#8 1.894 (1/3) Installing musl-obstack (1.2.3-r2)
+#8 1.930 (2/3) Installing libucontext (1.3.3-r0)
+#8 1.953 (3/3) Installing gcompat (1.1.0-r4)
+#8 1.989 OK: 11.0 MiB in 21 packages
+#8 DONE 2.1s
+
+#11 [deps 4/5] COPY package.json package-lock.json ./
+#11 DONE 0.1s
+
+#12 [deps 5/5] RUN npm ci
+#12 1.508 npm warn EBADENGINE Unsupported engine {
+#12 1.508 npm warn EBADENGINE   package: 'camera-controls@3.1.2',
+#12 1.508 npm warn EBADENGINE   required: { node: '>=22.0.0', npm: '>=10.5.1' },
+#12 1.508 npm warn EBADENGINE   current: { node: 'v20.20.0', npm: '10.8.2' }
+#12 1.508 npm warn EBADENGINE }
+#12 7.683 npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+#12 68.76 
+#12 68.76 added 624 packages, and audited 625 packages in 1m
+#12 68.76 
+#12 68.76 164 packages are looking for funding
+#12 68.76   run `npm fund` for details
+#12 68.78 
+#12 68.78 2 high severity vulnerabilities
+#12 68.78 
+#12 68.78 To address all issues, run:
+#12 68.78   npm audit fix
+#12 68.78 
+#12 68.78 Run `npm audit` for details.
+#12 68.79 npm notice
+#12 68.79 npm notice New major version of npm available! 10.8.2 -> 11.7.0
+#12 68.79 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.7.0
+#12 68.79 npm notice To update run: npm install -g npm@11.7.0
+#12 68.79 npm notice
+#12 DONE 69.7s
+
+#13 [builder 3/5] COPY --from=deps /app/node_modules ./node_modules
+#13 DONE 25.6s
+
+#14 [builder 4/5] COPY . .
+#14 DONE 1.2s
+
+#15 [builder 5/5] RUN npm run build
+#15 1.820 
+#15 1.820 > sl-recognition-v1-fe@0.1.0 build
+#15 1.820 > next build
+#15 1.820 
+#15 5.086 Attention: Next.js now collects completely anonymous telemetry regarding usage.
+#15 5.087 This information is used to shape Next.js' roadmap and prioritize features.
+#15 5.087 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+#15 5.087 https://nextjs.org/telemetry
+#15 5.087 
+#15 5.392    Γû▓ Next.js 15.5.9
+#15 5.392 
+#15 5.875    Creating an optimized production build ...
+#15 42.70  ΓÜá Compiled with warnings in 34.1s
+#15 42.70 
+#15 42.70 ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+#15 42.70 Critical dependency: the request of a dependency is an expression
+#15 42.70 
+#15 42.70 Import trace for requested module:
+#15 42.70 ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+#15 42.70 ./node_modules/@supabase/realtime-js/dist/main/index.js
+#15 42.70 ./node_modules/@supabase/supabase-js/dist/module/index.js
+#15 42.70 ./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+#15 42.70 ./node_modules/@supabase/ssr/dist/module/index.js
+#15 42.70 ./src/utils/supabase/server.ts
+#15 42.70 ./src/app/api/gesture-recognition/recognize/route.ts
+#15 42.70 
+#15 84.74  Γ£ô Compiled successfully in 68s
+#15 84.78    Linting and checking validity of types ...
+#15 98.97 
+#15 98.97 ./src/app/(main)/interaction/forum/page.tsx
+#15 98.97 535:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#15 98.97 
+#15 98.97 ./src/app/(main)/learning/quizzes/[setId]/edit/QuizQuestionEditor.tsx
+#15 98.97 57:6  Warning: React Hook useEffect has a missing dependency: 'getQuizSetWithQuestions'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+#15 98.97 
+#15 98.97 ./src/app/(main)/manage-proficiency-test/page.tsx
+#15 98.97 339:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#15 98.97 385:35  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#15 98.97 
+#15 98.97 ./src/app/proficiency-test/history/page.tsx
+#15 98.97 91:6  Warning: React Hook useEffect has a missing dependency: 'getTestHistory'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+#15 98.97 
+#15 98.97 ./src/components/chat/MessageInput.tsx
+#15 98.97 241:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#15 98.97 
+#15 98.97 ./src/components/forum/ImageAttachmentUpload.tsx
+#15 98.97 144:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#15 98.97 
+#15 98.97 ./src/components/forum/ImageModal.tsx
+#15 98.97 59:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#15 98.97 
+#15 98.97 ./src/components/forum/ImageThumbnail.tsx
+#15 98.97 53:7  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#15 98.97 
+#15 98.97 ./src/components/gesture/GestureCameraCapture.tsx
+#15 98.97 32:18  Warning: The ref value 'videoRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'videoRef.current' to a variable inside the effect, and use that variable in the cleanup function.  react-hooks/exhaustive-deps
+#15 98.97 
+#15 98.97 ./src/components/gesture/GestureMediaPreview.tsx
+#15 98.97 44:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#15 98.97 53:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#15 98.97 
+#15 98.97 ./src/components/gesture-recognition/AdminGestureForm.tsx
+#15 98.97 217:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#15 98.97 
+#15 98.97 ./src/components/gesture-recognition/CameraCapture.tsx
+#15 98.97 100:6  Warning: React Hook useEffect has a missing dependency: 'sendFrameToServer'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+#15 98.97 
+#15 98.97 ./src/components/gesture-recognition/FileUploadArea.tsx
+#15 98.97 33:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#15 98.97 
+#15 98.97 ./src/components/gesture-recognition/GestureForm.tsx
+#15 98.97 234:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#15 98.97 
+#15 98.97 ./src/components/gesture-recognition/RecognitionResultDisplay.tsx
+#15 98.97 64:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#15 98.97 
+#15 98.97 ./src/components/learning/MaterialCard.tsx
+#15 98.97 59:14  Warning: Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images.  jsx-a11y/alt-text
+#15 98.97 
+#15 98.97 ./src/components/learning/MaterialPreviewDialog.tsx
+#15 98.97 131:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#15 98.97 
+#15 98.97 ./src/components/learning/TutorialDialog.tsx
+#15 98.97 55:6  Warning: React Hook useEffect has a missing dependency: 'handleFetchMetadata'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+#15 98.97 163:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#15 98.97 
+#15 98.97 info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+#15 108.7    Collecting page data ...
+#15 116.6    Generating static pages (0/37) ...
+#15 117.9    Generating static pages (9/37) 
+#15 118.2    Generating static pages (18/37) 
+#15 118.6    Generating static pages (27/37) 
+#15 118.8  Γ£ô Generating static pages (37/37)
+#15 120.8    Finalizing page optimization ...
+#15 120.8    Collecting build traces ...
+#15 151.4 
+#15 151.5 Route (app)                                 Size  First Load JS
+#15 151.5 Γöî Γùï /                                    15.2 kB         176 kB
+#15 151.5 Γö£ Γùï /_not-found                             1 kB         103 kB
+#15 151.5 Γö£ Γùï /admin                               7.22 kB         132 kB
+#15 151.5 Γö£ ╞Æ /api/gesture-recognition/recognize     145 B         102 kB
+#15 151.5 Γö£ ╞Æ /api/gesture-recognition/search        145 B         102 kB
+#15 151.5 Γö£ ╞Æ /api/ml/predict                        145 B         102 kB
+#15 151.5 Γö£ ╞Æ /api/send-email                        145 B         102 kB
+#15 151.5 Γö£ ╞Æ /api/youtube-metadata                  145 B         102 kB
+#15 151.5 Γö£ ╞Æ /auth/callback                         145 B         102 kB
+#15 151.5 Γö£ Γùï /auth/error                             4 kB         117 kB
+#15 151.5 Γö£ Γùï /auth/forgot-password                6.32 kB         216 kB
+#15 151.5 Γö£ Γùï /auth/login                          6.89 kB         216 kB
+#15 151.5 Γö£ Γùï /auth/register                        5.5 kB         224 kB
+#15 151.5 Γö£ Γùï /auth/reset-password                  8.5 kB         213 kB
+#15 151.5 Γö£ Γùï /avatar/admin-database               5.48 kB         445 kB
+#15 151.5 Γö£ Γùï /avatar/generate                     8.87 kB         485 kB
+#15 151.5 Γö£ Γùï /avatar/my-avatars                   4.23 kB         444 kB
+#15 151.5 Γö£ Γùï /dashboard                             13 kB         238 kB
+#15 151.5 Γö£ Γùï /gesture-recognition/search          34.9 kB         480 kB
+#15 151.5 Γö£ Γùï /gesture-recognition/upload          4.43 kB         152 kB
+#15 151.5 Γö£ Γùï /gesture/browse                        482 B         103 kB
+#15 151.5 Γö£ Γùï /gesture/manage-contributions        5.58 kB         218 kB
+#15 151.5 Γö£ Γùï /gesture/submit                      10.4 kB         244 kB
+#15 151.5 Γö£ Γùï /gesture/view                        2.55 kB         215 kB
+#15 151.5 Γö£ Γùï /icon.svg                                0 B            0 B
+#15 151.5 Γö£ Γùï /interaction/chat                    15.2 kB         198 kB
+#15 151.5 Γö£ Γùï /interaction/forum                   13.9 kB         191 kB
+#15 151.5 Γö£ Γùï /learning/materials                    11 kB         214 kB
+#15 151.5 Γö£ Γùï /learning/quizzes                    8.86 kB         212 kB
+#15 151.5 Γö£ ╞Æ /learning/quizzes/[setId]            5.08 kB         177 kB
+#15 151.5 Γö£ ╞Æ /learning/quizzes/[setId]/edit       3.18 kB         203 kB
+#15 151.5 Γö£ Γùï /learning/tutorials                  9.11 kB         218 kB
+#15 151.5 Γö£ ╞Æ /learning/tutorials/[id]             5.58 kB         214 kB
+#15 151.5 Γö£ Γùï /manage-proficiency-test             10.1 kB         197 kB
+#15 151.5 Γö£ ╞Æ /proficiency-test/[testId]           4.99 kB         191 kB
+#15 151.5 Γö£ Γùï /proficiency-test/history             109 kB         290 kB
+#15 151.5 Γö£ Γùï /proficiency-test/results            6.05 kB         181 kB
+#15 151.5 Γö£ ╞Æ /proficiency-test/select             4.59 kB         115 kB
+#15 151.5 Γöö Γùï /profile                             10.4 kB         187 kB
+#15 151.5 + First Load JS shared by all             102 kB
+#15 151.5   Γö£ chunks/1255-8befde0980f5cba9.js      45.6 kB
+#15 151.5   Γö£ chunks/4bd1b696-100b9d70ed4e49c1.js  54.2 kB
+#15 151.5   Γöö other shared chunks (total)          2.38 kB
+#15 151.5 
+#15 151.5 
+#15 151.5 ╞Æ Middleware                             66.4 kB
+#15 151.5 
+#15 151.5 Γùï  (Static)   prerendered as static content
+#15 151.5 ╞Æ  (Dynamic)  server-rendered on demand
+#15 151.5 
+#15 151.8 npm notice
+#15 151.8 npm notice New major version of npm available! 10.8.2 -> 11.7.0
+#15 151.8 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.7.0
+#15 151.8 npm notice To update run: npm install -g npm@11.7.0
+#15 151.8 npm notice
+#15 DONE 152.0s
+
+#16 [runner 5/9] COPY --from=builder /app/public ./public
+#16 DONE 0.2s
+
+#17 [runner 6/9] RUN mkdir .next
+#17 DONE 0.3s
+
+#18 [runner 7/9] RUN chown nextjs:nodejs .next
+#18 DONE 0.4s
+
+#19 [runner 8/9] COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+#19 DONE 0.9s
+
+#20 [runner 9/9] COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+#20 DONE 0.2s
+
+#21 exporting to image
+#21 exporting layers
+#21 exporting layers 5.7s done
+#21 exporting manifest sha256:71570f2acec32cafc974048d8931b8ef3eb40381cbfff0e131a0b45d54ff35af 0.0s done
+#21 exporting config sha256:3905200c5ab9020de06bf14d8abd684a7643dda08d071779cbbfa1353723e9cd 0.0s done
+#21 exporting attestation manifest sha256:85e8dd7fd19ac0daff59f2bfe0837ca5ada80f0e16a83a4f779470357e6b16c0 0.0s done
+#21 exporting manifest list sha256:e28e5fdb84797b0685758588ee5fc809bb4b521774088e9bc112d37a927c9b22
+#21 exporting manifest list sha256:e28e5fdb84797b0685758588ee5fc809bb4b521774088e9bc112d37a927c9b22 0.0s done
+#21 naming to docker.io/library/signlanguage-recognition-fe:latest 0.0s done
+#21 unpacking to docker.io/library/signlanguage-recognition-fe:latest
+#21 unpacking to docker.io/library/signlanguage-recognition-fe:latest 2.4s done
+#21 DONE 8.3s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/zyd4g2zh807hsr3kx1y1m1pck
