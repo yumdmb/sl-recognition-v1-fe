@@ -259,7 +259,14 @@ export default function Register() {
             </Button>
             
             <p className="text-xs text-gray-500 text-center">
-              By registering, you agree to our Terms of Service.
+              By registering, you agree to our{' '}
+              <Link href="/terms" className="text-signlang-primary hover:underline">
+                Terms of Service
+              </Link>{' '}
+              and{' '}
+              <Link href="/privacy" className="text-signlang-primary hover:underline">
+                Privacy Policy
+              </Link>.
             </p>
           </form>
         </CardContent>
