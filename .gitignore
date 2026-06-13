@@ -47,3 +47,4 @@ local-docs/
 .roomodes
 .vscode
 src/app/(main)/debug-jwt/
+.opencode/

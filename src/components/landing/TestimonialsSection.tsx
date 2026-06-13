@@ -2,23 +2,39 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
+import { Quote } from "lucide-react";
 
 const testimonials = [
   {
-    name: "Sarah Johnson",
-    role: "ASL Student",
-    content: "SignBridge has transformed my learning experience. The AI recognition feature helps me practice with confidence!"
+    name: "Aisha Rahman",
+    role: "MSL Learner",
+    content: "The 3D avatar feature helped me see exactly how hand shapes should look from different angles. It made learning MSL so much clearer than photos alone."
   },
   {
-    name: "David Chen",
+    name: "Lim Wei Jie",
+    role: "Parent of a Deaf Child",
+    content: "My child and I practice together using the camera recognition. Getting instant feedback keeps them motivated, and the learning path shows us what to focus on next."
+  },
+  {
+    name: "Dr. Priya Nair",
+    role: "Special Education Teacher",
+    content: "SignBridge gives my students structured tutorials, quizzes, and a safe forum to ask questions. The gesture dictionary is becoming a valuable classroom resource."
+  },
+  {
+    name: "Kevin Tan",
     role: "Sign Language Interpreter",
-    content: "As a professional interpreter, I'm impressed by the accuracy and comprehensive nature of the platform."
+    content: "I use the gesture recognition tool to double-check signs, and I contribute new entries to help grow the dictionary. It is a great way to give back to the community."
   },
   {
-    name: "Maria Rodriguez",
-    role: "Parent",
-    content: "My child and I are learning ASL together through SignBridge. It's intuitive and engaging!"
+    name: "Nurul Huda",
+    role: "University Student",
+    content: "The proficiency test placed me at the right level and the AI learning path keeps me on track. I have gone from beginner to intermediate in three months."
+  },
+  {
+    name: "Ahmad Fauzi",
+    role: "Deaf Community Advocate",
+    content: "It is refreshing to see a platform that respects both ASL and MSL. The forum lets deaf and hearing learners connect and learn from each other."
   }
 ];
 
@@ -31,65 +47,55 @@ const cardVariants = {
       duration: 0.5,
       ease: "easeOut"
     }
-  },
-  hover: {
-    y: -10,
-    transition: {
-      duration: 0.2,
-      ease: "easeOut"
-    }
   }
 };
 
 export default function TestimonialsSection() {
-  const { scrollYProgress } = useScroll();
-
   return (
-    <section className="py-16 bg-white relative overflow-hidden">
-      <motion.div 
-        className="absolute inset-0 bg-gradient-to-r from-signlang-primary/5 to-transparent"
-        style={{
-          y: useTransform(scrollYProgress, [0, 1], [0, -100])
-        }}
-      />
-      <div className="container mx-auto px-4 relative">
-        <motion.h2 
-          className="text-3xl font-bold text-center mb-12"
+    <section className="py-20 bg-white relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-r from-signlang-primary/5 to-transparent pointer-events-none" />
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <motion.div 
+          className="text-center max-w-3xl mx-auto mb-16"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          What Our Users Say
-        </motion.h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <h2 className="text-3xl sm:text-4xl font-bold text-signlang-dark mb-4">
+            What Our Community Says
+          </h2>
+          <p className="text-lg text-gray-600">
+            Learners, educators, and advocates are using SignBridge to build communication bridges.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {testimonials.map((testimonial, index) => (
             <motion.div
-              key={index}
+              key={testimonial.name}
               variants={cardVariants}
               initial="hidden"
               whileInView="visible"
-              whileHover="hover"
               viewport={{ once: true }}
-              transition={{ delay: index * 0.2 }}
+              transition={{ delay: index * 0.1 }}
             >
-              <Card className="border-none shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <Card className="h-full border border-gray-100 shadow-sm hover:shadow-lg transition-shadow duration-200 bg-white">
                 <CardContent className="pt-6">
-                  <motion.div
-                    className="flex items-center mb-4"
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback className="bg-signlang-primary/20 text-signlang-primary font-semibold">
-                        {testimonial.name.split(' ').map(n => n[0]).join('')}
+                  <Quote className="h-8 w-8 text-signlang-primary/30 mb-4" />
+                  <p className="text-gray-700 mb-6 leading-relaxed">{testimonial.content}</p>
+                  <div className="flex items-center">
+                    <Avatar className="h-11 w-11">
+                      <AvatarFallback className="bg-signlang-accent text-signlang-dark font-semibold">
+                        {testimonial.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="ml-4">
-                      <h3 className="font-semibold">{testimonial.name}</h3>
-                      <p className="text-sm text-gray-600">{testimonial.role}</p>
+                    <div className="ml-3">
+                      <h3 className="font-semibold text-signlang-dark">{testimonial.name}</h3>
+                      <p className="text-sm text-gray-500">{testimonial.role}</p>
                     </div>
-                  </motion.div>
-                  <p className="text-gray-600">{testimonial.content}</p>
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>
