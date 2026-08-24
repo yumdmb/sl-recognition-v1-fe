@@ -3,15 +3,15 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Sparkles } from 'lucide-react';
 
 interface ProficiencyTestPromptProps {
   isOpen: boolean;
@@ -26,20 +26,30 @@ const ProficiencyTestPrompt: React.FC<ProficiencyTestPromptProps> = ({ isOpen, o
   };
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Welcome!</AlertDialogTitle>
-          <AlertDialogDescription>
-            Would you like to take a quick test to assess your sign language proficiency? This will help us personalize your learning experience.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>Maybe Later</AlertDialogCancel>
-          <AlertDialogAction onClick={handleTakeTest}>Take Test</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="rounded-2xl sm:max-w-md">
+        <DialogHeader className="sm:text-left">
+          <div className="mb-2 flex justify-start">
+            <span className="grid size-12 place-items-center rounded-2xl bg-primary-soft text-primary">
+              <Sparkles className="size-6" />
+            </span>
+          </div>
+          <DialogTitle className="font-display text-xl font-extrabold tracking-tight">
+            Find your sign language level!
+          </DialogTitle>
+          <DialogDescription className="leading-relaxed">
+            Would you like to take a quick test to assess your sign language proficiency? This will
+            help us personalize your learning experience.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2 sm:justify-end">
+          <Button variant="ghost" onClick={onClose}>
+            Maybe Later
+          </Button>
+          <Button onClick={handleTakeTest}>Take Test</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Plus, Eye, ClipboardList } from 'lucide-react';
+import { Plus, Eye } from 'lucide-react';
 import Link from 'next/link';
 
 interface GestureViewHeaderProps {
@@ -10,48 +10,38 @@ interface GestureViewHeaderProps {
   isManageView?: boolean;
 }
 
-export default function GestureViewHeader({ userRole, isManageView = false }: GestureViewHeaderProps) {
-  const isAdmin = userRole === 'admin';
-  
+export default function GestureViewHeader({ userRole, isManageView }: GestureViewHeaderProps) {
   return (
-    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center mb-6">
+    <div className="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold">
-          {isManageView ? 'Manage Contributions' : 'My Contributions'}
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
+          {userRole === 'admin' ? 'Moderation' : 'Your Library'}
+        </p>
+        <h1 className="font-display mt-2 text-3xl font-extrabold tracking-tight">
+          Gesture Contributions
         </h1>
-        <p className="text-muted-foreground mt-1">
-          {isManageView 
-            ? 'Review and manage all community gesture contributions'
+        <p className="mt-1.5 max-w-xl text-muted-foreground">
+          {userRole === 'admin'
+            ? 'Manage and review community gesture contributions'
             : 'View and manage your gesture contributions'
           }
         </p>
       </div>
-      
+
       <div className="flex gap-2">
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" className="rounded-full">
           <Link href="/gesture/browse">
             <Eye className="mr-2 h-4 w-4" />
             Browse Gestures
           </Link>
         </Button>
-        
-        {isAdmin && !isManageView && (
-          <Button asChild variant="outline">
-            <Link href="/gesture/manage-contributions">
-              <ClipboardList className="mr-2 h-4 w-4" />
-              Manage All
-            </Link>
-          </Button>
-        )}
-        
-        {!isManageView && (
-          <Button asChild>
-            <Link href="/gesture/submit">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Gesture
-            </Link>
-          </Button>
-        )}
+
+        <Button asChild className="rounded-full">
+          <Link href="/gesture/submit">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Gesture
+          </Link>
+        </Button>
       </div>
     </div>
   );

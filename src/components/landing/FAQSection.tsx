@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import {
   Accordion,
@@ -6,65 +6,97 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { motion } from "framer-motion";
+import { MessageCircleQuestion } from "lucide-react";
+
+interface FAQSectionProps {
+  sectionRef?: React.RefObject<HTMLDivElement>;
+}
 
 const faqs = [
   {
     question: "What is SignBridge and who is it for?",
-    answer: "SignBridge is a sign language learning platform for deaf and hard-of-hearing individuals, hearing learners, parents, educators, and interpreters. It supports both American Sign Language (ASL) and Malaysian Sign Language (MSL)."
+    answer:
+      "SignBridge is a platform that helps people learn and practise sign language with AI. It combines gesture recognition, structured tutorials, quizzes, and a community-driven sign dictionary — with a focus on Bahasa Isyarat Malaysia (BIM) and American Sign Language (ASL). Ideal for deaf and hard-of-hearing individuals, hearing learners, parents, educators, and interpreters.",
   },
   {
-    question: "How does AI gesture recognition work?",
-    answer: "You can upload an image or enable your camera to perform a sign. Our system analyzes hand shape, movement, and position, then returns the most likely word match along with confidence scores."
+    question: "How does the gesture recognition work?",
+    answer:
+      "Our recognition system uses computer vision to analyse hand shapes and movements. Upload a photo or use your camera in real time, and the model names the gesture with a confidence score — so you get instant feedback while practising. You can also enable your camera to perform a sign live.",
   },
   {
-    question: "Is SignBridge suitable for beginners?",
-    answer: "Yes. New users can take a proficiency test to assess their level, then receive a personalized learning path with tutorials, quizzes, and materials matched to their progress."
+    question: "Is SignBridge suitable for complete beginners?",
+    answer:
+      "Yes. Start with the proficiency test so we can place you at the right level, then follow the tutorials and quizzes. Everything is self-paced, and the community forum is there when you get stuck. New users receive a personalized learning path matched to their progress.",
   },
   {
     question: "What are 3D sign avatars used for?",
-    answer: "3D avatars let you visualize a sign from multiple angles. You can generate an avatar from your own gesture recording or view avatars created by the community to understand hand positioning more clearly."
+    answer:
+      "3D avatars let you visualize a sign from multiple angles. You can generate an avatar from your own gesture recording or view avatars created by the community to understand hand positioning more clearly.",
   },
   {
-    question: "Can I contribute new signs to the dictionary?",
-    answer: "Yes. Registered users can submit gesture images, recordings, or 3D avatar entries. Submissions are reviewed by moderators before being published to keep the dictionary accurate and reliable."
+    question: "Can I contribute signs from my region?",
+    answer:
+      "Absolutely. The Gesture Contributions module lets anyone submit new signs with images or video. Registered users can submit gesture images, recordings, or 3D avatar entries. Submissions are reviewed by moderators before being published to keep the dictionary accurate and reliable.",
   },
   {
     question: "Is my camera data stored or shared?",
-    answer: "Images captured for gesture recognition are processed for recognition only and are not used for advertising. Please see our Privacy Policy for full details on data handling."
+    answer:
+      "Images captured for gesture recognition are processed for recognition only and are not used for advertising. Please see our Privacy Policy for full details on data handling.",
   },
   {
     question: "Does SignBridge work on mobile devices?",
-    answer: "Yes. SignBridge is built as a responsive web application, so you can learn and practice on phones, tablets, and desktops."
-  }
+    answer:
+      "Yes. SignBridge is built as a responsive web application, so you can learn and practice on phones, tablets, and desktops.",
+  },
+  {
+    question: "Does it cost anything?",
+    answer:
+      "No — SignBridge is completely free. It began as a university research project to make sign-language education more accessible in Malaysia.",
+  },
 ];
 
-export default function FAQSection() {
+export default function FAQSection({ sectionRef }: FAQSectionProps) {
   return (
-    <section className="py-20 bg-signlang-accent/30">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-signlang-dark mb-4">
-              Frequently Asked Questions
-            </h2>
-            <p className="text-lg text-gray-600">
-              Everything you need to know before starting your sign language journey.
-            </p>
-          </div>
-          
-          <Accordion type="single" collapsible className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100">
+    <section ref={sectionRef} className="py-20 sm:py-24">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-12 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr]">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <span className="grid size-12 place-items-center rounded-2xl bg-primary-soft text-primary">
+            <MessageCircleQuestion className="size-6" />
+          </span>
+          <h2 className="font-display mt-5 text-3xl font-extrabold sm:text-4xl">
+            Questions, answered
+          </h2>
+          <p className="mt-4 leading-relaxed text-muted-foreground">
+            Everything you might want to know before creating an account. Still
+            curious? Register and try it — it takes less than a minute.
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+        >
+          <Accordion type="single" collapsible className="w-full">
             {faqs.map((faq, index) => (
-              <AccordionItem key={index} value={`item-${index + 1}`} className="border-b border-gray-100 last:border-0 px-4">
-                <AccordionTrigger className="text-left text-signlang-dark hover:text-signlang-primary transition-colors duration-200 py-5">
+              <AccordionItem key={index} value={`item-${index + 1}`} className="border-border">
+                <AccordionTrigger className="text-left text-[15px] font-semibold hover:text-primary hover:no-underline">
                   {faq.question}
                 </AccordionTrigger>
-                <AccordionContent className="text-gray-600 leading-relaxed pb-5">
+                <AccordionContent className="leading-relaxed text-muted-foreground">
                   {faq.answer}
                 </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

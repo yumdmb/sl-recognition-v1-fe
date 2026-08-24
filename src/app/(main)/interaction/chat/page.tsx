@@ -7,8 +7,8 @@ import { Loader2 } from 'lucide-react';
 export default function ChatPage() {
   return (
     <Suspense fallback={
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex h-[calc(100dvh-8rem)] min-h-[540px] items-center justify-center">
+        <Loader2 className="size-6 animate-spin text-primary" />
       </div>
     }>
       <ChatLayout />

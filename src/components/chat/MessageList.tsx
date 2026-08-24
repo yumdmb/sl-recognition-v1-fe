@@ -3,7 +3,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Message } from "@/lib/services/chatService";
 import { format } from "date-fns";
-import { Loader2, FileText } from "lucide-react";
+import { Loader2, FileText, MessageCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface MessageListProps {
   messages: Message[];
@@ -51,17 +52,22 @@ export default function MessageList({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="size-7 animate-spin text-muted-foreground/60" />
       </div>
     );
   }
 
   if (messages.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-        <p>No messages yet</p>
-        <p className="text-sm">Start the conversation!</p>
+      <div className="flex h-full flex-col items-center justify-center text-center">
+        <span className="grid size-12 place-items-center rounded-2xl bg-primary-soft text-primary">
+          <MessageCircle className="size-5.5" />
+        </span>
+        <p className="mt-4 font-semibold">No messages yet</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Say hello — this is the start of your conversation.
+        </p>
       </div>
     );
   }
@@ -76,18 +82,16 @@ export default function MessageList({
                 <div className="w-full border-t"></div>
               </div>
               <div className="relative flex justify-center">
-                <span className="bg-background px-2 text-xs text-muted-foreground">
+                <span className="rounded-full border border-border bg-card px-3 py-1 text-[11px] font-medium text-muted-foreground">
                   {(() => {
                     const today = new Date().toISOString().split('T')[0];
                     if (date === today) {
                       return "Today";
                     }
-                    
                     const dateObj = new Date(date + 'T00:00:00');
                     if (isNaN(dateObj.getTime())) {
                       return date;
                     }
-                    
                     return dateObj.toLocaleDateString(undefined, {
                       weekday: "long",
                       year: "numeric",
@@ -116,31 +120,29 @@ export default function MessageList({
                   key={message.id}
                   className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
                 >
-                  <div className="flex gap-2 max-w-[85%] md:max-w-[80%]">                    {!isCurrentUser && (
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage 
-                          src={message.sender?.profile_picture_url || undefined} 
-                          alt={message.sender?.name || "User"} 
-                        />
-                        <AvatarFallback>
+                  <div className={cn("flex max-w-[75%] gap-2.5", isCurrentUser && "flex-row-reverse")}>
+                    {!isCurrentUser && (
+                      <Avatar className="size-8 shrink-0 self-end">
+                        <AvatarFallback className="bg-primary-soft text-[10px] font-bold text-primary">
                           {getInitials(message.sender?.name || "")}
                         </AvatarFallback>
                       </Avatar>
                     )}
 
-                    <div>
+                    <div className="min-w-0">
                       {!isCurrentUser && (
-                        <p className="text-xs text-muted-foreground mb-1">
+                        <p className="mb-1 pl-1 text-[11px] font-medium text-muted-foreground">
                           {message.sender?.name}
                         </p>
                       )}
                       
                       <div
-                        className={`rounded-lg p-3 ${
+                        className={cn(
+                          'rounded-2xl px-3.5 py-2.5 text-sm shadow-xs',
                           isCurrentUser
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
-                        }`}
+                            ? 'rounded-br-md bg-primary text-primary-foreground'
+                            : 'rounded-bl-md border border-border bg-card'
+                        )}
                       >
                         {message.file_url ? (
                           (() => {
@@ -190,22 +192,17 @@ export default function MessageList({
                           <p className="whitespace-pre-wrap break-words">{message.content}</p>
                         )}
                         
-                        <p className={`text-xs mt-1 ${isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                        <p
+                          className={cn(
+                            'mt-1 text-right text-[10px]',
+                            isCurrentUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                          )}
+                        >
                           {time}
                           {message.is_edited && <span className="ml-1">(edited)</span>}
                         </p>
                       </div>
-                    </div>                    {isCurrentUser && (
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage 
-                          src={message.sender?.profile_picture_url || undefined} 
-                          alt={message.sender?.name || "User"} 
-                        />
-                        <AvatarFallback>
-                          {getInitials(message.sender?.name || "")}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
+                    </div>
                   </div>
                 </div>
               );

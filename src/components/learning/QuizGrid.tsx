@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React from 'react';
 import { QuizSetWithProgress } from '@/types/database';
@@ -22,7 +22,7 @@ const QuizGrid: React.FC<QuizGridProps> = ({
   onDeleteQuizSet
 }) => {
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {quizSets.map((set) => (
         <QuizCard
           key={set.id}

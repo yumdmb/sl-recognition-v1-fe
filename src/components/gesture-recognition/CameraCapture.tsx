@@ -1,14 +1,19 @@
 "use client";
 
 import React, { useRef, useEffect, useState } from "react";
+import { Camera } from "lucide-react";
 import { toast } from "sonner";
 
 interface CameraCaptureProps {
   isActive: boolean;
-  language: "ASL" | "MSL"; // Add language prop
+  language?: "ASL" | "MSL"; // Add language prop
+  onPhotoCapture?: (file: File, previewUrl: string) => void;
 }
 
-export const CameraCapture: React.FC<CameraCaptureProps> = ({ isActive, language }) => {
+export const CameraCapture: React.FC<CameraCaptureProps> = ({
+  isActive,
+  language = "ASL",
+}) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -101,18 +106,36 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ isActive, language
 
   return (
     <div className="space-y-4">
-      <div className="relative w-full aspect-video">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-ink shadow-lift">
         <video
           ref={videoRef}
           autoPlay
           playsInline
-          className="w-full h-full object-cover rounded-lg border border-gray-200"
+          className="aspect-video w-full object-cover"
         />
+        {/* Scanner corner brackets */}
+        {isActive && (
+          <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+            <span className="absolute left-3 top-3 size-6 rounded-tl-lg border-l-2 border-t-2 border-mint/70" />
+            <span className="absolute right-3 top-3 size-6 rounded-tr-lg border-r-2 border-t-2 border-mint/70" />
+            <span className="absolute bottom-3 left-3 size-6 rounded-bl-lg border-b-2 border-l-2 border-mint/70" />
+            <span className="absolute bottom-3 right-3 size-6 rounded-br-lg border-b-2 border-r-2 border-mint/70" />
+            <span className="absolute left-1/2 top-4 -translate-x-1/2 rounded-full bg-ink/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-mint-soft">
+              <Camera className="mr-1 inline h-3 w-3" />
+              Live
+            </span>
+          </div>
+        )}
         <canvas ref={canvasRef} className="hidden" />
       </div>
       {prediction && (
-        <div className="text-base md:text-lg lg:text-xl text-green-600 font-bold text-center p-3 md:p-4 bg-green-50 rounded-lg">
-          You have successfully shown the &ldquo;{prediction}&rdquo; gesture!
+        <div className="rounded-2xl border border-border bg-card p-4 text-center shadow-soft">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
+            Prediction
+          </p>
+          <p className="font-display mt-1 text-2xl font-extrabold tracking-tight">
+            {prediction}
+          </p>
         </div>
       )}
     </div>

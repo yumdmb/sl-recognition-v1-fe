@@ -3,148 +3,180 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import ImageSlideshow from "@/components/ImageSlideshow";
-import { ArrowRight, LayoutDashboard, Sparkles } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight, Play, Sparkles, ScanFace, Flame } from "lucide-react";
 
 interface HeroSectionProps {
   scrollToFeatures: () => void;
   isAuthenticated: boolean;
 }
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  visible: (i: number) => ({
     opacity: 1,
-    transition: {
-      delayChildren: 0.2,
-      staggerChildren: 0.15
-    }
-  }
+    y: 0,
+    transition: { delay: 0.08 * i, duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
+  }),
 };
 
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: {
-      duration: 0.5,
-      ease: "easeOut"
-    }
-  }
-};
+const stats = [
+  { value: "2", label: "Sign languages" },
+  { value: "AI", label: "Gesture recognition" },
+  { value: "100%", label: "Free to learn" },
+];
 
 export default function HeroSection({ scrollToFeatures, isAuthenticated }: HeroSectionProps) {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-white via-signlang-accent/30 to-white py-16 sm:py-24 lg:py-28">
-      {/* Background decoration */}
-      <div className="absolute top-0 right-0 -z-10 w-[500px] h-[500px] bg-signlang-primary/10 rounded-full blur-3xl translate-x-1/3 -translate-y-1/3" />
-      <div className="absolute bottom-0 left-0 -z-10 w-[400px] h-[400px] bg-signlang-primary/10 rounded-full blur-3xl -translate-x-1/3 translate-y-1/3" />
-      
-      <motion.div
-        className="container mx-auto px-4 sm:px-6 lg:px-8"
-        initial="hidden"
-        animate="visible"
-        variants={containerVariants}
-      >
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          <div className="text-left order-2 lg:order-1">
-            <motion.div 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-signlang-primary/10 text-signlang-dark text-sm font-semibold mb-6"
-              variants={itemVariants}
-            >
-              <Sparkles className="h-4 w-4 text-signlang-primary" />
-              In collaboration with MyBIM
-            </motion.div>
-            
-            <motion.h1
-              className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 text-signlang-dark leading-tight"
-              variants={itemVariants}
-            >
-              Bridge Every Conversation with{' '}
-              <span className="text-signlang-primary">Sign Language</span>
-            </motion.h1>
-            
-            <motion.p
-              className="text-lg sm:text-xl text-gray-600 mb-8 leading-relaxed"
-              variants={itemVariants}
-            >
-              Learn ASL and MSL through AI-powered gesture recognition, interactive lessons, 
-              3D avatar demonstrations, and a supportive community — built with the Malaysian 
-              Sign Language and Deaf Studies National Organisation.
-            </motion.p>
-            
-            <motion.div
-              className="flex flex-col sm:flex-row gap-4"
-              variants={itemVariants}
-            >
-              {isAuthenticated ? (
-                <Button size="lg" asChild className="group">
-                  <Link href="/dashboard" className="flex items-center justify-center gap-2">
-                    <LayoutDashboard className="h-5 w-5" />
-                    Go to Dashboard
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Link>
-                </Button>
-              ) : (
-                <Button size="lg" asChild className="group">
-                  <Link href="/auth/register" className="flex items-center justify-center gap-2">
-                    Start Learning Free
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Link>
-                </Button>
-              )}
-              
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={scrollToFeatures}
-                className="cursor-pointer"
-              >
-                Explore Features
-              </Button>
-            </motion.div>
+    <section className="relative overflow-hidden pb-16 pt-32 sm:pb-24 sm:pt-40">
+      {/* Backdrop */}
+      <div className="bg-grid absolute inset-0 [mask-image:radial-gradient(ellipse_75%_65%_at_50%_35%,black,transparent)]" />
+      <div className="absolute -top-32 right-[-10%] size-[560px] rounded-full bg-primary/10 blur-3xl" />
+      <div className="absolute bottom-[-20%] left-[-10%] size-[420px] rounded-full bg-sky/10 blur-3xl" />
 
-            <motion.div 
-              className="mt-8 flex flex-wrap items-center gap-6 text-sm text-gray-500"
-              variants={itemVariants}
-            >
-              <div className="flex items-center gap-2">
-                <div className="flex -space-x-2">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div 
-                      key={i} 
-                      className="w-8 h-8 rounded-full bg-signlang-primary/20 border-2 border-white flex items-center justify-center text-xs font-bold text-signlang-dark"
-                    >
-                      {String.fromCharCode(64 + i)}
-                    </div>
-                  ))}
-                </div>
-                <span>Join learners worldwide</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="flex gap-0.5">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <svg key={i} className="h-4 w-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-                <span>Loved by learners</span>
-              </div>
-            </motion.div>
-          </div>
-          
-          <motion.div 
-            className="order-1 lg:order-2"
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          >
-            <ImageSlideshow />
+      <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-14 px-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr]">
+        {/* Copy */}
+        <div>
+          <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}>
+            <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary-soft px-3.5 py-1.5 text-xs font-semibold text-primary">
+              <Sparkles className="size-3.5" />
+              Bahasa Isyarat Malaysia · BIM &amp; ASL
+            </span>
           </motion.div>
+
+          <motion.h1
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={1}
+            className="font-display mt-6 text-balance text-5xl font-extrabold leading-[1.04] tracking-tight sm:text-6xl lg:text-[4.4rem]"
+          >
+            Speak with your <span className="text-gradient-mint">hands</span>.
+            <br />
+            Be heard by <span className="relative inline-block">everyone.
+              <svg
+                className="absolute -bottom-2 left-0 w-full text-primary/50"
+                viewBox="0 0 220 12"
+                fill="none"
+                preserveAspectRatio="none"
+                aria-hidden
+              >
+                <path d="M3 9C60 3 160 3 217 8" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
+              </svg>
+            </span>
+          </motion.h1>
+
+          <motion.p
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={2}
+            className="mt-7 max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground"
+          >
+            SignBridge turns your camera into a patient sign-language tutor — learn
+            Malaysian and American Sign Language through structured lessons, quizzes,
+            and real-time AI gesture recognition.
+          </motion.p>
+
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={3}
+            className="mt-9 flex flex-wrap items-center gap-3"
+          >
+            {isAuthenticated ? (
+              <Button size="lg" asChild className="group">
+                <Link href="/dashboard" className="flex items-center justify-center gap-2">
+                  Go to Dashboard
+                  <ArrowRight className="transition-transform duration-300 group-hover:translate-x-0.5" />
+                </Link>
+              </Button>
+            ) : (
+              <Button size="lg" asChild className="group">
+                <Link href="/auth/register">
+                  Start learning free
+                  <ArrowRight className="transition-transform duration-300 group-hover:translate-x-0.5" />
+                </Link>
+              </Button>
+            )}
+            <Button size="lg" variant="outline" onClick={scrollToFeatures} className="group">
+              <Play className="text-primary" />
+              See how it works
+            </Button>
+          </motion.div>
+
+          <motion.dl
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={4}
+            className="mt-12 flex divide-x divide-border"
+          >
+            {stats.map((s) => (
+              <div key={s.label} className="pr-8 pl-8 first:pl-0 last:pr-0">
+                <dt className="font-display text-2xl font-bold">{s.value}</dt>
+                <dd className="mt-0.5 text-xs font-medium text-muted-foreground">{s.label}</dd>
+              </div>
+            ))}
+          </motion.dl>
         </div>
-      </motion.div>
+
+        {/* Visual */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.94, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          className="relative mx-auto w-full max-w-[520px]"
+        >
+          {/* Back card */}
+          <div className="absolute -right-4 -top-4 h-full w-full rotate-3 rounded-[2rem] border border-primary/20 bg-primary-soft" aria-hidden />
+
+          <div className="relative overflow-hidden rounded-[2rem] border border-border shadow-lift">
+            <Image
+              src="/family-talking.png"
+              alt="A family practising sign language together"
+              width={1040}
+              height={820}
+              priority
+              className="h-auto w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-ink/45 via-transparent to-transparent" />
+          </div>
+
+          {/* Floating chip: recognition */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="glass absolute -left-3 top-8 flex items-center gap-3 rounded-2xl border border-border px-4 py-3 shadow-lift sm:-left-8"
+          >
+            <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
+              <ScanFace className="size-4.5" />
+            </span>
+            <div>
+              <p className="text-sm font-semibold">“Terima kasih”</p>
+              <p className="text-xs text-muted-foreground">recognised in 0.4s</p>
+            </div>
+          </motion.div>
+
+          {/* Floating chip: streak */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="glass absolute -bottom-5 right-6 flex items-center gap-3 rounded-2xl border border-border px-4 py-3 shadow-lift"
+          >
+            <span className="grid size-9 place-items-center rounded-xl bg-sun/15 text-sun">
+              <Flame className="size-4.5" />
+            </span>
+            <div>
+              <p className="text-sm font-semibold">12-day streak</p>
+              <p className="text-xs text-muted-foreground">BIM quiz champion</p>
+            </div>
+          </motion.div>
+        </motion.div>
+      </div>
     </section>
   );
 }

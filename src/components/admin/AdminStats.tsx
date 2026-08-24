@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import React from 'react';
 import Link from 'next/link';
@@ -33,65 +33,71 @@ export const AdminStats: React.FC<AdminStatsProps> = ({
 }) => {
   const totalPendingContributions = pendingGestureContributions + pendingAvatarContributions;
   const totalAssessed = proficiencyDistribution.beginner + proficiencyDistribution.intermediate + proficiencyDistribution.advanced;
-  
+
+  const stats = [
+    {
+      icon: Users,
+      tone: 'bg-primary-soft text-primary',
+      value: totalUsers,
+      label: 'Total learners',
+      sub: 'excluding admins',
+    },
+    {
+      icon: Ear,
+      tone: 'bg-sky/10 text-sky',
+      value: deafUsers,
+      label: 'Deaf members',
+      sub: 'primary signers',
+    },
+    {
+      icon: EarOff,
+      tone: 'bg-sun/10 text-sun',
+      value: nonDeafUsers,
+      label: 'Hearing learners',
+      sub: 'learning to sign',
+    },
+  ];
+
   return (
     <div className="space-y-6">
-      {/* User Statistics */}
-      <Card>
-        <CardContent className="p-6">
-          <h3 className="text-lg font-medium mb-4">User Statistics</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 rounded-full bg-blue-100 text-blue-700">
-                <Users className="h-6 w-6" />
+      {/* Botanical user stats */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {stats.map((s) => (
+          <Card key={s.label} className="card-lift gap-0">
+            <CardContent className="flex items-center gap-4">
+              <span className={`grid size-12 shrink-0 place-items-center rounded-2xl ${s.tone}`}>
+                <s.icon className="size-5.5" />
+              </span>
+              <div className="min-w-0">
+                <p className="font-display text-3xl font-extrabold leading-none tracking-tight">{s.value}</p>
+                <p className="mt-1.5 truncate text-sm font-semibold">{s.label}</p>
+                <p className="truncate text-xs text-muted-foreground">{s.sub}</p>
               </div>
-              <div>
-                <p className="text-2xl font-bold">{totalUsers}</p>
-                <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="p-3 rounded-full bg-purple-100 text-purple-700">
-                <Ear className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{deafUsers}</p>
-                <p className="text-sm font-medium text-muted-foreground">Deaf Users</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="p-3 rounded-full bg-pink-100 text-pink-700">
-                <EarOff className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{nonDeafUsers}</p>
-                <p className="text-sm font-medium text-muted-foreground">Non-Deaf Users</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-      {/* Engagement & Actions Row */}
+      {/* Engagement & Actions Row - from origin, styled botanically */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Pending Contributions - Actionable */}
-        <Card className={totalPendingContributions > 0 ? "border-amber-300 bg-amber-50/50" : ""}>
+        <Card className={`card-lift gap-0 ${totalPendingContributions > 0 ? "border-amber-200 bg-amber-50/30" : ""}`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium">Pending Contributions</h3>
+              <h3 className="font-display text-base font-bold">Pending Contributions</h3>
               {totalPendingContributions > 0 && (
-                <span className="flex items-center gap-1 text-amber-600 text-sm font-medium">
-                  <AlertCircle className="h-4 w-4" />
+                <span className="flex items-center gap-1 text-amber-700 text-xs font-semibold">
+                  <AlertCircle className="h-3.5 w-3.5" />
                   Requires Action
                 </span>
               )}
             </div>
             <div className="flex items-center space-x-4 mt-4">
-              <div className={`p-3 rounded-full ${totalPendingContributions > 0 ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
-                <Clock className="h-6 w-6" />
-              </div>
+              <span className={`grid size-12 place-items-center rounded-2xl ${totalPendingContributions > 0 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                <Clock className="size-5.5" />
+              </span>
               <div>
-                <p className="text-3xl font-bold">{totalPendingContributions}</p>
+                <p className="font-display text-3xl font-extrabold">{totalPendingContributions}</p>
                 <p className="text-sm font-medium text-muted-foreground">
                   {totalPendingContributions === 0 ? 'All caught up!' : 'Awaiting review'}
                 </p>
@@ -102,16 +108,16 @@ export const AdminStats: React.FC<AdminStatsProps> = ({
             {totalPendingContributions > 0 && (
               <div className="mt-4 pt-4 border-t border-amber-200 grid grid-cols-2 gap-4">
                 <Link 
-                  href="/gesture/manage-contributions"
-                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-amber-100 transition-colors group cursor-pointer"
+                  href="/gesture/view"
+                  className="flex items-center gap-2 p-2 rounded-xl hover:bg-amber-100/60 transition-colors group cursor-pointer border border-transparent hover:border-amber-200"
                 >
-                  <div className="p-2 rounded-full bg-orange-100 text-orange-600 group-hover:bg-orange-200 transition-colors">
-                    <Hand className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1">
+                  <span className="grid size-9 place-items-center rounded-xl bg-orange-100 text-orange-600 group-hover:bg-orange-200 transition-colors">
+                    <Hand className="size-4" />
+                  </span>
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <p className="text-lg font-semibold">{pendingGestureContributions}</p>
-                      <ArrowRight className="h-4 w-4 text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:translate-x-1" />
+                      <p className="font-semibold">{pendingGestureContributions}</p>
+                      <ArrowRight className="h-3.5 w-3.5 text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity group-hover:translate-x-0.5" />
                     </div>
                     <p className="text-xs text-muted-foreground">Gesture</p>
                   </div>
@@ -119,15 +125,15 @@ export const AdminStats: React.FC<AdminStatsProps> = ({
                 
                 <Link 
                   href="/avatar/admin-database?status=pending"
-                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-amber-100 transition-colors group cursor-pointer"
+                  className="flex items-center gap-2 p-2 rounded-xl hover:bg-amber-100/60 transition-colors group cursor-pointer border border-transparent hover:border-amber-200"
                 >
-                  <div className="p-2 rounded-full bg-indigo-100 text-indigo-600 group-hover:bg-indigo-200 transition-colors">
-                    <User className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1">
+                  <span className="grid size-9 place-items-center rounded-xl bg-indigo-100 text-indigo-600 group-hover:bg-indigo-200 transition-colors">
+                    <User className="size-4" />
+                  </span>
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <p className="text-lg font-semibold">{pendingAvatarContributions}</p>
-                      <ArrowRight className="h-4 w-4 text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:translate-x-1" />
+                      <p className="font-semibold">{pendingAvatarContributions}</p>
+                      <ArrowRight className="h-3.5 w-3.5 text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity group-hover:translate-x-0.5" />
                     </div>
                     <p className="text-xs text-muted-foreground">Avatar</p>
                   </div>
@@ -138,15 +144,15 @@ export const AdminStats: React.FC<AdminStatsProps> = ({
         </Card>
 
         {/* Active Learners */}
-        <Card>
+        <Card className="card-lift gap-0">
           <CardContent className="p-6">
-            <h3 className="text-lg font-medium">Active Learners</h3>
+            <h3 className="font-display text-base font-bold">Active Learners</h3>
             <div className="flex items-center space-x-4 mt-4">
-              <div className="p-3 rounded-full bg-emerald-100 text-emerald-700">
-                <BookOpen className="h-6 w-6" />
-              </div>
+              <span className="grid size-12 place-items-center rounded-2xl bg-emerald-100 text-emerald-700">
+                <BookOpen className="size-5.5" />
+              </span>
               <div>
-                <p className="text-3xl font-bold">{activeLearners}</p>
+                <p className="font-display text-3xl font-extrabold">{activeLearners}</p>
                 <p className="text-sm font-medium text-muted-foreground">
                   Users with learning progress
                 </p>
@@ -162,45 +168,45 @@ export const AdminStats: React.FC<AdminStatsProps> = ({
         </Card>
       </div>
 
-      {/* Proficiency Distribution */}
-      <Card>
+      {/* Proficiency Distribution - botanical */}
+      <Card className="card-lift gap-0">
         <CardContent className="p-6">
-          <h3 className="text-lg font-medium mb-4">Proficiency Distribution</h3>
+          <h3 className="font-display text-base font-bold mb-4">Proficiency Distribution</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 rounded-lg bg-green-50 border border-green-200">
-              <GraduationCap className="h-6 w-6 mx-auto text-green-600 mb-2" />
-              <p className="text-2xl font-bold text-green-700">{proficiencyDistribution.beginner}</p>
-              <p className="text-sm font-medium text-green-600">Beginner</p>
+            <div className="text-center p-4 rounded-2xl bg-primary-soft border border-primary/10">
+              <GraduationCap className="h-6 w-6 mx-auto text-primary mb-2" />
+              <p className="font-display text-2xl font-bold text-primary">{proficiencyDistribution.beginner}</p>
+              <p className="text-sm font-medium text-primary/80">Beginner</p>
             </div>
-            <div className="text-center p-4 rounded-lg bg-blue-50 border border-blue-200">
-              <GraduationCap className="h-6 w-6 mx-auto text-blue-600 mb-2" />
-              <p className="text-2xl font-bold text-blue-700">{proficiencyDistribution.intermediate}</p>
-              <p className="text-sm font-medium text-blue-600">Intermediate</p>
+            <div className="text-center p-4 rounded-2xl bg-sky/10 border border-sky/20">
+              <GraduationCap className="h-6 w-6 mx-auto text-sky mb-2" />
+              <p className="font-display text-2xl font-bold text-sky">{proficiencyDistribution.intermediate}</p>
+              <p className="text-sm font-medium text-sky/80">Intermediate</p>
             </div>
-            <div className="text-center p-4 rounded-lg bg-purple-50 border border-purple-200">
-              <GraduationCap className="h-6 w-6 mx-auto text-purple-600 mb-2" />
-              <p className="text-2xl font-bold text-purple-700">{proficiencyDistribution.advanced}</p>
-              <p className="text-sm font-medium text-purple-600">Advanced</p>
+            <div className="text-center p-4 rounded-2xl bg-sun/10 border border-sun/20">
+              <GraduationCap className="h-6 w-6 mx-auto text-sun mb-2" />
+              <p className="font-display text-2xl font-bold text-sun">{proficiencyDistribution.advanced}</p>
+              <p className="text-sm font-medium text-sun/80">Advanced</p>
             </div>
-            <div className="text-center p-4 rounded-lg bg-gray-50 border border-gray-200">
-              <GraduationCap className="h-6 w-6 mx-auto text-gray-500 mb-2" />
-              <p className="text-2xl font-bold text-gray-600">{proficiencyDistribution.unassessed}</p>
-              <p className="text-sm font-medium text-gray-500">Unassessed</p>
+            <div className="text-center p-4 rounded-2xl bg-muted border border-border">
+              <GraduationCap className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
+              <p className="font-display text-2xl font-bold text-muted-foreground">{proficiencyDistribution.unassessed}</p>
+              <p className="text-sm font-medium text-muted-foreground">Unassessed</p>
             </div>
           </div>
           {totalAssessed > 0 && (
             <div className="mt-4 pt-4 border-t">
-              <div className="flex h-3 rounded-full overflow-hidden bg-gray-100">
+              <div className="flex h-3 rounded-full overflow-hidden bg-muted">
                 <div 
-                  className="bg-green-500 transition-all" 
+                  className="bg-primary transition-all" 
                   style={{ width: `${(proficiencyDistribution.beginner / (totalAssessed || 1)) * 100}%` }}
                 />
                 <div 
-                  className="bg-blue-500 transition-all" 
+                  className="bg-sky transition-all" 
                   style={{ width: `${(proficiencyDistribution.intermediate / (totalAssessed || 1)) * 100}%` }}
                 />
                 <div 
-                  className="bg-purple-500 transition-all" 
+                  className="bg-sun transition-all" 
                   style={{ width: `${(proficiencyDistribution.advanced / (totalAssessed || 1)) * 100}%` }}
                 />
               </div>

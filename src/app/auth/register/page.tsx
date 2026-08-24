@@ -1,17 +1,16 @@
-'use client'
+'use client';
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { UserPlus, User, Mail, Lock, Check, X } from 'lucide-react';
+import { Loader2, UserPlus, Ear, EarOff, Check, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import AuthLayout from '@/components/auth/AuthLayout';
+import AuthShell from '@/components/auth/AuthShell';
 import { validatePassword, isPasswordValid } from '@/lib/utils';
 
 export default function Register() {
@@ -32,11 +31,8 @@ export default function Register() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Basic form validation
     if (!name || !email || !password) {
-      toast.error("Registration failed", {
-        description: "All fields are required."
-      });
+      toast.error("Registration failed", { description: "All fields are required." });
       setIsLoading(false);
       return;
     }
@@ -51,9 +47,7 @@ export default function Register() {
     }
 
     if (password !== confirmPassword) {
-      toast.error("Registration failed", {
-        description: "Passwords don't match."
-      });
+      toast.error("Registration failed", { description: "Passwords don't match." });
       setIsLoading(false);
       return;
     }
@@ -61,7 +55,6 @@ export default function Register() {
     try {
       const success = await register(name, email, password, role);
       if (success) {
-        // Redirect to login page after successful registration
         setTimeout(() => {
           router.push('/auth/login');
         }, 2000);
@@ -76,216 +69,187 @@ export default function Register() {
   };
 
   return (
-    <AuthLayout>
-      <Card className="shadow-lg border border-gray-100">
-        <CardHeader className="space-y-1 pb-4">
-          <CardTitle className="text-2xl font-bold text-center text-gray-900">
-            Create Account
-          </CardTitle>
-          <CardDescription className="text-center">
-            Sign up to start your learning journey
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input 
-                  id="name" 
-                  name="name"
-                  type="text"
-                  autoComplete="name"
-                  placeholder="John Doe" 
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="pl-10"
-                  required 
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input 
-                  id="email" 
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="your.email@example.com" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  required 
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input 
-                  id="password" 
-                  name="new-password"
-                  type="password" 
-                  autoComplete="new-password"
-                  placeholder="••••••••" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                  required 
-                />
-              </div>
-              
-              {/* Password requirements checklist */}
-              {password.length > 0 && (
-                <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-xs font-medium text-gray-600 mb-2">Password Requirements:</p>
-                  <div className="grid grid-cols-1 gap-1.5">
-                    <div className="flex items-center gap-2">
-                      {passwordValidation.minLength ? (
-                        <Check className="h-3.5 w-3.5 text-green-500" />
-                      ) : (
-                        <X className="h-3.5 w-3.5 text-red-500" />
-                      )}
-                      <span className={`text-xs ${passwordValidation.minLength ? 'text-green-600' : 'text-gray-500'}`}>
-                        At least 8 characters
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {passwordValidation.hasUppercase ? (
-                        <Check className="h-3.5 w-3.5 text-green-500" />
-                      ) : (
-                        <X className="h-3.5 w-3.5 text-red-500" />
-                      )}
-                      <span className={`text-xs ${passwordValidation.hasUppercase ? 'text-green-600' : 'text-gray-500'}`}>
-                        At least 1 uppercase letter (A-Z)
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {passwordValidation.hasLowercase ? (
-                        <Check className="h-3.5 w-3.5 text-green-500" />
-                      ) : (
-                        <X className="h-3.5 w-3.5 text-red-500" />
-                      )}
-                      <span className={`text-xs ${passwordValidation.hasLowercase ? 'text-green-600' : 'text-gray-500'}`}>
-                        At least 1 lowercase letter (a-z)
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {passwordValidation.hasDigit ? (
-                        <Check className="h-3.5 w-3.5 text-green-500" />
-                      ) : (
-                        <X className="h-3.5 w-3.5 text-red-500" />
-                      )}
-                      <span className={`text-xs ${passwordValidation.hasDigit ? 'text-green-600' : 'text-gray-500'}`}>
-                        At least 1 digit (0-9)
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {passwordValidation.hasSymbol ? (
-                        <Check className="h-3.5 w-3.5 text-green-500" />
-                      ) : (
-                        <X className="h-3.5 w-3.5 text-red-500" />
-                      )}
-                      <span className={`text-xs ${passwordValidation.hasSymbol ? 'text-green-600' : 'text-gray-500'}`}>
-                        At least 1 symbol (!@#$%^&amp;*...)
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input 
-                  id="confirmPassword" 
-                  name="confirm-password"
-                  type="password" 
-                  autoComplete="new-password"
-                  placeholder="••••••••" 
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="pl-10"
-                  required 
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Account Type</Label>
-              <RadioGroup 
-                defaultValue="non-deaf"
-                className="flex space-x-4"
-                onValueChange={(value) => setRole(value as 'non-deaf' | 'deaf')}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="non-deaf" id="non-deaf" />
-                  <Label htmlFor="non-deaf" className="font-normal">Learner</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="deaf" id="deaf" />
-                  <Label htmlFor="deaf" className="font-normal">Deaf User</Label>
-                </div>
-              </RadioGroup>
-            </div>
-            
-            <Button
-              type="submit" 
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Creating Account...
+    <AuthShell
+      title="Create your account"
+      description="Join a community learning sign language together — free, forever."
+      footer={
+        <p className="text-center text-sm text-muted-foreground">
+          Already have an account?{' '}
+          <Link href="/auth/login" className="font-semibold text-primary hover:underline">
+            Sign in
+          </Link>
+        </p>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="name">Full name</Label>
+          <Input
+            id="name"
+            type="text"
+            placeholder="Aisyah Rahman"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            autoComplete="name"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Min. 8 characters"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="new-password"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm password</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              placeholder="Repeat it"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              autoComplete="new-password"
+            />
+          </div>
+        </div>
+
+        {/* Password requirements checklist */}
+        {password.length > 0 && (
+          <div className="rounded-xl border border-border bg-muted/50 p-3">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Password requirements:</p>
+            <div className="grid grid-cols-1 gap-1.5">
+              <div className="flex items-center gap-2">
+                {passwordValidation.minLength ? (
+                  <Check className="h-3.5 w-3.5 text-green-500" />
+                ) : (
+                  <X className="h-3.5 w-3.5 text-destructive" />
+                )}
+                <span className={`text-xs ${passwordValidation.minLength ? 'text-green-600' : 'text-muted-foreground'}`}>
+                  At least 8 characters
                 </span>
-              ) : (
-                <span className="flex items-center">
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Create Account
+              </div>
+              <div className="flex items-center gap-2">
+                {passwordValidation.hasUppercase ? (
+                  <Check className="h-3.5 w-3.5 text-green-500" />
+                ) : (
+                  <X className="h-3.5 w-3.5 text-destructive" />
+                )}
+                <span className={`text-xs ${passwordValidation.hasUppercase ? 'text-green-600' : 'text-muted-foreground'}`}>
+                  At least 1 uppercase letter (A-Z)
                 </span>
-              )}
-            </Button>
-            
-            <p className="text-xs text-gray-500 text-center">
-              By registering, you agree to our{' '}
-              <Link href="/terms" className="text-signlang-primary hover:underline">
-                Terms of Service
-              </Link>{' '}
-              and{' '}
-              <Link href="/privacy" className="text-signlang-primary hover:underline">
-                Privacy Policy
-              </Link>.
-            </p>
-          </form>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-4 pt-4">
-          <div className="relative w-full">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-500">Already have an account?</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {passwordValidation.hasLowercase ? (
+                  <Check className="h-3.5 w-3.5 text-green-500" />
+                ) : (
+                  <X className="h-3.5 w-3.5 text-destructive" />
+                )}
+                <span className={`text-xs ${passwordValidation.hasLowercase ? 'text-green-600' : 'text-muted-foreground'}`}>
+                  At least 1 lowercase letter (a-z)
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {passwordValidation.hasDigit ? (
+                  <Check className="h-3.5 w-3.5 text-green-500" />
+                ) : (
+                  <X className="h-3.5 w-3.5 text-destructive" />
+                )}
+                <span className={`text-xs ${passwordValidation.hasDigit ? 'text-green-600' : 'text-muted-foreground'}`}>
+                  At least 1 digit (0-9)
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {passwordValidation.hasSymbol ? (
+                  <Check className="h-3.5 w-3.5 text-green-500" />
+                ) : (
+                  <X className="h-3.5 w-3.5 text-destructive" />
+                )}
+                <span className={`text-xs ${passwordValidation.hasSymbol ? 'text-green-600' : 'text-muted-foreground'}`}>
+                  At least 1 symbol (!@#$%^&amp;*...)
+                </span>
+              </div>
             </div>
           </div>
-          <p className="text-center text-sm">
-            <Link href="/auth/login" className="text-signlang-primary hover:underline font-medium">
-              Sign in instead
-            </Link>
-          </p>
-        </CardFooter>
-      </Card>
-    </AuthLayout>
+        )}
+
+        <div className="space-y-2.5">
+          <Label>I am…</Label>
+          <RadioGroup
+            defaultValue="non-deaf"
+            className="grid grid-cols-2 gap-3"
+            onValueChange={(value) => setRole(value as 'non-deaf' | 'deaf')}
+          >
+            {[
+              { value: 'non-deaf', id: 'non-deaf', label: 'Hearing learner', desc: 'I want to learn sign language', icon: Ear },
+              { value: 'deaf', id: 'deaf', label: 'Deaf member', desc: 'Sign language is my language', icon: EarOff },
+            ].map((opt) => (
+              <Label
+                key={opt.id}
+                htmlFor={opt.id}
+                className="flex cursor-pointer flex-col items-start gap-2.5 rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/40 hover:bg-accent has-[button[data-state=checked]]:border-primary has-[button[data-state=checked]]:bg-primary-soft"
+              >
+                <RadioGroupItem value={opt.value} id={opt.id} className="absolute" />
+                <opt.icon className="size-4.5 text-primary" />
+                <span>
+                  <span className="block text-sm font-semibold">{opt.label}</span>
+                  <span className="mt-0.5 block text-xs font-normal text-muted-foreground">{opt.desc}</span>
+                </span>
+              </Label>
+            ))}
+          </RadioGroup>
+        </div>
+
+        <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="animate-spin" />
+              Creating account…
+            </>
+          ) : (
+            <>
+              <UserPlus />
+              Create account
+            </>
+          )}
+        </Button>
+
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          After registering, please check your email to verify your account.
+        </p>
+        <p className="text-xs text-muted-foreground text-center">
+          By registering, you agree to our{' '}
+          <Link href="/terms" className="text-primary hover:underline">
+            Terms of Service
+          </Link>{' '}
+          and{' '}
+          <Link href="/privacy" className="text-primary hover:underline">
+            Privacy Policy
+          </Link>
+          .
+        </p>
+      </form>
+    </AuthShell>
   );
-} 
+}

@@ -3,20 +3,18 @@ import { useRouter } from "next/navigation";
 import { Chat, Message, ChatService, UnreadCount } from "@/lib/services/chatService";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { AuthContext } from "@/context/AuthContext";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import ChatList from "./ChatList";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Loader2 } from "lucide-react";
+import { ChevronLeft, Loader2, MessageCircle, MessagesSquare } from "lucide-react";
 
 export default function ChatLayout() {
   const authContext = useContext(AuthContext);
   const user = authContext?.user;
   const router = useRouter();
-  const isMobile = useIsMobile();
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -348,53 +346,63 @@ export default function ChatLayout() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
-      {/* Chat List Sidebar - Hidden on mobile when chat is selected */}
-      <div className={`border-r w-80 flex-shrink-0 h-full ${isMobile && selectedChat ? 'hidden' : 'flex'} ${!isMobile ? 'md:flex' : ''} flex-col p-4`}>
-        <h1 className="font-semibold text-xl mb-4">Messages</h1>
-        <ChatList
-          chats={chats}
-          isLoading={isLoadingChats}
-          selectedChat={selectedChat}
-          onSelectChat={setSelectedChat}
-          onCreateChat={handleCreateChat}
-          currentUserId={user.id}
-          unreadCounts={unreadCounts}
-        />
+    <div className="flex h-[calc(100dvh-8rem)] min-h-[540px] overflow-hidden rounded-2xl border bg-card shadow-soft">
+      {/* Chat List Sidebar */}
+      <div className={`w-80 flex-shrink-0 flex-col border-r ${selectedChat ? 'hidden md:flex' : 'flex'}`}>
+        <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Inbox</p>
+            <h2 className="font-display mt-0.5 text-lg font-bold tracking-tight">Messages</h2>
+          </div>
+          <span className="grid size-10 place-items-center rounded-xl bg-primary-soft text-primary">
+            <MessagesSquare className="size-5" />
+          </span>
+        </div>
+        <div className="scrollbar-thin flex min-h-0 flex-1 flex-col overflow-y-auto p-3">
+          <ChatList
+            chats={chats}
+            isLoading={isLoadingChats}
+            selectedChat={selectedChat}
+            onSelectChat={setSelectedChat}
+            onCreateChat={handleCreateChat}
+            currentUserId={user.id}
+            unreadCounts={unreadCounts}
+          />
+        </div>
       </div>
-      
-      {/* Chat Area - Full screen on mobile when chat is selected */}
-      <div className={`flex-grow flex flex-col h-full ${isMobile && !selectedChat ? 'hidden' : 'flex'}`}>
+
+      {/* Chat Area */}
+      <div className="flex-grow flex flex-col h-full min-w-0">
         {selectedChat ? (
           <>
-            {/* Chat Header with back button on mobile */}
-            <div className="border-b p-4 flex items-center gap-3">
-              {isMobile && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSelectedChat(null)}
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </Button>
-              )}
-              
-              <Avatar className="h-10 w-10">
+            {/* Chat Header */}
+            <div className="glass flex items-center gap-3 border-b px-4 py-3 sm:px-5">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="shrink-0 md:hidden"
+                onClick={() => setSelectedChat(null)}
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+
+              <Avatar className="h-10 w-10 border">
                 {selectedChat && (
                   <>
                     <AvatarImage
                       src={selectedChat.participants.find(p => p.user_id !== user.id)?.user?.profile_picture_url || undefined}
                       alt={getChatName(selectedChat)}
                     />
-                    <AvatarFallback>
+                    <AvatarFallback className="bg-mint-soft text-xs font-semibold text-mint-deep">
                       {getInitials(getChatName(selectedChat))}
                     </AvatarFallback>
                   </>
                 )}
               </Avatar>
               
-              <div>
-                <h2 className="font-medium">{selectedChat && getChatName(selectedChat)}</h2>
+              <div className="min-w-0">
+                <h2 className="truncate font-semibold">{selectedChat && getChatName(selectedChat)}</h2>
+                <p className="text-xs text-muted-foreground">Private conversation</p>
               </div>
             </div>
             
@@ -416,9 +424,16 @@ export default function ChatLayout() {
             </div>
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-            <p className="text-lg font-medium">Select a conversation</p>
-            <p className="text-sm">Choose an existing conversation or start a new one</p>
+          <div className="flex h-full flex-col items-center justify-center p-8">
+            <div className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-dashed p-8 text-center">
+              <span className="grid size-12 place-items-center rounded-xl bg-primary-soft text-primary">
+                <MessageCircle className="size-6" />
+              </span>
+              <p className="mt-4 font-semibold">Select a conversation</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Choose an existing conversation or start a new one from the list.
+              </p>
+            </div>
           </div>
         )}
       </div>

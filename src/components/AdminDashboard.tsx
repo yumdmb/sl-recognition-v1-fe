@@ -6,6 +6,15 @@ import { AdminStats } from '@/components/admin/AdminStats';
 import { AdminQuickAccessPanel } from '@/components/admin/AdminQuickAccessPanel';
 import { motion } from 'framer-motion';
 
+const fadeUp = {
+  hidden: { opacity: 0, y: 18 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: 0.06 * i, duration: 0.55, ease: [0.22, 1, 0.36, 1] as const },
+  }),
+};
+
 const AdminDashboard: React.FC = () => {
   const [totalUsers, setTotalUsers] = useState(0);
   const [deafUsers, setDeafUsers] = useState(0);
@@ -115,42 +124,21 @@ const AdminDashboard: React.FC = () => {
     fetchActiveLearners();
   }, []);
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        duration: 0.5,
-      },
-    },
-  };
-
   return (
-    <motion.div
-      className="space-y-4 md:space-y-6"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      <motion.h2
-        className="text-2xl md:text-3xl font-bold"
-        variants={itemVariants}
-      >
-        Hi Admin!
-      </motion.h2>
-      
-      <motion.div variants={itemVariants}>
+    <motion.div className="space-y-6" initial="hidden" animate="visible">
+      <motion.div variants={fadeUp} custom={0} className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">Admin overview</p>
+          <h2 className="font-display mt-1 text-3xl font-extrabold tracking-tight">
+            Platform at a glance
+          </h2>
+          <p className="mt-1.5 text-muted-foreground">
+            Moderate contributions and keep the learning content fresh.
+          </p>
+        </div>
+      </motion.div>
+
+      <motion.div variants={fadeUp} custom={1}>
         <AdminStats
           totalUsers={totalUsers}
           deafUsers={deafUsers}
@@ -161,13 +149,12 @@ const AdminDashboard: React.FC = () => {
           activeLearners={activeLearners}
         />
       </motion.div>
-      
-      <motion.div variants={itemVariants}>
+
+      <motion.div variants={fadeUp} custom={2}>
         <AdminQuickAccessPanel userRole="admin" />
       </motion.div>
-      
     </motion.div>
   );
 };
 
-export default AdminDashboard; 
+export default AdminDashboard;

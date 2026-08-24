@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createClient } from '@/utils/supabase/client';
+import { BookmarkPlus, Loader2 } from "lucide-react";
 
 interface GestureCategory {
   id: number;
@@ -61,46 +62,54 @@ export default function SaveForm({
   }, []);
 
   return (
-    <Card>
-      <CardHeader className="px-3 md:px-6">
-        <CardTitle className="text-lg md:text-xl">Submit Gesture</CardTitle>
-        <CardDescription className="text-xs md:text-sm">Provide details about your sign language gesture</CardDescription>
+    <Card className="rounded-2xl shadow-soft">
+      <CardHeader>
+        <div className="flex items-center gap-3.5">
+          <span className="grid size-10 place-items-center rounded-xl bg-sun/10 text-sun">
+            <BookmarkPlus className="size-5" />
+          </span>
+          <div>
+            <CardTitle className="font-display text-lg font-bold">Save Gesture</CardTitle>
+            <CardDescription>Provide details about your sign language gesture</CardDescription>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="px-3 md:px-6">
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name" className="text-sm">Title</Label>
+      <CardContent>
+        <div className="grid gap-5 md:grid-cols-2">
+          <div className="grid content-start gap-2">
+            <Label htmlFor="name">Name</Label>
             <Input
               id="name"
               value={signName}
               onChange={(e) => setSignName(e.target.value)}
               placeholder="Enter gesture title"
-              className="h-10"
+              className="h-10 rounded-xl"
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="language" className="text-sm">Language</Label>
+          <div className="grid content-start gap-2">
+            <Label htmlFor="language">Language</Label>
             <Select value={language} onValueChange={(value: "ASL" | "MSL") => setLanguage(value)}>
-              <SelectTrigger className="h-10">
+              <SelectTrigger id="language" className="w-full rounded-xl">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl">
                 <SelectItem value="ASL">American Sign Language (ASL)</SelectItem>
                 <SelectItem value="MSL">Malaysian Sign Language (MSL)</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="category" className="text-sm">Category</Label>
-            <Select 
-              value={categoryId?.toString() || ""} 
-              onValueChange={(value) => setCategoryId(value ? parseInt(value) : null)}
+          <div className="grid content-start gap-2">
+            <Label htmlFor="category">Category</Label>
+            <Select
+              value={categoryId?.toString() || "none"}
+              onValueChange={(value) => setCategoryId(value === "none" ? null : parseInt(value))}
               disabled={loadingCategories}
             >
-              <SelectTrigger className="h-10">
+              <SelectTrigger id="category" className="w-full rounded-xl">
                 <SelectValue placeholder={loadingCategories ? "Loading..." : "Select category"} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="none">No category</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id.toString()}>
                     {category.icon && <span className="mr-2">{category.icon}</span>}
@@ -110,22 +119,29 @@ export default function SaveForm({
               </SelectContent>
             </Select>
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="description" className="text-sm">Description (Optional)</Label>
+          <div className="grid content-start gap-2 md:col-span-2">
+            <Label htmlFor="description">Description (Optional)</Label>
             <Textarea
               id="description"
               value={signDescription}
               onChange={(e) => setSignDescription(e.target.value)}
               placeholder="Enter gesture description"
-              className="min-h-20 md:min-h-24"
+              className="min-h-24 rounded-xl"
             />
           </div>
-          <div className="flex flex-col md:flex-row justify-end gap-2 md:gap-4 pt-2">
-            <Button onClick={onCancel} variant="outline" className="w-full md:w-auto order-2 md:order-1">
+          <div className="flex justify-end gap-3 md:col-span-2">
+            <Button onClick={onCancel} variant="outline" className="rounded-full">
               Cancel
             </Button>
-            <Button onClick={onSave} disabled={isLoading} className="w-full md:w-auto order-1 md:order-2">
-              {isLoading ? "Submitting..." : "Submit for Review"}
+            <Button onClick={onSave} disabled={isLoading} className="gap-2 rounded-full">
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Submit for Review"
+              )}
             </Button>
           </div>
         </div>

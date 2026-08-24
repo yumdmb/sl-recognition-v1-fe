@@ -1,13 +1,18 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Bricolage_Grotesque, Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";
 import { SidebarProvider } from "@/context/SidebarContext";
 import { LearningProvider } from "@/context/LearningContext";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+});
+
+const display = Bricolage_Grotesque({
+  variable: "--font-display",
   subsets: ["latin"],
 });
 
@@ -61,7 +66,9 @@ export const metadata: Metadata = {
   },
 };
 
-// Client-side Providers component
+export const viewport: Viewport = {
+  themeColor: "#0B2B21",
+};
 
 function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -86,7 +93,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${display.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>{children}</Providers>
       </body>

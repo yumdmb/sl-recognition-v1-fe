@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Edit, Trash, Image as ImageIcon, Video } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowLeft, Plus, Pencil, Trash2, Check, ListChecks, Image as ImageIcon, Video } from "lucide-react";
 import { useAdmin } from '@/context/AdminContext';
 import { useLearning } from '@/context/LearningContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,6 +29,7 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
   const [isLoading, setIsLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState<QuizQuestion | null>(null);
+
   useEffect(() => {
     // Redirect non-admin users
     if (!isAdmin) {
@@ -78,6 +80,7 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
     setCurrentQuestion({...question});
     setEditDialogOpen(true);
   };
+
   // Handle deleting a question
   const handleDeleteQuestion = async (id: string) => {
     if (!confirm('Are you sure you want to delete this question?')) return;
@@ -91,6 +94,7 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
       toast.error('Failed to delete question');
     }
   };
+
   // Handle saving a question (new or updated)
   const handleSaveQuestion = async () => {
     if (!currentQuestion) return;
@@ -129,7 +133,7 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
           image_url: currentQuestion.image_url,
           order_index: currentQuestion.order_index
         });
-        
+
         // Refresh questions after creating a new one
         const updatedQuizSet = await getQuizSetWithQuestions(setId);
         if (updatedQuizSet) {
@@ -147,7 +151,7 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
           image_url: currentQuestion.image_url,
           order_index: currentQuestion.order_index
         });
-        
+
         // Refresh questions after updating
         const refreshedQuizSet = await getQuizSetWithQuestions(setId);
         if (refreshedQuizSet) {
@@ -183,138 +187,194 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
 
   if (isLoading) {
     return (
-      <div className="container py-8">
-        <h1 className="text-2xl font-bold mb-4">Loading questions...</h1>
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-9 w-36 rounded-lg" />
+          <Skeleton className="h-7 w-56 rounded-lg" />
+        </div>
+        <Skeleton className="h-10 w-44 rounded-lg" />
+        {[0, 1, 2].map((i) => (
+          <Skeleton key={i} className="h-44 w-full rounded-2xl" />
+        ))}
       </div>
     );
   }
 
   return (
-    <div className="container py-8">
-      <div className="flex justify-between items-center mb-6">
-        <Button variant="outline" onClick={() => router.push('/learning/quizzes')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Quizzes
-        </Button>
-        <h1 className="text-2xl font-bold">{quizTitle ? `Edit ${quizTitle} Questions` : 'Edit Questions'}</h1>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Quiz builder</p>
+          <h2 className="font-display mt-2 text-3xl font-extrabold tracking-tight">
+            {quizTitle || 'Questions'}
+          </h2>
+          <p className="mt-1.5 text-muted-foreground">
+            {questions.length} question{questions.length === 1 ? '' : 's'} in this set
+          </p>
+        </div>
+        <div className="flex items-center gap-2.5">
+          <Button variant="outline" onClick={() => router.push('/learning/quizzes')}>
+            <ArrowLeft />
+            Back
+          </Button>
+          <Button onClick={handleAddQuestion}>
+            <Plus />
+            Add question
+          </Button>
+        </div>
       </div>
-
-      {/* Add new question button */}
-      <Button onClick={handleAddQuestion} className="mb-8">
-        <Plus className="h-4 w-4 mr-2" />
-        Add New Question
-      </Button>
 
       {/* Questions list */}
       {questions.length === 0 ? (
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <p className="text-center text-gray-500">No questions added yet. Click &ldquo;Add New Question&rdquo; to get started.</p>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border px-6 py-16 text-center">
+          <span className="grid size-14 place-items-center rounded-2xl bg-primary-soft text-primary">
+            <ListChecks className="size-6" />
+          </span>
+          <h3 className="font-display mt-5 text-lg font-bold">No questions yet</h3>
+          <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
+            Add your first question to start building this quiz set.
+          </p>
+          <Button className="mt-6" onClick={handleAddQuestion}>
+            <Plus />
+            Add question
+          </Button>
+        </div>
       ) : (
-        questions.map((question, index) => (
-          <Card key={question.id} className="mb-6">
-            <CardHeader>
-              <div className="flex justify-between">
-                <CardTitle>Question {index + 1}</CardTitle>
-                <div className="space-x-2">
-                  <Button size="sm" variant="ghost" onClick={() => handleEditQuestion(question)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => handleDeleteQuestion(question.id)}>
-                    <Trash className="h-4 w-4 mr-2" />
-                    Delete
-                  </Button>
-                </div>
-              </div>
-              <CardDescription className="text-lg font-medium text-black pt-2">
-                {question.question}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {question.options.map((option, i) => (
-                  <div 
-                    key={i} 
-                    className={`p-3 border rounded-md ${option === question.correct_answer ? 'border-green-500 bg-green-50' : ''}`}
-                  >
-                    {option} {option === question.correct_answer && '✓'}
+        <div className="space-y-4">
+          {questions.map((question, index) => (
+            <Card key={question.id} className="card-lift gap-0">
+              <CardContent className="space-y-4 p-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3.5">
+                    <span className="font-display grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-sm font-bold text-muted-foreground">
+                      {index + 1}
+                    </span>
+                    <p className="pt-1 font-semibold leading-snug">{question.question}</p>
                   </div>
-                ))}
-              </div>
-              <div className="mt-4 text-gray-600">
-                <p><span className="font-medium">Explanation:</span> {question.explanation}</p>
-              </div>
-              {(question.image_url || question.video_url) && (
-                <div className="mt-4 flex gap-2 items-center text-sm text-muted-foreground">
-                  {question.image_url && (
-                    <div className="flex items-center gap-1">
-                      <ImageIcon className="h-4 w-4" />
-                      <span>Image attached</span>
-                    </div>
-                  )}
-                  {question.video_url && (
-                    <div className="flex items-center gap-1">
-                      <Video className="h-4 w-4" />
-                      <span>Video attached</span>
-                    </div>
-                  )}
+                  <div className="flex shrink-0 gap-1">
+                    <Button size="icon" variant="ghost" onClick={() => handleEditQuestion(question)} aria-label="Edit question">
+                      <Pencil className="size-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => handleDeleteQuestion(question.id)}
+                      aria-label="Delete question"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        ))
+
+                <div className="ml-11 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {question.options.map((option, i) => {
+                    const isCorrect = option === question.correct_answer;
+                    return (
+                      <div
+                        key={i}
+                        className={`flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-sm ${
+                          isCorrect
+                            ? 'border-primary/40 bg-primary-soft font-semibold text-primary'
+                            : 'border-border bg-card text-foreground/80'
+                        }`}
+                      >
+                        {isCorrect && <Check className="size-4 shrink-0" />}
+                        <span className="truncate">{option}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <p className="ml-11 rounded-xl bg-muted px-3.5 py-2.5 text-sm leading-relaxed text-muted-foreground">
+                  <span className="font-semibold text-foreground/70">Explanation: </span>
+                  {question.explanation}
+                </p>
+                {(question.image_url || question.video_url) && (
+                  <div className="ml-11 flex gap-2 items-center text-sm text-muted-foreground">
+                    {question.image_url && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2.5 py-1 text-xs font-semibold text-primary">
+                        <ImageIcon className="size-3.5" />
+                        Image attached
+                      </span>
+                    )}
+                    {question.video_url && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-sky/10 px-2.5 py-1 text-xs font-semibold text-sky">
+                        <Video className="size-3.5" />
+                        Video attached
+                      </span>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
 
       {/* Edit dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{currentQuestion?.id ? 'Edit' : 'Add'} Question</DialogTitle>
+            <DialogTitle className="font-display">
+              {currentQuestion?.id ? 'Edit question' : 'New question'}
+            </DialogTitle>
+            <DialogDescription>
+              Fill in the question, four options, and mark the correct one.
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-5 py-4">
             <div className="space-y-2">
               <Label htmlFor="question">Question</Label>
-              <Textarea 
+              <Textarea
                 id="question"
                 value={currentQuestion?.question || ''}
                 onChange={(e) => handleQuestionChange('question', e.target.value)}
-                placeholder="Enter question text"
+                placeholder="e.g. What sign is shown for “thank you”?"
               />
             </div>
 
-            <div className="space-y-4">
-              <Label>Options</Label>
-              {currentQuestion?.options.map((option, idx) => (
-                <div key={idx} className="flex space-x-2">
-                  <Input 
-                    value={option}
-                    onChange={(e) => handleQuestionChange('options', { index: idx, text: e.target.value })}
-                    placeholder={`Option ${idx + 1} (e.g., A)`}
-                    className="flex-1"
-                  />
-                  <Button 
-                    type="button" 
-                    variant={option === currentQuestion?.correct_answer ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleSetCorrectAnswer(option)}
-                  >
-                    {option === currentQuestion?.correct_answer ? '✓ Correct' : 'Set as Correct'}
-                  </Button>
-                </div>
-              ))}
+            <div className="space-y-2.5">
+              <Label>Options — tap one to mark it correct</Label>
+              {currentQuestion?.options.map((option, idx) => {
+                const isCorrect = option === currentQuestion?.correct_answer;
+                return (
+                  <div key={idx} className="flex gap-2">
+                    <Input
+                      value={option}
+                      onChange={(e) => handleQuestionChange('options', { index: idx, text: e.target.value })}
+                      placeholder={`Option ${idx + 1}`}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant={isCorrect ? "default" : "outline"}
+                      size="sm"
+                      className="shrink-0"
+                      onClick={() => handleSetCorrectAnswer(option)}
+                    >
+                      {isCorrect ? (
+                        <>
+                          <Check />
+                          Correct
+                        </>
+                      ) : (
+                        'Set correct'
+                      )}
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="explanation">Explanation</Label>
-              <Textarea 
+              <Textarea
                 id="explanation"
                 value={currentQuestion?.explanation || ''}
                 onChange={(e) => handleQuestionChange('explanation', e.target.value)}
-                placeholder="Explain the correct answer"
+                placeholder="Explain why the correct answer is right"
               />
             </div>
 
@@ -340,7 +400,7 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveQuestion}>Save Question</Button>
+            <Button onClick={handleSaveQuestion}>Save question</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

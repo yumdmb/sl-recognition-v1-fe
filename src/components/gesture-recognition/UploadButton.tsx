@@ -16,9 +16,10 @@ export const UploadButton: React.FC<UploadButtonProps> = ({
   onUpload
 }) => {
   return (
-    <Button 
-      onClick={onUpload} 
-      className="w-full"
+    <Button
+      onClick={onUpload}
+      className="w-full rounded-full"
+      size="lg"
       disabled={!hasFile || isLoading}
     >
       {isLoading ? (

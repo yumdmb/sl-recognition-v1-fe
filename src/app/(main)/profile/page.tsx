@@ -1,11 +1,12 @@
-'use client'
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Mail, Calendar, Edit, Award, KeyRound } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Mail, Calendar, Edit, Award, KeyRound, GraduationCap, UserRound } from "lucide-react";
 import { EditProfileDialog } from '@/components/user/EditProfileDialog';
 import { ChangePasswordDialog } from '@/components/user/ChangePasswordDialog';
 import { ProfilePictureUpload } from '@/components/user/ProfilePictureUpload';
@@ -41,21 +42,57 @@ export default function ProfilePage() {
     return null;
   }
 
+  const initials = (currentUser.name || 'U')
+    .split(' ')
+    .map((p: string) => p[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
+  const roleLabel =
+    currentUser.role === 'admin'
+      ? 'Administrator'
+      : currentUser.role === 'deaf'
+        ? 'Deaf member'
+        : 'Hearing learner';
+  const roleTone =
+    currentUser.role === 'admin'
+      ? 'border-sun/30 bg-sun/10 text-sun'
+      : currentUser.role === 'deaf'
+        ? 'border-primary/25 bg-primary-soft text-primary'
+        : 'border-sky/25 bg-sky/10 text-sky';
+
+  const infoRows = [
+    {
+      icon: UserRound,
+      tone: 'bg-primary-soft text-primary',
+      label: 'Full name',
+      value: currentUser.name,
+    },
+    {
+      icon: Mail,
+      tone: 'bg-sky/10 text-sky',
+      label: 'Email',
+      value: currentUser.email,
+    },
+    {
+      icon: Calendar,
+      tone: 'bg-coral/10 text-coral',
+      label: 'Account type',
+      value: roleLabel,
+    },
+  ];
+
   return (
-    <div className="max-w-7xl mx-auto">
-      <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">My Profile</h1>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        {/* User Information Card */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <User className="h-5 w-5 mr-2" /> User Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-8 flex justify-center">
+    <div className="mx-auto max-w-3xl space-y-6">
+      {/* Hero card - botanical */}
+      <Card className="relative overflow-hidden gap-0 border-border">
+        <div className="bg-dots h-24 w-full bg-ink opacity-90" aria-hidden />
+        <CardContent className="-mt-10 px-6 pb-6">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="flex items-end gap-4">
+              {/* Profile picture or initials */}
+              <div className="-mb-1">
                 <ProfilePictureUpload
                   userId={currentUser.id}
                   currentPictureUrl={profilePictureUrl}
@@ -63,179 +100,159 @@ export default function ProfilePage() {
                   onUpdate={handleProfilePictureUpdate}
                 />
               </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center">
-                  <User className="h-5 w-5 mr-3 text-gray-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Full Name</p>
-                    <p className="text-lg">{currentUser.name}</p>
+              <div className="pb-1">
+                <h2 className="font-display text-2xl font-extrabold tracking-tight">{currentUser.name}</h2>
+                <span className={`mt-1.5 inline-block rounded-full border px-3 py-0.5 text-xs font-semibold ${roleTone}`}>
+                  {roleLabel}
+                </span>
+              </div>
+            </div>
+            <Button variant="outline" className="rounded-full" onClick={() => setIsEditDialogOpen(true)}>
+              <Edit />
+              Edit profile
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[1.5fr_1fr]">
+        {/* Details - botanical + enriched */}
+        <Card className="gap-0">
+          <CardContent className="space-y-5 p-6">
+            <h3 className="font-display text-base font-bold">Account details</h3>
+            <div className="space-y-4">
+              {infoRows.map((row) => (
+                <div key={row.label} className="flex items-center gap-3.5">
+                  <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${row.tone}`}>
+                    <row.icon className="size-4.5" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground">{row.label}</p>
+                    <p className="truncate text-sm font-semibold">{row.value}</p>
                   </div>
                 </div>
-                
-                <div className="flex items-center">
-                  <Mail className="h-5 w-5 mr-3 text-gray-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Email</p>
-                    <p className="text-lg">{currentUser.email}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center">
-                  <Calendar className="h-5 w-5 mr-3 text-gray-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Account Type</p>
-                    <p className="text-lg capitalize">{currentUser.role}</p>
-                  </div>
-                </div>
-                
-                {currentUser.role !== 'admin' && (
-                <div className="flex items-start">
-                  <Award className="h-5 w-5 mr-3 text-gray-500 mt-1" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-500 mb-3">Proficiency Levels</p>
-                    
-                    {/* Language Proficiency Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                      {/* ASL Proficiency */}
-                      <div className="p-3 border rounded-lg bg-gray-50 dark:bg-gray-800">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xl">🇺🇸</span>
-                          <span className="font-medium">ASL</span>
-                        </div>
-                        {currentUser.asl_proficiency_level ? (
-                          <p className="text-lg font-semibold text-blue-600 dark:text-blue-400 capitalize">
-                            {currentUser.asl_proficiency_level}
-                          </p>
-                        ) : (
-                          <p className="text-sm text-gray-500">Not assessed</p>
-                        )}
-                      </div>
-                      
-                      {/* MSL Proficiency */}
-                      <div className="p-3 border rounded-lg bg-gray-50 dark:bg-gray-800">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xl">🇲🇾</span>
-                          <span className="font-medium">MSL</span>
-                        </div>
-                        {currentUser.msl_proficiency_level ? (
-                          <p className="text-lg font-semibold text-green-600 dark:text-green-400 capitalize">
-                            {currentUser.msl_proficiency_level}
-                          </p>
-                        ) : (
-                          <p className="text-sm text-gray-500">Not assessed</p>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Actions */}
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="w-full sm:w-auto"
-                        onClick={() => router.push('/proficiency-test/history')}
-                      >
-                        View History
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="w-full sm:w-auto"
-                        onClick={() => router.push('/proficiency-test/select')}
-                      >
-                        Take New Test
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-                )}
-                
-                {/* Language Preference Section */}
-                {currentUser.role !== 'admin' && (
-                <div className="flex items-start">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-gray-500 mt-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M4.083 9h1.946c.089-1.546.383-2.97.837-4.118A6.004 6.004 0 004.083 9zM10 2a8 8 0 100 16 8 8 0 000-16zm0 2c-.076 0-.232.032-.465.262-.238.234-.497.623-.737 1.182-.389.907-.673 2.142-.766 3.556h3.936c-.093-1.414-.377-2.649-.766-3.556-.24-.56-.5-.948-.737-1.182C10.232 4.032 10.076 4 10 4zm3.971 5c-.089-1.546-.383-2.97-.837-4.118A6.004 6.004 0 0115.917 9h-1.946zm-2.003 2H8.032c.093 1.414.377 2.649.766 3.556.24.56.5.948.737 1.182.233.23.389.262.465.262.076 0 .232-.032.465-.262.238-.234.498-.623.737-1.182.389-.907.673-2.142.766-3.556zm1.166 4.118c.454-1.147.748-2.572.837-4.118h1.946a6.004 6.004 0 01-2.783 4.118zm-6.268 0C6.412 13.97 6.118 12.546 6.03 11H4.083a6.004 6.004 0 002.783 4.118z" clipRule="evenodd" />
-                  </svg>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-500 mb-2">Sign Language Preference</p>
-                    {currentUser.preferred_language ? (
-                      <div className="space-y-3">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+              ))}
+
+              {/* Proficiency - merged botanical + ASL/MSL breakdown */}
+              <div className="flex items-start gap-3.5">
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-sun/10 text-sun">
+                  <Award className="size-4.5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-muted-foreground">Proficiency levels</p>
+                  {currentUser.role !== 'admin' ? (
+                    <div className="mt-2 space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-xl border border-border bg-muted/40 p-3">
                           <div className="flex items-center gap-2">
-                            <span className="text-2xl">{currentUser.preferred_language === 'ASL' ? '🇺🇸' : '🇲🇾'}</span>
-                            <p className="text-lg font-semibold">
-                              {currentUser.preferred_language === 'ASL' ? 'American Sign Language' : 'Malaysian Sign Language'}
-                            </p>
+                            <span className="text-base">🇺🇸</span>
+                            <span className="text-xs font-semibold">ASL</span>
                           </div>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="w-full sm:w-auto"
-                            onClick={() => router.push('/proficiency-test/select')}
-                          >
-                            Change Language
-                          </Button>
+                          {currentUser.asl_proficiency_level ? (
+                            <Badge className="mt-2 capitalize">{currentUser.asl_proficiency_level}</Badge>
+                          ) : (
+                            <p className="mt-2 text-xs text-muted-foreground">Not assessed</p>
+                          )}
                         </div>
-                        <p className="text-xs text-gray-500">
-                          All learning content will be filtered to show {currentUser.preferred_language} content
-                        </p>
+                        <div className="rounded-xl border border-border bg-muted/40 p-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">🇲🇾</span>
+                            <span className="text-xs font-semibold">MSL</span>
+                          </div>
+                          {currentUser.msl_proficiency_level ? (
+                            <Badge className="mt-2 capitalize">{currentUser.msl_proficiency_level}</Badge>
+                          ) : (
+                            <p className="mt-2 text-xs text-muted-foreground">Not assessed</p>
+                          )}
+                        </div>
                       </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <p className="text-lg text-gray-600">Not yet selected</p>
-                        <Button size="sm" onClick={() => router.push('/proficiency-test/select')}>
-                          Select Language
+                      {/* Legacy single field fallback */}
+                      {!currentUser.asl_proficiency_level && !currentUser.msl_proficiency_level && currentUser.proficiency_level && (
+                        <Badge className="capitalize">{currentUser.proficiency_level}</Badge>
+                      )}
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" variant="outline" onClick={() => router.push('/proficiency-test/history')}>
+                          View history
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => router.push('/proficiency-test/select')}>
+                          Take new test
                         </Button>
                       </div>
-                    )}
+                      {/* Language preference */}
+                      <div className="pt-2 border-t border-border">
+                        <p className="text-xs font-medium text-muted-foreground">Sign language preference</p>
+                        {currentUser.preferred_language ? (
+                          <div className="mt-2 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg">{currentUser.preferred_language === 'ASL' ? '🇺🇸' : '🇲🇾'}</span>
+                              <span className="text-sm font-semibold">{currentUser.preferred_language === 'ASL' ? 'American Sign Language' : 'Malaysian Sign Language'}</span>
+                            </div>
+                            <Button size="sm" variant="outline" onClick={() => router.push('/proficiency-test/select')}>
+                              Change
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">Not yet selected</span>
+                            <Button size="sm" onClick={() => router.push('/proficiency-test/select')}>
+                              Select language
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : currentUser.proficiency_level ? (
+                    <Badge className="mt-0.5 capitalize">{currentUser.proficiency_level}</Badge>
+                  ) : (
+                    <div className="mt-1 flex flex-wrap items-center gap-2.5">
+                      <span className="text-sm text-muted-foreground">Not applicable</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Fallback for simple proficiency display if needed */}
+              {currentUser.role === 'admin' && currentUser.proficiency_level && (
+                <div className="flex items-center gap-3.5">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-sun/10 text-sun">
+                    <GraduationCap className="size-4.5" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground">Proficiency</p>
+                    <Badge className="mt-0.5 capitalize">{currentUser.proficiency_level}</Badge>
                   </div>
                 </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Account Actions Card */}
-        <div className="lg:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Account Actions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <Button 
-                  variant="outline" 
-                  className="w-full flex items-center justify-start"
-                  onClick={() => setIsEditDialogOpen(true)}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Profile
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full flex items-center justify-start"
-                  onClick={() => setIsChangePasswordDialogOpen(true)}
-                >
-                  <KeyRound className="h-4 w-4 mr-2" />
-                  Change Password
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Actions */}
+        <Card className="h-fit gap-0">
+          <CardContent className="space-y-3 p-6">
+            <h3 className="font-display text-base font-bold">Account actions</h3>
+            <Button variant="outline" className="w-full justify-start" onClick={() => setIsEditDialogOpen(true)}>
+              <Edit />
+              Edit profile
+            </Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => setIsChangePasswordDialogOpen(true)}>
+              <KeyRound />
+              Change password
+            </Button>
+            <p className="pt-1 text-xs leading-relaxed text-muted-foreground">
+              Need to update your details? Account changes apply across all your SignBridge devices.
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Edit Profile Dialog */}
+      {/* Dialogs - preserved from origin */}
       <EditProfileDialog
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
         currentUser={currentUser}
         onSave={handleSaveProfile}
       />
-
-      {/* Change Password Dialog */}
       <ChangePasswordDialog
         open={isChangePasswordDialogOpen}
         onOpenChange={setIsChangePasswordDialogOpen}
@@ -243,4 +260,4 @@ export default function ProfilePage() {
       />
     </div>
   );
-} 
+}

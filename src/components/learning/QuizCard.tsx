@@ -1,9 +1,11 @@
-'use client'
+'use client';
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Edit, ListChecks, Trash2, Play, ClipboardList } from 'lucide-react';
 import { QuizSetWithProgress } from '@/types/database';
 
 interface QuizCardProps {
@@ -23,49 +25,65 @@ const QuizCard: React.FC<QuizCardProps> = ({
   onEditQuizSet,
   onDeleteQuizSet
 }) => {
+  const progress = quizSet.progress;
+  const pct = progress
+    ? Math.round((progress.score / progress.total_questions) * 100)
+    : null;
+
   return (
-    <Card>
-      <CardHeader className="px-4 md:px-6">
-        <CardTitle className="text-lg md:text-xl">{quizSet.title}</CardTitle>
-        <CardDescription>{quizSet.description}</CardDescription>
-      </CardHeader>
-      <CardContent className="px-4 md:px-6">
-        <div className="text-sm text-gray-500">
-          <p>{quizSet.questionCount} questions · {quizSet.language}</p>
-          {quizSet.progress && (
-            <p className="mt-1">
-              Last score: {quizSet.progress.score}/{quizSet.progress.total_questions} ({Math.round((quizSet.progress.score / quizSet.progress.total_questions) * 100)}%)
-            </p>
+    <Card className="card-lift gap-0 py-5">
+      <CardContent className="flex h-full flex-col">
+        <div className="flex items-start justify-between gap-3">
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary">
+            <ClipboardList className="size-5" />
+          </span>
+          <Badge variant="outline" className="border-border text-muted-foreground">
+            {quizSet.questionCount} questions
+          </Badge>
+        </div>
+
+        <h3 className="font-display mt-4 text-lg font-bold leading-snug">{quizSet.title}</h3>
+        <p className="mt-1.5 line-clamp-2 flex-1 text-sm leading-relaxed text-muted-foreground">
+          {quizSet.description}
+        </p>
+
+        {progress && pct !== null && (
+          <div className="mt-4">
+            <div className="mb-1.5 flex items-center justify-between text-xs">
+              <span className="font-medium text-muted-foreground">Last attempt</span>
+              <span className="font-bold text-primary">{progress.score}/{progress.total_questions} · {pct}%</span>
+            </div>
+            <Progress value={pct} className="h-1.5" />
+          </div>
+        )}
+
+        <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+          <Button size="sm" onClick={() => onStartQuiz(quizSet.id)} className="group">
+            <Play />
+            {progress ? 'Retake' : 'Start quiz'}
+          </Button>
+          {isAdmin && (
+            <>
+              <Button size="sm" variant="ghost" onClick={() => onEditQuizSet(quizSet)}>
+                <Edit />
+                Set
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => onEditQuestions(quizSet.id)}>
+                <ListChecks />
+                Questions
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="ml-auto text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => onDeleteQuizSet(quizSet.id)}
+              >
+                <Trash2 />
+              </Button>
+            </>
           )}
         </div>
       </CardContent>
-      <CardFooter className="flex flex-col sm:flex-row justify-end gap-3 px-4 md:px-6">
-        {isAdmin && (
-          <>
-            <Button size="sm" variant="outline" onClick={() => onEditQuizSet(quizSet)} className="w-full sm:w-auto min-h-[44px]">
-              <Edit className="mr-2 h-4 w-4" />
-              Edit Set
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => onEditQuestions(quizSet.id)} className="w-full sm:w-auto min-h-[44px]">
-              <Edit className="mr-2 h-4 w-4" />
-              Edit Questions
-            </Button>
-            <Button size="sm" variant="destructive" onClick={() => onDeleteQuizSet(quizSet.id)} className="w-full sm:w-auto min-h-[44px]">
-              <Trash className="mr-2 h-4 w-4" />
-              Delete
-            </Button>
-          </>
-        )}
-        {quizSet.progress ? (
-          <Button size="sm" disabled className="w-full sm:w-auto min-h-[44px] opacity-60">
-            {quizSet.progress.completed ? 'Completed ✓' : `Score: ${quizSet.progress.score}/${quizSet.progress.total_questions}`}
-          </Button>
-        ) : (
-          <Button size="sm" onClick={() => onStartQuiz(quizSet.id)} className="w-full sm:w-auto min-h-[44px]">
-            Start Quiz
-          </Button>
-        )}
-      </CardFooter>
     </Card>
   );
 };

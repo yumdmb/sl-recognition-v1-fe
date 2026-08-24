@@ -1,6 +1,8 @@
-'use client'
+'use client';
 
 import React, { useEffect, useMemo } from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { Award, BookOpen, Loader2, ChevronRight } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import { useLearning } from '@/context/LearningContext';
@@ -47,129 +49,119 @@ const QuizProgress: React.FC<QuizProgressProps> = ({ language }) => {
 
   if (quizSetsLoading) {
     return (
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 h-48 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-signlang-primary mx-auto" />
-          <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Loading quizzes...</p>
-        </div>
-      </div>
+      <Card>
+        <CardContent className="grid min-h-[220px] place-items-center">
+          <div className="text-center">
+            <Loader2 className="mx-auto size-6 animate-spin text-primary" />
+            <p className="mt-3 text-sm text-muted-foreground">Loading quiz progress…</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   // Show message if user hasn't taken proficiency test for this language
   if (!userLevel) {
     return (
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-center items-center h-auto min-h-[200px] relative overflow-hidden">
-        <div className="z-10 relative text-center">
-          <div className="flex items-center justify-between w-full mb-6">
-            <span className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              {language} Quizzes
+      <Card className="card-lift gap-0">
+        <CardContent className="space-y-5">
+          <div className="flex items-center gap-3">
+            <span className="grid size-10 place-items-center rounded-xl bg-sun/10 text-sun">
+              <Award className="size-5" />
             </span>
-            <Award size={20} className="text-signlang-primary" />
+            <div>
+              <h3 className="font-display text-base font-bold">{language} Quizzes</h3>
+              <p className="text-xs text-muted-foreground">Unlock with proficiency test</p>
+            </div>
           </div>
-          <BookOpen className="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600 mb-3" />
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 max-w-[200px]">
-            Take the {language} proficiency test to unlock quizzes.
-          </p>
-          <Link 
-            href="/proficiency-test/select"
-            className="inline-flex items-center px-4 py-2 bg-signlang-primary hover:bg-signlang-primary/90 text-signlang-dark font-medium rounded-lg transition-colors text-sm"
-          >
-            Take Test
-            <ChevronRight size={16} className="ml-1" />
-          </Link>
-        </div>
-        {/* Decorative Background */}
-        <div className="absolute -right-6 -bottom-6 w-28 h-28 bg-signlang-accent dark:bg-signlang-primary/10 rounded-full" />
-      </div>
+          <div className="flex flex-col items-center rounded-xl border border-dashed border-border px-4 py-6 text-center bg-muted/20">
+            <BookOpen className="mx-auto h-8 w-8 text-muted-foreground/60 mb-2" />
+            <p className="text-sm text-muted-foreground mb-3 max-w-[220px]">
+              Take the {language} proficiency test to unlock quizzes.
+            </p>
+            <Link 
+              href="/proficiency-test/select"
+              className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground font-medium rounded-full transition-colors text-sm hover:bg-primary/90"
+            >
+              Take Test
+              <ChevronRight size={16} className="ml-1" />
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col h-full min-h-[200px] relative overflow-hidden group">
-      {/* Card Header */}
-      <div className="z-10 relative">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-            {language} Quizzes
+    <Card className="gap-0 card-lift">
+      <CardContent className="space-y-5">
+        <div className="flex items-center gap-3">
+          <span className="grid size-10 place-items-center rounded-xl bg-sun/10 text-sun">
+            <Award className="size-5" />
           </span>
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 bg-signlang-accent dark:bg-signlang-primary/20 text-signlang-dark dark:text-signlang-primary text-xs font-bold rounded">
-              {levelDisplayText}
-            </span>
-            <Award size={20} className="text-signlang-primary" />
+          <div className="flex-1 min-w-0">
+            <h3 className="font-display text-base font-bold flex items-center gap-2">
+              {language} Quizzes
+              <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-bold text-primary">
+                {levelDisplayText}
+              </span>
+            </h3>
+            <p className="text-xs text-muted-foreground">Attempted vs. available sets</p>
           </div>
         </div>
-        
-        {/* Main Stat */}
-        <div className="text-4xl font-bold text-slate-900 dark:text-white mb-1">
-          {overallCompletion}%
+
+        <div>
+          <div className="flex items-end justify-between">
+            <span className="font-display text-4xl font-extrabold tracking-tight">{overallCompletion}%</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              {attemptedQuizzes.length} of {totalQuizzes} attempted
+            </span>
+          </div>
+          <Progress value={overallCompletion} className="mt-3 h-2.5" />
         </div>
-        <p className="text-xs text-slate-400 dark:text-slate-500">
-          {attemptedQuizzes.length} of {totalQuizzes} quizzes attempted
-        </p>
-      </div>
 
-      {/* Progress Bar */}
-      <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2 mt-4 z-10 relative">
-        <div 
-          className="bg-signlang-primary h-2 rounded-full transition-all duration-500" 
-          style={{ width: `${overallCompletion}%` }}
-        />
-      </div>
-
-      {/* Quiz List */}
-      {totalQuizzes === 0 ? (
-        <div className="text-center py-4 mt-4 z-10 relative">
-          <p className="text-slate-500 dark:text-slate-400 text-sm">
+        {totalQuizzes === 0 ? (
+          <p className="rounded-xl border border-dashed border-border px-4 py-5 text-center text-sm text-muted-foreground">
             No {language} quizzes available for {levelDisplayText} level yet.
           </p>
-        </div>
-      ) : (
-        <div className="max-h-40 overflow-y-auto mt-4 space-y-2 z-10 relative pr-1">
-          {languageFilteredQuizzes.slice(0, 4).map(quizSet => {
-            const hasProgress = !!quizSet.progress;
-            
-            return (
-              <div 
-                key={quizSet.id}
-                className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-              >
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate pr-2">{quizSet.title}</span>
-                  {hasProgress ? (
-                    <span className="text-xs font-bold text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full flex-shrink-0">
-                      Completed
-                    </span>
-                  ) : (
-                    <span className="text-xs font-medium text-slate-400 dark:text-slate-500 bg-slate-200 dark:bg-slate-600 px-2 py-0.5 rounded-full flex-shrink-0">
-                      Not Started
-                    </span>
-                  )}
+        ) : (
+          <div className="space-y-3 max-h-40 overflow-y-auto pr-1">
+            {languageFilteredQuizzes.slice(0, 4).map(quizSet => {
+              const progress = quizSet.progress;
+              const progressPercentage = progress ? (progress.score / progress.total_questions) * 100 : 0;
+              const hasProgress = !!progress;
+
+              return (
+                <div key={quizSet.id}>
+                  <div className="mb-1 flex items-center justify-between gap-3">
+                    <span className="truncate text-sm font-medium">{quizSet.title}</span>
+                    {hasProgress ? (
+                      <span className="shrink-0 text-xs font-semibold text-primary">
+                        {progress.score}/{progress.total_questions}
+                      </span>
+                    ) : (
+                      <span className="shrink-0 text-xs text-muted-foreground/60">Not attempted</span>
+                    )}
+                  </div>
+                  <Progress value={progressPercentage} className="h-1.5" />
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
 
-      {/* View All Link */}
-      {totalQuizzes > 4 && (
-        <Link 
-          href="/learning/quizzes"
-          className="mt-3 text-xs font-bold text-slate-500 hover:text-signlang-primary uppercase tracking-wide flex items-center justify-center gap-1 transition-colors z-10"
-        >
-          View All Quizzes
-          <ChevronRight size={14} />
-        </Link>
-      )}
-
-      {/* Decorative Background Element */}
-      <div className="absolute -right-6 -bottom-6 w-28 h-28 bg-signlang-accent dark:bg-signlang-primary/10 rounded-full group-hover:scale-110 transition-transform duration-500" />
-    </div>
+        {totalQuizzes > 4 && (
+          <Link 
+            href="/learning/quizzes"
+            className="flex items-center justify-center gap-1 text-xs font-semibold text-primary hover:underline"
+          >
+            View All Quizzes
+            <ChevronRight size={14} />
+          </Link>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
 export default QuizProgress;
-
-

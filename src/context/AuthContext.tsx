@@ -334,7 +334,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     } catch (error) {
       console.error('Logout error:', error);
+      toast.error("Logout failed", {
+        description: error instanceof Error ? error.message : "An unexpected error occurred. Please try again."
+      });
       return false;
+    } finally {
+      // Clear local state immediately so the UI redirects even if the
+      // Supabase SIGNED_OUT event is delayed or never fires
+      // (e.g. stale session after a project pause/restore).
+      setCurrentUser(null);
+      setIsAuthenticated(false);
     }
   };
   // Update user information

@@ -6,14 +6,16 @@ import { ForumService, ForumPost } from '@/lib/services/forumService';
 import type { ForumComment as ForumCommentType } from '@/lib/services/forumService';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
-import { Loader2, MessageSquare, PlusCircle, Send } from 'lucide-react';
+import { Loader2, MessageSquare, Pencil, Trash2, Plus, Eye, EyeOff, Send, MessagesSquare, PlusCircle } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ForumPostCard, CommentThread, ImageModal } from '@/components/forum';
+import { cn } from '@/lib/utils';
 
 // Recursive helper function to add a reply to a specific comment (or its children)
 const addReplyToComment = (comments: ForumCommentType[], parentCommentId: string, newComment: ForumCommentType): ForumCommentType[] => {
@@ -76,6 +78,14 @@ const countAllComments = (comments: ForumCommentType[]): number => {
 const getAllCommentIds = (comments: ForumCommentType[]): string[] => {
   return comments.flatMap(c => [c.id, ...getAllCommentIds(c.replies || [])]);
 };
+
+const getInitials = (name: string) =>
+  (name || '?')
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2);
 
 export default function ForumPage() {
   const [posts, setPosts] = useState<ForumPost[]>([]);
@@ -339,19 +349,31 @@ export default function ForumPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col justify-center items-center h-[calc(100vh-200px)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-lg text-muted-foreground">Loading forum posts...</p>
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="space-y-2.5">
+            <Skeleton className="h-3.5 w-20 rounded-lg" />
+            <Skeleton className="h-8 w-52 rounded-lg" />
+          </div>
+          <Skeleton className="h-10 w-32 rounded-lg" />
+        </div>
+        {[0, 1].map((i) => (
+          <Skeleton key={i} className="h-40 w-full rounded-2xl" />
+        ))}
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-4 md:py-8 px-0 md:px-6 overflow-x-hidden">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4 px-4 md:px-0">
-        <h1 className="text-2xl md:text-4xl font-bold">
-          Community Forum
-        </h1>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Community</p>
+          <h2 className="font-display mt-2 text-3xl font-extrabold tracking-tight">Forum</h2>
+          <p className="mt-1.5 max-w-xl text-muted-foreground">
+            Ask questions, share tips, and learn together with the SignBridge community.
+          </p>
+        </div>
         <Button
           size="lg"
           onClick={() => {
@@ -366,13 +388,14 @@ export default function ForumPage() {
             setShowCreateFormModal(true);
           }}
         >
-          <PlusCircle className="mr-2 h-5 w-5" /> Add New Post
+          <Plus />
+          New post
         </Button>
       </div>
 
       {/* Display Forum Posts */}
       {posts.length > 0 ? (
-        <div className="space-y-4 md:space-y-6 px-4 md:px-0">
+        <div className="space-y-4 md:space-y-6">
           {posts.map(post => {
             const comments = postComments[post.id] || [];
             // Use local count if comments have been loaded, otherwise use count from API
@@ -414,15 +437,15 @@ export default function ForumPage() {
                             required
                             className="flex-grow"
                           />
-                          <Button 
-                            type="submit" 
-                            disabled={!topLevelCommentText.trim() || isSubmittingComment} 
+                          <Button
+                            type="submit"
+                            disabled={!topLevelCommentText.trim() || isSubmittingComment}
                             className="w-full sm:w-auto"
                           >
                             {isSubmittingComment ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              <Loader2 className="animate-spin" />
                             ) : (
-                              <Send className="mr-2 h-4 w-4" />
+                              <Send />
                             )}
                             Comment
                           </Button>
@@ -465,13 +488,27 @@ export default function ForumPage() {
           })}
         </div>
       ) : (
-        <Card className="text-center py-10">
-          <CardContent>
-            <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-xl text-muted-foreground">No forum topics posted yet.</p>
-            <p className="text-sm text-muted-foreground">Click &quot;Add New Post&quot; to start a discussion!</p>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border px-6 py-16 text-center">
+          <span className="grid size-14 place-items-center rounded-2xl bg-primary-soft text-primary">
+            <MessagesSquare className="size-6" />
+          </span>
+          <h3 className="font-display mt-5 text-lg font-bold">No discussions yet</h3>
+          <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
+            Start the first conversation — ask a question or share a learning tip.
+          </p>
+          <Button
+            className="mt-6"
+            onClick={() => {
+              setEditingPost(null);
+              setNewTitle('');
+              setNewContent('');
+              setShowCreateFormModal(true);
+            }}
+          >
+            <Plus />
+            Create a post
+          </Button>
+        </div>
       )}
 
       {/* Create/Edit Post Modal */}
@@ -486,15 +523,18 @@ export default function ForumPage() {
       }}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl">
-              {editingPost ? 'Edit Discussion Topic' : 'Create New Discussion Topic'}
+            <DialogTitle className="font-display">
+              {editingPost ? 'Edit discussion' : 'New discussion'}
             </DialogTitle>
+            <DialogDescription>
+              {editingPost
+                ? 'Update your topic title or content.'
+                : 'Share something with the community.'}
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handlePostSubmit} className="space-y-4 py-4">
-            <div>
-              <label htmlFor="postTitle" className="block text-sm font-medium text-foreground mb-1">
-                Title
-              </label>
+            <div className="space-y-2">
+              <label htmlFor="postTitle" className="block text-sm font-medium text-foreground">Title</label>
               <Input
                 id="postTitle"
                 placeholder="Enter topic title"
@@ -504,10 +544,8 @@ export default function ForumPage() {
                 disabled={isSubmittingPost}
               />
             </div>
-            <div>
-              <label htmlFor="postContent" className="block text-sm font-medium text-foreground mb-1">
-                Content
-              </label>
+            <div className="space-y-2">
+              <label htmlFor="postContent" className="block text-sm font-medium text-foreground">Content</label>
               <Textarea
                 id="postContent"
                 placeholder="What's on your mind? Share details here..."
@@ -556,7 +594,7 @@ export default function ForumPage() {
                           }}
                           className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                         >
-                          ×
+                          Ã—
                         </button>
                       </div>
                     ))}
@@ -624,8 +662,8 @@ export default function ForumPage() {
                 type="submit"
                 disabled={!newTitle.trim() || !newContent.trim() || isSubmittingPost}
               >
-                {isSubmittingPost && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isSubmittingPost ? 'Submitting...' : (editingPost ? 'Save Changes' : 'Submit Post')}
+                {isSubmittingPost && <Loader2 className="animate-spin" />}
+                {isSubmittingPost ? 'Submitting…' : (editingPost ? 'Save changes' : 'Submit post')}
               </Button>
             </DialogFooter>
           </form>

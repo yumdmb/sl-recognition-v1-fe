@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,6 +12,7 @@ interface TutorialHeaderProps {
   onSearchChange: (value: string) => void;
   isAdmin: boolean;
   onAddTutorial: () => void;
+  activeTab?: string;
 }
 
 const TutorialHeader: React.FC<TutorialHeaderProps> = ({
@@ -19,33 +20,32 @@ const TutorialHeader: React.FC<TutorialHeaderProps> = ({
   searchQuery,
   onSearchChange,
   isAdmin,
-  onAddTutorial
+  onAddTutorial,
+  activeTab = "all"
 }) => {
   return (
-    <div className="sticky top-0 z-10 bg-background pb-4 space-y-4">
-      {/* Admin-only level tabs row */}
-      {isAdmin && (
-        <div className="flex justify-between items-center">
-          <Tabs defaultValue="all" onValueChange={onTabChange} className="flex-1">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="all">All Levels</TabsTrigger>
-              <TabsTrigger value="beginner">Beginner</TabsTrigger>
-              <TabsTrigger value="intermediate">Intermediate</TabsTrigger>
-              <TabsTrigger value="advanced">Advanced</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          
-          <Button className="ml-4" onClick={onAddTutorial}>
-            <Plus className="h-4 w-4 mr-2" /> Add Tutorial
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Tabs value={activeTab} onValueChange={onTabChange} className="flex-1">
+          <TabsList className="h-10 rounded-xl bg-muted p-1">
+            <TabsTrigger value="all" className="rounded-lg px-4 data-[state=active]:shadow-soft">All</TabsTrigger>
+            <TabsTrigger value="beginner" className="rounded-lg px-4 data-[state=active]:shadow-soft">Beginner</TabsTrigger>
+            <TabsTrigger value="intermediate" className="rounded-lg px-4 data-[state=active]:shadow-soft">Intermediate</TabsTrigger>
+            <TabsTrigger value="advanced" className="rounded-lg px-4 data-[state=active]:shadow-soft">Advanced</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {isAdmin && (
+          <Button onClick={onAddTutorial}>
+            <Plus className="size-4" /> New tutorial
           </Button>
-        </div>
-      )}
-      
-      {/* Search row - visible to all users */}
+        )}
+      </div>
+
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
         <Input
-          placeholder="Search tutorials..."
+          placeholder="Search tutorials…"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-10"

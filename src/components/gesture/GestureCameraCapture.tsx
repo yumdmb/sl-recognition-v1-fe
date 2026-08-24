@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Camera } from 'lucide-react';
+import { Camera, Video, Square } from 'lucide-react';
 import { toast } from "sonner";
 
 interface GestureCameraCaptureProps {
@@ -12,16 +12,15 @@ interface GestureCameraCaptureProps {
   onRecordingStateChange: (isRecording: boolean) => void;
 }
 
-export default function GestureCameraCapture({ 
-  mediaType, 
-  isRecording, 
-  onMediaCaptured, 
-  onRecordingStateChange 
+export default function GestureCameraCapture({
+  mediaType,
+  isRecording,
+  onMediaCaptured,
+  onRecordingStateChange
 }: GestureCameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
-  const [isCameraActive, setIsCameraActive] = React.useState(false);
 
   // Cleanup effect
   useEffect(() => {
@@ -36,26 +35,23 @@ export default function GestureCameraCapture({
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: mediaType === 'video'
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        setIsCameraActive(true);
       }
-    } catch (err) {
-      console.error("Camera error:", err);
+    } catch (error) {
       toast.error("Camera Error", {
         description: "Failed to access camera. Please check permissions."
       });
-      setIsCameraActive(false);
     }
   };
   const startRecording = () => {
     if (videoRef.current?.srcObject) {
       chunksRef.current = [];
-      
+
       // Try different MIME types in order of preference
       const mimeTypes = [
         'video/webm;codecs=vp9,opus',
@@ -63,7 +59,7 @@ export default function GestureCameraCapture({
         'video/webm',
         'video/mp4'
       ];
-      
+
       let options = {};
       for (const mimeType of mimeTypes) {
         if (MediaRecorder.isTypeSupported(mimeType)) {
@@ -72,11 +68,11 @@ export default function GestureCameraCapture({
           break;
         }
       }
-      
+
       try {
         const mediaRecorder = new MediaRecorder(videoRef.current.srcObject as MediaStream, options);
         mediaRecorderRef.current = mediaRecorder;
-        
+
         mediaRecorder.ondataavailable = (e) => {
           if (e.data && e.data.size > 0) {
             chunksRef.current.push(e.data);
@@ -92,27 +88,27 @@ export default function GestureCameraCapture({
             });
             return;
           }
-          
+
           // Determine output format based on browser support
           const mimeType = mediaRecorder.mimeType || 'video/webm';
           const fileExtension = mimeType.includes('mp4') ? 'mp4' : 'webm';
-          
+
           const blob = new Blob(chunksRef.current, { type: mimeType });
           console.log(`Created blob: ${blob.size} bytes, type: ${mimeType}`);
-          
-          const file = new File([blob], `gesture-recording.${fileExtension}`, { 
+
+          const file = new File([blob], `gesture-recording.${fileExtension}`, {
             type: mimeType,
             lastModified: Date.now()
           });
-          
+
           const previewUrl = URL.createObjectURL(blob);
           onMediaCaptured(file, previewUrl);
         };
-        
+
         mediaRecorder.onerror = (event) => {
           console.error("MediaRecorder error:", event);
-          toast.error("Recording Error", { 
-            description: "An error occurred during recording. Please try again." 
+          toast.error("Recording Error", {
+            description: "An error occurred during recording. Please try again."
           });
         };
 
@@ -140,7 +136,6 @@ export default function GestureCameraCapture({
       if (videoRef.current?.srcObject) {
         (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
         videoRef.current.srcObject = null;
-        setIsCameraActive(false);
       }
     }
   };
@@ -161,38 +156,42 @@ export default function GestureCameraCapture({
       if (videoRef.current.srcObject) {
         (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
         videoRef.current.srcObject = null;
-        setIsCameraActive(false);
       }
     }
   };
 
   return (
-    <div className="space-y-4">
-      <div className="relative aspect-video bg-muted/50 rounded-xl overflow-hidden border-2 border-dashed border-muted-foreground/20 shadow-inner group">
+    <div className="space-y-5">
+      <div className="relative aspect-video overflow-hidden rounded-2xl border border-border bg-ink shadow-lift">
         <video
           ref={videoRef}
-          className="w-full h-full object-cover transform scale-x-[-1]" // Mirror effect
+          className="h-full w-full object-cover"
           autoPlay
           playsInline
         />
-        {!isCameraActive && (
-            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground bg-muted/10 backdrop-blur-sm">
-                <div className="text-center">
-                    <Camera className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>Camera is off</p>
-                </div>
-            </div>
-        )}
+        {/* Scanner corner brackets */}
+        <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+          <span className="absolute left-3 top-3 size-6 rounded-tl-lg border-l-2 border-t-2 border-mint/70" />
+          <span className="absolute right-3 top-3 size-6 rounded-tr-lg border-r-2 border-t-2 border-mint/70" />
+          <span className="absolute bottom-3 left-3 size-6 rounded-bl-lg border-b-2 border-l-2 border-mint/70" />
+          <span className="absolute bottom-3 right-3 size-6 rounded-br-lg border-b-2 border-r-2 border-mint/70" />
+          {isRecording && (
+            <span className="absolute left-1/2 top-4 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-ink/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-coral">
+              <span className="size-2 animate-pulse rounded-full bg-coral" />
+              Recording
+            </span>
+          )}
+        </div>
       </div>
-      
-      <div className="flex justify-center space-x-4">
+
+      <div className="flex flex-wrap items-center justify-center gap-3">
         {!isRecording ? (
           <>
             <Button
               type="button"
               variant="outline"
               onClick={startCamera}
-              className="flex items-center hover:bg-primary/10 hover:text-primary transition-colors"
+              className="flex items-center rounded-full"
             >
               <Camera className="mr-2 h-4 w-4" />
               Start Camera
@@ -201,20 +200,18 @@ export default function GestureCameraCapture({
               <Button
                 type="button"
                 onClick={captureImage}
-                disabled={!isCameraActive}
-                className="flex items-center bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                className="flex items-center rounded-full"
               >
-                <div className="w-4 h-4 rounded-full border-2 border-current mr-2 bg-transparent" />
+                <Camera className="mr-2 h-4 w-4" />
                 Capture Image
               </Button>
             ) : (
               <Button
                 type="button"
                 onClick={startRecording}
-                disabled={!isCameraActive}
-                className="flex items-center bg-destructive hover:bg-destructive/90 text-white"
+                className="flex items-center rounded-full"
               >
-                <div className="w-4 h-4 rounded-full bg-red-600 border-2 border-white mr-2 animate-pulse" />
+                <Video className="mr-2 h-4 w-4" />
                 Start Recording
               </Button>
             )}
@@ -224,16 +221,16 @@ export default function GestureCameraCapture({
             type="button"
             variant="destructive"
             onClick={stopRecording}
-            className="flex items-center shadow-lg shadow-destructive/20 animate-pulse"
+            className="flex items-center rounded-full"
           >
-            <div className="w-4 h-4 rounded-sm bg-white mr-2" />
+            <Square className="mr-2 h-4 w-4" />
             Stop Recording
           </Button>
         )}
       </div>
-      
-      <div className="text-sm text-muted-foreground text-center italic bg-primary/5 p-2 rounded-lg">
-        {mediaType === 'image' 
+
+      <div className="text-center text-xs text-muted-foreground">
+        {mediaType === 'image'
           ? 'Position yourself clearly in the frame and capture the gesture at the right moment.'
           : 'Record a clear demonstration of the gesture. Keep the video under 30 seconds for best results.'
         }

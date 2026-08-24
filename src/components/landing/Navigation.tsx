@@ -1,247 +1,226 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import Image from "next/image";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Menu, BookOpen, Users, Sparkles, LayoutDashboard } from "lucide-react";
+import { Hand, Menu, X, ChevronDown, Users } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 
 interface NavigationProps {
   isAboutOpen: boolean;
   setIsAboutOpen: (open: boolean) => void;
   scrollToSection: (ref: React.RefObject<HTMLDivElement | null>) => void;
-  featuresRef: React.RefObject<HTMLDivElement>;
-  howItWorksRef: React.RefObject<HTMLDivElement>;
+  featuresRef?: React.RefObject<HTMLDivElement | null>;
+  howItWorksRef?: React.RefObject<HTMLDivElement | null>;
   aslRef: React.RefObject<HTMLDivElement>;
   mslRef: React.RefObject<HTMLDivElement>;
+  faqRef?: React.RefObject<HTMLDivElement | null>;
 }
 
-const navLinkStyles = "text-gray-600 hover:text-signlang-dark transition-colors duration-200 font-medium";
-
-export default function Navigation({ 
-  isAboutOpen, 
-  setIsAboutOpen, 
-  scrollToSection, 
+export default function Navigation({
+  isAboutOpen,
+  setIsAboutOpen,
+  scrollToSection,
+  aslRef,
+  mslRef,
   featuresRef,
   howItWorksRef,
-  aslRef, 
-  mslRef 
+  faqRef,
 }: NavigationProps) {
   const { isAuthenticated } = useAuth();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 10);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const handleScrollAndClose = (ref: React.RefObject<HTMLDivElement | null>) => {
+  const goTo = (ref: React.RefObject<HTMLDivElement | null>) => {
     scrollToSection(ref);
-    setIsMobileMenuOpen(false);
+    setMobileOpen(false);
   };
 
-  const aboutLinks = [
-    { label: 'About ASL', ref: aslRef },
-    { label: 'About MSL', ref: mslRef },
-  ];
-
   return (
-    <motion.header 
-      className={`sticky top-0 z-50 bg-white/95 backdrop-blur-sm transition-shadow duration-200 ${
-        isScrolled ? 'shadow-md' : 'shadow-sm'
-      }`}
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3 group">
-            <Image
-              src="/signbridge-logo-no-word.PNG"
-              alt="SignBridge Logo"
-              width={40}
-              height={30}
-              className="object-contain"
-            />
-            <span className="text-2xl font-bold text-signlang-dark">SignBridge</span>
-          </Link>
+    <header className="fixed top-0 inset-x-0 z-50 px-4 sm:px-6 pt-4">
+      <div
+        className={`mx-auto flex h-14 max-w-6xl items-center justify-between rounded-2xl border px-3 pl-4 transition-all duration-300 ${
+          scrolled
+            ? "glass border-border shadow-soft"
+            : "border-transparent bg-transparent"
+        }`}
+      >
+        {/* Brand */}
+        <Link href="/" className="group flex items-center gap-2.5">
+          <span className="grid size-9 place-items-center rounded-xl bg-ink text-mint shadow-soft transition-transform duration-300 group-hover:rotate-6">
+            <Hand className="size-4.5" strokeWidth={2.2} />
+          </span>
+          <span className="font-display text-lg font-bold tracking-tight">
+            Sign<span className="text-primary">Bridge</span>
+          </span>
+          <span className="hidden rounded-full border border-border bg-card px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:inline-block">
+            MyBIM
+          </span>
+        </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-1">
+        {/* Desktop links */}
+        <nav className="hidden items-center gap-1 md:flex" data-about-dropdown>
+          <div className="relative">
             <button
-              onClick={() => handleScrollAndClose(featuresRef)}
-              className={`px-3 py-2 rounded-md ${navLinkStyles}`}
+              className="flex items-center gap-1 rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              onClick={() => setIsAboutOpen(!isAboutOpen)}
+              aria-expanded={isAboutOpen}
             >
-              Features
+              Learn about
+              <ChevronDown
+                className={`size-3.5 transition-transform duration-200 ${isAboutOpen ? "rotate-180" : ""}`}
+              />
             </button>
-            <button
-              onClick={() => handleScrollAndClose(howItWorksRef)}
-              className={`px-3 py-2 rounded-md ${navLinkStyles}`}
-            >
-              How It Works
-            </button>
-            
-            {/* About Dropdown — only ASL/MSL */}
-            <div className="relative" data-about-dropdown>
-              <button
-                className={`flex items-center space-x-1 px-3 py-2 rounded-md ${navLinkStyles}`}
-                onClick={() => setIsAboutOpen(!isAboutOpen)}
-                aria-expanded={isAboutOpen}
-                aria-haspopup="true"
-              >
-                <span>About</span>
-                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isAboutOpen ? 'rotate-180' : ''}`} />
-              </button>
-              
-              <AnimatePresence>
-                {isAboutOpen && (
-                  <motion.div 
-                    className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 overflow-hidden"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
+            {isAboutOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setIsAboutOpen(false)} />
+                <div className="absolute left-1/2 top-full z-20 mt-2 w-60 -translate-x-1/2 overflow-hidden rounded-xl border border-border bg-card p-1.5 shadow-lift">
+                  <button
+                    onClick={() => goTo(aslRef)}
+                    className="block w-full rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-accent"
                   >
-                    {aboutLinks.map((link) => (
-                      <button
-                        key={link.label}
-                        onClick={() => handleScrollAndClose(link.ref)}
-                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-signlang-accent hover:text-signlang-dark transition-colors duration-200"
-                      >
-                        {link.label}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <Link 
-              href="/interaction/forum" 
-              className={`px-3 py-2 rounded-md ${navLinkStyles} flex items-center gap-1.5`}
+                    <span className="font-medium">ASL</span>
+                    <span className="block text-xs text-muted-foreground">
+                      American Sign Language
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => goTo(mslRef)}
+                    className="block w-full rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-accent"
+                  >
+                    <span className="font-medium">BIM / MSL</span>
+                    <span className="block text-xs text-muted-foreground">
+                      Bahasa Isyarat Malaysia
+                    </span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+          <button
+            onClick={() => featuresRef?.current && goTo(featuresRef as React.RefObject<HTMLDivElement | null>)}
+            className="rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            Features
+          </button>
+          {howItWorksRef && (
+            <button
+              onClick={() => howItWorksRef.current && goTo(howItWorksRef as React.RefObject<HTMLDivElement | null>)}
+              className="rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
-              <Users className="h-4 w-4" />
-              Community
-            </Link>
-          </nav>
+              How it works
+            </button>
+          )}
+          <button
+            onClick={() => faqRef?.current && goTo(faqRef as React.RefObject<HTMLDivElement | null>)}
+            className="rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            FAQ
+          </button>
+          <Link
+            href="/interaction/forum"
+            className="flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <Users className="size-3.5" />
+            Community
+          </Link>
+        </nav>
 
-          {/* Desktop CTA */}
-          <div className="hidden md:flex items-center space-x-3">
+        <div className="hidden items-center gap-2 md:flex">
+          {isAuthenticated ? (
+            <Button className="rounded-full" asChild>
+              <Link href="/dashboard">Dashboard</Link>
+            </Button>
+          ) : (
+            <>
+              <Button variant="ghost" className="rounded-full" asChild>
+                <Link href="/auth/login">Log in</Link>
+              </Button>
+              <Button className="rounded-full" asChild>
+                <Link href="/auth/register">Get started</Link>
+              </Button>
+            </>
+          )}
+        </div>
+
+        {/* Mobile toggle */}
+        <button
+          className="grid size-9 place-items-center rounded-lg text-foreground transition-colors hover:bg-accent md:hidden"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="Toggle menu"
+        >
+          {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+        </button>
+      </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="mx-auto mt-2 max-w-6xl rounded-2xl border border-border bg-card p-3 shadow-lift md:hidden">
+          <button
+            onClick={() => goTo(aslRef)}
+            className="block w-full rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-accent"
+          >
+            About ASL
+          </button>
+          <button
+            onClick={() => goTo(mslRef)}
+            className="block w-full rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-accent"
+          >
+            About BIM / MSL
+          </button>
+          <button
+            onClick={() => featuresRef?.current && goTo(featuresRef as React.RefObject<HTMLDivElement | null>)}
+            className="block w-full rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-accent"
+          >
+            Features
+          </button>
+          {howItWorksRef && (
+            <button
+              onClick={() => howItWorksRef.current && goTo(howItWorksRef as React.RefObject<HTMLDivElement | null>)}
+              className="block w-full rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-accent"
+            >
+              How it works
+            </button>
+          )}
+          <button
+            onClick={() => faqRef?.current && goTo(faqRef as React.RefObject<HTMLDivElement | null>)}
+            className="block w-full rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-accent"
+          >
+            FAQ
+          </button>
+          <Link
+            href="/interaction/forum"
+            onClick={() => setMobileOpen(false)}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-accent"
+          >
+            <Users className="size-4 text-primary" />
+            Community Forum
+          </Link>
+          <div className="mt-2 flex gap-2 border-t border-border pt-3">
             {isAuthenticated ? (
-              <Button asChild>
-                <Link href="/dashboard" className="flex items-center gap-2">
-                  <LayoutDashboard className="h-4 w-4" />
-                  Dashboard
-                </Link>
+              <Button className="flex-1" asChild>
+                <Link href="/dashboard">Dashboard</Link>
               </Button>
             ) : (
               <>
-                <Button variant="ghost" asChild>
-                  <Link href="/auth/login">Login</Link>
+                <Button variant="outline" className="flex-1" asChild>
+                  <Link href="/auth/login">Log in</Link>
                 </Button>
-                <Button asChild>
-                  <Link href="/auth/register">Sign Up</Link>
+                <Button className="flex-1" asChild>
+                  <Link href="/auth/register">Get started</Link>
                 </Button>
               </>
             )}
           </div>
-
-          {/* Mobile Menu */}
-          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <SheetTrigger asChild className="md:hidden">
-              <button 
-                className="p-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
-                aria-label="Open menu"
-              >
-                <Menu className="h-6 w-6" />
-              </button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] p-0">
-              <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-              <div className="flex flex-col h-full">
-                <div className="flex items-center p-4 border-b border-gray-100">
-                  <Link href="/" className="flex items-center space-x-2" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Image
-                      src="/signbridge-logo-no-word.PNG"
-                      alt="SignBridge Logo"
-                      width={32}
-                      height={24}
-                      className="object-contain"
-                    />
-                    <span className="text-xl font-bold text-signlang-dark">SignBridge</span>
-                  </Link>
-                </div>
-                
-                <div className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
-                  <button
-                    onClick={() => handleScrollAndClose(featuresRef)}
-                    className="w-full flex items-center px-4 py-3 text-left text-gray-700 hover:bg-signlang-accent rounded-lg transition-colors"
-                  >
-                    <Sparkles className="h-5 w-5 mr-3 text-signlang-primary" />
-                    Features
-                  </button>
-                  <button
-                    onClick={() => handleScrollAndClose(howItWorksRef)}
-                    className="w-full flex items-center px-4 py-3 text-left text-gray-700 hover:bg-signlang-accent rounded-lg transition-colors"
-                  >
-                    <BookOpen className="h-5 w-5 mr-3 text-signlang-primary" />
-                    How It Works
-                  </button>
-                  <button
-                    onClick={() => handleScrollAndClose(aslRef)}
-                    className="w-full flex items-center px-4 py-3 text-left text-gray-700 hover:bg-signlang-accent rounded-lg transition-colors"
-                  >
-                    <BookOpen className="h-5 w-5 mr-3 text-signlang-primary" />
-                    About ASL
-                  </button>
-                  <button
-                    onClick={() => handleScrollAndClose(mslRef)}
-                    className="w-full flex items-center px-4 py-3 text-left text-gray-700 hover:bg-signlang-accent rounded-lg transition-colors"
-                  >
-                    <BookOpen className="h-5 w-5 mr-3 text-signlang-primary" />
-                    About MSL
-                  </button>
-                  <Link
-                    href="/interaction/forum"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="w-full flex items-center px-4 py-3 text-gray-700 hover:bg-signlang-accent rounded-lg transition-colors"
-                  >
-                    <Users className="h-5 w-5 mr-3 text-signlang-primary" />
-                    Community Forum
-                  </Link>
-                </div>
-
-                <div className="p-4 border-t border-gray-100 space-y-2">
-                  {isAuthenticated ? (
-                    <Button asChild className="w-full">
-                      <Link href="/dashboard" className="flex items-center justify-center gap-2">
-                        <LayoutDashboard className="h-4 w-4" />
-                        Go to Dashboard
-                      </Link>
-                    </Button>
-                  ) : (
-                    <>
-                      <Button variant="outline" asChild className="w-full">
-                        <Link href="/auth/login">Login</Link>
-                      </Button>
-                      <Button asChild className="w-full">
-                        <Link href="/auth/register">Sign Up Free</Link>
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
         </div>
-      </div>
-    </motion.header>
+      )}
+    </header>
   );
 }

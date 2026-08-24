@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,45 +42,48 @@ const QuizDialog: React.FC<QuizDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
-          <DialogTitle>{quizSet.id ? 'Edit' : 'Add'} Quiz Set</DialogTitle>
+          <DialogTitle className="font-display">{quizSet.id ? 'Edit' : 'New'} quiz set</DialogTitle>
+          <DialogDescription>
+            Give the set a clear title and description so learners know what to expect.
+          </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
-            <Label htmlFor="title" className="sm:text-right">Title</Label>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="title">Title</Label>
             <Input
               id="title"
+              placeholder="e.g. Everyday greetings"
               value={quizSet.title}
               onChange={(e) => handleFieldChange('title', e.target.value)}
-              className="sm:col-span-3"
             />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
-            <Label htmlFor="description" className="sm:text-right">Description</Label>
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
+              placeholder="What does this quiz cover?"
               value={quizSet.description}
               onChange={(e) => handleFieldChange('description', e.target.value)}
-              className="sm:col-span-3"
             />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
-            <Label htmlFor="language" className="sm:text-right">Language</Label>
+          <div className="space-y-2">
+            <Label htmlFor="language">Language</Label>
             <Select value={quizSet.language} onValueChange={handleLanguageChange}>
-              <SelectTrigger className="sm:col-span-3">
+              <SelectTrigger id="language">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ASL">ASL</SelectItem>
-                <SelectItem value="MSL">MSL</SelectItem>
+                <SelectItem value="ASL">ASL — American Sign Language</SelectItem>
+                <SelectItem value="MSL">MSL — Malaysian Sign Language</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
-            <Label htmlFor="level" className="sm:text-right">Level</Label>
+          <div className="space-y-2">
+            <Label htmlFor="level">Level</Label>
             <Select value={quizSet.level || 'beginner'} onValueChange={(value) => handleFieldChange('level', value)}>
-              <SelectTrigger className="sm:col-span-3">
+              <SelectTrigger id="level">
                 <SelectValue placeholder="Select level" />
               </SelectTrigger>
               <SelectContent>

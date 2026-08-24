@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React from 'react';
 import { TutorialWithProgress } from '@/types/database';
@@ -18,7 +18,7 @@ const TutorialGrid: React.FC<TutorialGridProps> = ({
   onDeleteTutorial
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
       {tutorials.map(tutorial => (
         <TutorialCard
           key={tutorial.id}

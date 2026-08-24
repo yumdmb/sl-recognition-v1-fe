@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar3DRecording } from "@/types/hand";
 import Avatar3DPlayer from "./Avatar3DPlayer";
+import { Eye, RotateCcw, Save, Loader2, ImageIcon } from "lucide-react";
 
 interface GesturePreviewProps {
   recorded3DAvatar: Avatar3DRecording | null;
@@ -29,17 +30,20 @@ const GesturePreview: React.FC<GesturePreviewProps> = ({
   const hasContent = recorded3DAvatar && recorded3DAvatar.frames.length > 0;
 
   return (
-    <Card className="w-full">
-      <CardHeader className="pb-2 px-3 md:px-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-          <div>
-            <CardTitle className="text-lg md:text-xl">Recorded Gesture Preview</CardTitle>
-            <CardDescription className="text-xs md:text-sm">
-              Review and submit your recorded 3D gesture
-            </CardDescription>
+    <Card className="col-span-3 gap-0 pb-6 rounded-2xl shadow-soft">
+      <CardHeader>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3.5">
+            <span className="grid size-10 place-items-center rounded-xl bg-sky/10 text-sky">
+              <Eye className="size-5" />
+            </span>
+            <div>
+              <CardTitle className="font-display text-lg font-bold">Preview</CardTitle>
+              <CardDescription>Your captured 3D gesture</CardDescription>
+            </div>
           </div>
           {hasContent && (
-            <Badge variant="secondary" className="text-xs w-fit">
+            <Badge variant="secondary" className="rounded-full bg-primary-soft text-primary">
               {recorded3DAvatar.frames.length <= 1
                 ? "Static Pose"
                 : `${recorded3DAvatar.frames.length} frames • ${(recorded3DAvatar.duration / 1000).toFixed(1)}s`}
@@ -47,27 +51,40 @@ const GesturePreview: React.FC<GesturePreviewProps> = ({
           )}
         </div>
       </CardHeader>
-      <CardContent className="px-3 md:px-6">
-        <div className="w-full max-w-5xl mx-auto">
-          <div className="aspect-video bg-muted rounded-lg overflow-hidden mb-4">
-            {hasContent ? (
-              <Avatar3DPlayer recording={recorded3DAvatar} />
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground px-4">
-                <p className="text-center text-sm md:text-base">
-                  No recording yet - Record a 3D gesture above
-                </p>
-              </div>
-            )}
-          </div>
+      <CardContent>
+        <div className="aspect-video overflow-hidden rounded-2xl border border-border bg-muted">
+          {hasContent ? (
+            <Avatar3DPlayer recording={recorded3DAvatar} />
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
+              <span className="grid size-12 place-items-center rounded-2xl bg-background text-muted-foreground/70">
+                <ImageIcon className="size-6" />
+              </span>
+              <p className="text-sm">No preview available</p>
+              <p className="max-w-[220px] text-center text-xs">
+                Record a 3D gesture to see preview here
+              </p>
+            </div>
+          )}
         </div>
         {hasContent && (
-          <div className="flex flex-col md:flex-row gap-2 md:justify-between">
-            <Button onClick={onReset} variant="outline" className="w-full md:w-auto order-2 md:order-1">
+          <div className="mt-4 flex justify-between gap-3">
+            <Button onClick={onReset} variant="outline" className="gap-2 rounded-full">
+              <RotateCcw className="h-4 w-4" />
               Discard & Reset
             </Button>
-            <Button onClick={onSave} disabled={isLoading} size="lg" className="w-full md:w-auto order-1 md:order-2">
-              {isLoading ? "Loading..." : "Continue"}
+            <Button onClick={onSave} disabled={isLoading} className="gap-2 rounded-full">
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Save to Signbank
+                </>
+              )}
             </Button>
           </div>
         )}

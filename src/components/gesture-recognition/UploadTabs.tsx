@@ -24,27 +24,27 @@ export const UploadTabs: React.FC<UploadTabsProps> = ({
   onPhotoCapture
 }) => {
   const [isRecording, setIsRecording] = useState(false);
-  
+
   return (
-    <Tabs value={activeTab} onValueChange={onTabChange} className="w-full mb-4">
+    <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
       <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="upload" className="flex items-center">
+        <TabsTrigger value="upload" className="flex items-center gap-2 py-2.5">
           <Upload className="mr-2 h-4 w-4" /> Upload
         </TabsTrigger>
-        <TabsTrigger value="camera" className="flex items-center">
+        <TabsTrigger value="camera" className="flex items-center gap-2 py-2.5">
           <Camera className="mr-2 h-4 w-4" /> Camera
         </TabsTrigger>
       </TabsList>
-      
-      <TabsContent value="upload" className="space-y-4">
+
+      <TabsContent value="upload" className="mt-4 space-y-4">
         <FileUploadArea
           previewUrl={previewUrl}
           onFileChange={onFileChange}
           onRemoveFile={onRemoveFile}
         />
       </TabsContent>
-      
-      <TabsContent value="camera">
+
+      <TabsContent value="camera" className="mt-4">
         <GestureCameraCapture
           mediaType="image"
           isRecording={isRecording}

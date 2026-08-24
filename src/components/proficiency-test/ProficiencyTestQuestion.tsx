@@ -1,9 +1,11 @@
+'use client';
+
 import React from 'react';
 import { Database } from '@/types/database';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 type Question = Database['public']['Tables']['proficiency_test_questions']['Row'] & {
   choices: Database['public']['Tables']['proficiency_test_question_choices']['Row'][];
@@ -17,49 +19,71 @@ interface ProficiencyTestQuestionProps {
 
 const ProficiencyTestQuestion: React.FC<ProficiencyTestQuestionProps> = ({ question, onSelectChoice, selectedChoice }) => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{question.question_text}</CardTitle>
-        {question.image_url && (
-          <div className="mt-4 flex justify-center">
-            <div className="relative max-w-md w-full aspect-video rounded-lg overflow-hidden bg-muted">
-              <Image
-                src={question.image_url}
-                alt="Question image"
-                fill
-                className="object-contain"
-                unoptimized
-              />
-            </div>
+    <div>
+      <p className="font-display text-xl font-bold leading-snug tracking-tight">
+        {question.question_text}
+      </p>
+      {question.image_url && (
+        <div className="mt-4 flex justify-center">
+          <div className="relative max-w-md w-full aspect-video overflow-hidden rounded-xl border bg-muted">
+            <Image
+              src={question.image_url}
+              alt="Question image"
+              fill
+              className="object-contain"
+              unoptimized
+            />
           </div>
-        )}
-      </CardHeader>
-      <CardContent>
-        <RadioGroup onValueChange={onSelectChoice} value={selectedChoice || undefined}>
-          <div className="space-y-3 md:space-y-2">
-            {question.choices.map((choice) => (
-              <div key={choice.id} className="flex items-start space-x-3 min-h-[44px] p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
-                <RadioGroupItem value={choice.id} id={choice.id} className="min-h-[24px] min-w-[24px] mt-0.5" />
-                <Label htmlFor={choice.id} className="cursor-pointer flex-1">
-                  <span className="text-base">{choice.choice_text}</span>
-                  {choice.image_url && (
-                    <div className="mt-2 relative max-w-xs w-full aspect-video rounded-md overflow-hidden bg-muted">
-                      <Image
-                        src={choice.image_url}
-                        alt="Choice image"
-                        fill
-                        className="object-contain"
-                        unoptimized
-                      />
-                    </div>
-                  )}
-                </Label>
-              </div>
-            ))}
-          </div>
-        </RadioGroup>
-      </CardContent>
-    </Card>
+        </div>
+      )}
+
+      <RadioGroup
+        onValueChange={onSelectChoice}
+        value={selectedChoice || undefined}
+        className="mt-5 space-y-3"
+      >
+        {question.choices.map((choice, i) => {
+          const isSelected = selectedChoice === choice.id;
+
+          return (
+            <Label
+              key={choice.id}
+              htmlFor={choice.id}
+              className={cn(
+                'flex w-full cursor-pointer items-center gap-4 rounded-xl border p-4 text-sm font-normal transition-all',
+                isSelected
+                  ? 'border-primary bg-primary-soft shadow-soft'
+                  : 'border-border hover:border-primary/40 hover:bg-accent'
+              )}
+            >
+              <span
+                className={cn(
+                  'grid size-7 shrink-0 place-items-center rounded-full border text-xs font-bold transition-colors',
+                  isSelected
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border text-muted-foreground'
+                )}
+              >
+                {String.fromCharCode(65 + i)}
+              </span>
+              <span className="flex-1 leading-relaxed text-foreground">{choice.choice_text}</span>
+              {choice.image_url && (
+                <span className="relative block h-16 w-24 shrink-0 overflow-hidden rounded-lg border bg-muted">
+                  <Image
+                    src={choice.image_url}
+                    alt="Choice image"
+                    fill
+                    className="object-contain"
+                    unoptimized
+                  />
+                </span>
+              )}
+              <RadioGroupItem value={choice.id} id={choice.id} className="sr-only" />
+            </Label>
+          );
+        })}
+      </RadioGroup>
+    </div>
   );
 };
 

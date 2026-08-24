@@ -16,6 +16,7 @@ export default function LandingPage() {
   const { isAuthenticated } = useAuth();
   const featuresRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
   const howItWorksRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
+  const faqRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
   const aslRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
   const mslRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
   const [isAboutOpen, setIsAboutOpen] = useState(false);
@@ -33,9 +34,7 @@ export default function LandingPage() {
   }, []);
 
   const scrollToFeatures = () => {
-    if (featuresRef.current) {
-      featuresRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    featuresRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>) => {
@@ -47,43 +46,43 @@ export default function LandingPage() {
 
   const aslFeatures = [
     {
-      icon: <Building className="h-6 w-6" />,
-      title: "Rich History",
-      description: "ASL has its own grammar and structure, distinct from English, with deep roots in North American Deaf culture."
+      icon: <Building />,
+      title: "Rich history",
+      description: "ASL has its own grammar and structure, distinct from spoken English."
     },
     {
-      icon: <MessageCircle className="h-6 w-6" />,
-      title: "Visual Communication",
-      description: "Uses hand shapes, movements, facial expressions, and body language to convey meaning fully."
+      icon: <MessageCircle />,
+      title: "Visual communication",
+      description: "Built from hand shapes, movement, facial expressions and body language."
     },
     {
-      icon: <Award className="h-6 w-6" />,
-      title: "Cultural Significance",
-      description: "Central to Deaf culture and community identity across the United States and Canada."
+      icon: <Award />,
+      title: "Cultural significance",
+      description: "Central to Deaf culture and community across North America."
     }
   ];
 
   const mslFeatures = [
     {
-      icon: <Building className="h-6 w-6" />,
-      title: "Local Development",
-      description: "MSL evolved to meet the communication needs of Malaysia's diverse deaf communities."
+      icon: <Building />,
+      title: "Locally grown",
+      description: "Evolved to serve Malaysia's diverse Deaf and hearing communities."
     },
     {
-      icon: <MessageCircle className="h-6 w-6" />,
-      title: "Unique Features",
-      description: "Incorporates elements from Malaysian culture, local signs, and regional expressions."
+      icon: <MessageCircle />,
+      title: "Unique features",
+      description: "Incorporates elements of Malaysian culture and languages, including manual bahasa Malaysia."
     },
     {
-      icon: <Award className="h-6 w-6" />,
-      title: "Growing Recognition",
-      description: "Increasingly recognized and supported by Malaysian educators, advocates, and organisations like MyBIM."
+      icon: <Award />,
+      title: "Growing recognition",
+      description: "Increasingly recognised and supported across Malaysian society."
     }
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-white text-foreground">
-      <Navigation 
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <Navigation
         isAboutOpen={isAboutOpen}
         setIsAboutOpen={setIsAboutOpen}
         scrollToSection={scrollToSection}
@@ -91,6 +90,7 @@ export default function LandingPage() {
         howItWorksRef={howItWorksRef}
         aslRef={aslRef}
         mslRef={mslRef}
+        faqRef={faqRef}
       />
 
       <main className="flex-grow">
@@ -106,24 +106,24 @@ export default function LandingPage() {
           sectionRef={aslRef}
           title="About American Sign Language (ASL)"
           subtitle="What is ASL?"
-          description="American Sign Language (ASL) is a complete, natural language with the same linguistic properties as spoken languages. It is expressed by movements of the hands and face, and is the primary language of many North Americans who are deaf and hard of hearing."
+          description="American Sign Language is a complete, natural language with the same linguistic properties as spoken languages. It is expressed through movements of the hands and face, and is the primary language of many deaf and hard-of-hearing North Americans."
           imageSrc="/family-talking.png"
-          imageAlt="Two people communicating using American Sign Language"
+          imageAlt="A family signing together"
           features={aslFeatures}
         />
 
         <SignLanguageInfoSection
           sectionRef={mslRef}
-          title="About Malaysian Sign Language (MSL)"
-          subtitle="What is MSL?"
-          description="Malaysian Sign Language (MSL), or Bahasa Isyarat Malaysia (BIM), is the primary sign language used by the deaf community in Malaysia. It is a visual language that incorporates elements of Malaysian culture and local linguistic features."
+          title="About Malaysian Sign Language (BIM)"
+          subtitle="What is BIM?"
+          description="Bahasa Isyarat Malaysia (BIM) is the primary sign language of the Malaysian Deaf community. A fully-fledged visual language, it weaves together local culture and linguistic features — and it's the heart of what SignBridge was built to teach."
           imageSrc="/group-of-people.png"
-          imageAlt="Group of people learning Malaysian Sign Language together"
+          imageAlt="A group of people learning sign language"
           features={mslFeatures}
           reverse={true}
         />
 
-        <FAQSection />
+        <FAQSection sectionRef={faqRef} />
       </main>
 
       <Footer />

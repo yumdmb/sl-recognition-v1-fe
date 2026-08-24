@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { UserPlus } from "lucide-react";
+import { UserPlus, MessagesSquare } from "lucide-react";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Chat } from "@/lib/services/chatService";
 import { formatDistanceToNow } from "date-fns";
 import NewChatDialog from "@/components/chat/NewChatDialog";
 import UnreadBadge from "@/components/chat/UnreadBadge";
+import { cn } from "@/lib/utils";
 
 interface ChatListProps {
   chats: Chat[];
@@ -34,11 +35,11 @@ export default function ChatList({
     return (
       <div className="space-y-2">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="flex gap-2 items-center p-2">
-            <Skeleton className="h-10 w-10 rounded-full" />
-            <div className="space-y-1 flex-1">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-3 w-24" />
+          <div key={i} className="flex items-center gap-3 p-2">
+            <Skeleton className="size-10 rounded-full" />
+            <div className="flex-1 space-y-1.5">
+              <Skeleton className="h-4 w-32 rounded-lg" />
+              <Skeleton className="h-3 w-20 rounded-lg" />
             </div>
           </div>
         ))}
@@ -50,7 +51,7 @@ export default function ChatList({
     if (chat.is_group) {
       return "Group Chat"; // In a real app, you'd store the group name in the chat record
     }
-    
+
     const otherParticipant = chat.participants.find(
       (p) => p.user_id !== currentUserId
     );
@@ -70,60 +71,67 @@ export default function ChatList({
     <>
       <Dialog open={isNewChatDialogOpen} onOpenChange={setIsNewChatDialogOpen}>
         <DialogTrigger asChild>
-          <Button className="w-full mb-4" variant="outline">
-            <UserPlus className="mr-2 h-4 w-4" /> New Chat
+          <Button className="w-full" variant="outline">
+            <UserPlus />
+            New chat
           </Button>
-        </DialogTrigger>        <NewChatDialog 
+        </DialogTrigger>
+        <NewChatDialog
           onCreateChat={async (userId: string) => {
             await onCreateChat(userId);
             setIsNewChatDialogOpen(false);
-          }} 
+          }}
           currentUserId={currentUserId}
         />
       </Dialog>
 
-      <div className="space-y-2">
+      <div className="mt-3 space-y-1">
         {chats.length === 0 ? (
-          <p className="text-muted-foreground text-center py-4">
-            No chats found. Start a new conversation!
-          </p>
+          <div className="flex flex-col items-center rounded-2xl border border-dashed border-border px-4 py-10 text-center">
+            <span className="grid size-11 place-items-center rounded-xl bg-primary-soft text-primary">
+              <MessagesSquare className="size-5" />
+            </span>
+            <p className="mt-4 text-sm font-semibold">No conversations yet</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Start a new chat to get going.
+            </p>
+          </div>
         ) : (
           chats.map((chat) => {
             const chatName = getChatName(chat);
-            const otherParticipant = chat.participants.find(
-              (p) => p.user_id !== currentUserId
-            );
-            
+            const isActive = selectedChat?.id === chat.id;
+
             return (
-              <div
+              <button
                 key={chat.id}
-                className={`p-2 rounded cursor-pointer flex items-center gap-2 ${
-                  selectedChat?.id === chat.id
-                    ? "bg-primary/10"
-                    : "hover:bg-muted"
-                }`}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition-colors',
+                  isActive ? 'bg-accent' : 'hover:bg-accent/60'
+                )}
                 onClick={() => onSelectChat(chat)}
-              >                <Avatar className="h-10 w-10">
-                  <AvatarImage 
-                    src={otherParticipant?.user?.profile_picture_url || undefined} 
-                    alt={chatName} 
+              >
+                <Avatar className="size-10 shrink-0">
+                  <AvatarImage
+                    src={chat.participants.find(p => p.user_id !== currentUserId)?.user?.profile_picture_url || undefined}
+                    alt={chatName}
                   />
-                  <AvatarFallback>
+                  <AvatarFallback className={cn('font-display text-xs font-bold', isActive ? 'bg-primary text-primary-foreground' : 'bg-primary-soft text-primary')}>
                     {getInitials(chatName)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 overflow-hidden">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-medium truncate">{chatName}</h3>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <h3 className={cn('truncate text-sm', isActive ? 'font-semibold' : 'font-medium')}>
+                      {chatName}
+                    </h3>
                     <div className="flex items-center gap-2">
                       {chat.last_message_at && (() => {
                         const dateObj = new Date(chat.last_message_at);
-                        // Only render if date is valid
                         if (!isNaN(dateObj.getTime())) {
                           return (
-                            <span className="text-xs text-muted-foreground">
+                            <span className="shrink-0 text-[11px] text-muted-foreground">
                               {formatDistanceToNow(dateObj, {
-                                addSuffix: true,
+                                addSuffix: false,
                               })}
                             </span>
                           );
@@ -133,9 +141,9 @@ export default function ChatList({
                       <UnreadBadge count={unreadCounts[chat.id] || 0} />
                     </div>
                   </div>
-                  {/* You could add last message preview here */}
                 </div>
-              </div>
+                {isActive && <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />}
+              </button>
             );
           })
         )}

@@ -273,43 +273,49 @@ export default function MessageInput({
       )}
       
       {/* Message input form */}
-      <form onSubmit={handleSubmit} className="flex items-center gap-2">
-        <Input
+      <form
+        onSubmit={handleSubmit}
+        className="flex items-center gap-1.5 rounded-2xl border border-border bg-card p-1.5 pl-2 shadow-soft transition-colors focus-within:border-primary/40"
+      >
+        <input
           type="file"
           ref={fileInputRef}
           onChange={handleFileChange}
           className="hidden"
           disabled={disabled || isSending}
         />
-        
+
         <Button
           type="button"
           size="icon"
-          variant={attachedFile ? "secondary" : "ghost"}
+          variant="ghost"
+          className="shrink-0 text-muted-foreground hover:text-foreground"
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || isSending}
-          className={attachedFile ? "text-primary" : ""}
+          aria-label="Attach a file"
         >
-          <Paperclip className="h-5 w-5" />
+          <Paperclip className="size-4.5" />
         </Button>
-        
-        <Input
+
+        <input
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder={attachedFile ? "Add a message (optional)..." : "Type a message..."}
-          className="flex-1"
+          placeholder={attachedFile ? "Add a message (optional)..." : "Type a message…"}
+          className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/70 disabled:opacity-50"
           disabled={disabled || isSending}
         />
-        
+
         <Button
           type="submit"
           size="icon"
+          className="shrink-0 rounded-xl"
           disabled={(!message.trim() && !attachedFile) || disabled || isSending}
+          aria-label="Send message"
         >
           {isSending ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <Loader2 className="size-4.5 animate-spin" />
           ) : (
-            <Send className="h-5 w-5" />
+            <Send className="size-4.5" />
           )}
         </Button>
       </form>

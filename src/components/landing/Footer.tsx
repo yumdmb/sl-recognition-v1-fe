@@ -1,112 +1,96 @@
 'use client'
 
 import Link from "next/link";
-import Image from "next/image";
-import { useAuth } from '@/context/AuthContext';
+import { Hand, Github } from "lucide-react";
+
+const columns = [
+  {
+    title: "Platform",
+    links: [
+      { label: "Gesture recognition", href: "/gesture-recognition/upload" },
+      { label: "3D Avatar Generation", href: "/avatar/generate" },
+      { label: "Tutorials", href: "/learning/tutorials" },
+      { label: "Quizzes", href: "/learning/quizzes" },
+      { label: "Materials", href: "/learning/materials" },
+      { label: "Proficiency Tests", href: "/proficiency-test/select" },
+    ],
+  },
+  {
+    title: "Community",
+    links: [
+      { label: "Browse gestures", href: "/gesture/browse" },
+      { label: "Submit a gesture", href: "/gesture/submit" },
+      { label: "Forum", href: "/interaction/forum" },
+      { label: "Chat assistant", href: "/interaction/chat" },
+    ],
+  },
+  {
+    title: "Account",
+    links: [
+      { label: "Log in", href: "/auth/login" },
+      { label: "Create account", href: "/auth/register" },
+      { label: "Dashboard", href: "/dashboard" },
+      { label: "Profile", href: "/profile" },
+    ],
+  },
+];
 
 export default function Footer() {
-  const { isAuthenticated } = useAuth();
-
   return (
-    <footer className="bg-gray-900 text-white">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+    <footer className="relative overflow-hidden bg-ink text-mint-soft">
+      <div className="bg-grid absolute inset-0 opacity-20 [mask-image:linear-gradient(to_bottom,black,transparent_60%)]" aria-hidden />
+      <div className="absolute -top-32 left-1/2 size-[480px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" aria-hidden />
+
+      <div className="relative mx-auto max-w-6xl px-4 pb-10 pt-16 sm:px-6">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1.2fr_2fr]">
           {/* Brand */}
-          <div className="lg:col-span-1">
-            <Link href="/" className="flex items-center space-x-3 mb-4">
-              <Image
-                src="/signbridge-logo-no-word.PNG"
-                alt="SignBridge Logo"
-                width={40}
-                height={30}
-                className="object-contain brightness-0 invert"
-              />
-              <span className="text-xl font-bold">SignBridge</span>
-            </Link>
-            <p className="text-gray-400 leading-relaxed">
-              Empowering communication through AI-powered sign language learning, 
-              gesture recognition, and community-driven resources.
+          <div>
+            <div className="flex items-center gap-2.5">
+              <span className="grid size-9 place-items-center rounded-xl bg-primary text-ink">
+                <Hand className="size-4.5" strokeWidth={2.2} />
+              </span>
+              <span className="font-display text-lg font-bold text-white">
+                Sign<span className="text-primary">Bridge</span>
+              </span>
+            </div>
+            <p className="mt-5 max-w-xs text-sm leading-relaxed text-mint-soft/60">
+              Empowering communication through sign-language learning and AI gesture
+              recognition — built for the Malaysian Deaf community and beyond.
+            </p>
+            <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-mint-soft/70">
+              <Github className="size-3.5" />
+              Final Year Project · Open source
             </p>
           </div>
 
-          {/* Platform */}
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Platform</h4>
-            <ul className="space-y-3">
-              <li>
-                <Link href="/gesture-recognition/upload" className="text-gray-400 hover:text-white transition-colors duration-200">
-                  Gesture Recognition
-                </Link>
-              </li>
-              <li>
-                <Link href="/avatar/generate" className="text-gray-400 hover:text-white transition-colors duration-200">
-                  3D Avatar Generation
-                </Link>
-              </li>
-              <li>
-                <Link href="/learning/materials" className="text-gray-400 hover:text-white transition-colors duration-200">
-                  Learning Materials
-                </Link>
-              </li>
-              <li>
-                <Link href="/proficiency-test/select" className="text-gray-400 hover:text-white transition-colors duration-200">
-                  Proficiency Tests
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Community */}
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Community</h4>
-            <ul className="space-y-3">
-              <li>
-                <Link href="/interaction/forum" className="text-gray-400 hover:text-white transition-colors duration-200">
-                  Forum
-                </Link>
-              </li>
-              <li>
-                <Link href="/interaction/chat" className="text-gray-400 hover:text-white transition-colors duration-200">
-                  Chat
-                </Link>
-              </li>
-              <li>
-                <Link href="/gesture/submit" className="text-gray-400 hover:text-white transition-colors duration-200">
-                  Contribute a Sign
-                </Link>
-              </li>
-              <li>
-                <Link href={isAuthenticated ? "/dashboard" : "/auth/register"} className="text-gray-400 hover:text-white transition-colors duration-200">
-                  {isAuthenticated ? "Dashboard" : "Get Started"}
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Legal */}
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Legal</h4>
-            <ul className="space-y-3">
-              <li>
-                <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors duration-200">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link href="/terms" className="text-gray-400 hover:text-white transition-colors duration-200">
-                  Terms of Service
-                </Link>
-              </li>
-            </ul>
+          {/* Links */}
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
+            {columns.map((col) => (
+              <div key={col.title}>
+                <h4 className="text-xs font-bold uppercase tracking-[0.16em] text-mint-soft/50">
+                  {col.title}
+                </h4>
+                <ul className="mt-4 space-y-2.5">
+                  {col.links.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href}
+                        className="text-sm text-mint-soft/75 transition-colors hover:text-primary"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-gray-400 text-sm text-center md:text-left">
-            &copy; {new Date().getFullYear()} SignBridge. All rights reserved.
-          </p>
-          <p className="text-gray-500 text-sm text-center md:text-right">
-            Developed in collaboration with MyBIM — Malaysian Sign Language and Deaf Studies National Organisation.
+        <div className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-7 text-xs text-mint-soft/50 sm:flex-row">
+          <p>© {new Date().getFullYear()} SignBridge · MyBIM. All rights reserved.</p>
+          <p>
+            Made with care for the Deaf community <span className="text-primary">·</span> Bahasa Isyarat Malaysia
           </p>
         </div>
       </div>

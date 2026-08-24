@@ -3,7 +3,8 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Image as ImageIcon } from 'lucide-react';
+import { Skeleton } from "@/components/ui/skeleton";
+import { Image as ImageIcon, Sparkles, RotateCcw } from 'lucide-react';
 
 interface RecognitionResult {
   word: string;
@@ -26,9 +27,19 @@ export const RecognitionResultDisplay: React.FC<RecognitionResultDisplayProps> =
 }) => {
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-r-transparent mb-4"></div>
-        <p className="text-gray-500">Processing your gesture...</p>
+      <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border px-6 py-12 text-center">
+        <span className="grid size-14 animate-pulse place-items-center rounded-2xl bg-primary-soft text-primary">
+          <Sparkles className="size-6" />
+        </span>
+        <h3 className="font-display mt-5 text-lg font-bold">Recognising…</h3>
+        <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
+          Processing your gesture, this usually takes a moment.
+        </p>
+        <div className="mt-6 w-full max-w-sm space-y-3">
+          <Skeleton className="h-6 w-2/3 mx-auto rounded-full" />
+          <Skeleton className="h-2 w-full rounded-full" />
+          <Skeleton className="h-24 w-full rounded-2xl" />
+        </div>
       </div>
     );
   }
@@ -36,43 +47,48 @@ export const RecognitionResultDisplay: React.FC<RecognitionResultDisplayProps> =
   if (result) {
     return (
       <div className="space-y-6">
-        <div className="text-center">
-          <p className="text-4xl font-bold text-primary mb-2">
+        <div className="rounded-3xl bg-primary-soft px-6 py-8 text-center">
+          <span className="inline-grid size-10 place-items-center rounded-xl bg-card text-primary shadow-soft">
+            <Sparkles className="size-5" />
+          </span>
+          <p className="font-display mt-3 text-3xl font-extrabold tracking-tight text-primary">
             {result.word}
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="mt-1.5 text-sm text-muted-foreground">
             in {language} Sign Language
           </p>
         </div>
 
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium">Confidence</span>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm font-semibold">Confidence</span>
+            <span className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-bold text-primary">
               {Math.round(result.confidence * 100)}%
             </span>
           </div>
-          <Progress 
-            value={result.confidence * 100} 
+          <Progress
+            value={result.confidence * 100}
             className="h-2"
           />
         </div>
 
-        <div className="border-t pt-4">
-          <h4 className="font-medium mb-2">Preview</h4>
-          <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-50">
+        <div className="border-t border-border pt-5">
+          <h4 className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Preview</h4>
+          <div className="relative mt-3 aspect-video overflow-hidden rounded-2xl border border-border bg-muted">
             <img
               src={result.imageUrl}
               alt="Recognized gesture"
-              className="w-full h-full object-contain"
+              className="h-full w-full object-contain"
             />
           </div>
         </div>
 
-        <Button 
-          className="w-full"
+        <Button
+          className="w-full rounded-full"
+          size="lg"
           onClick={onTryAgain}
         >
+          <RotateCcw className="mr-2 size-4" />
           Try Another Gesture
         </Button>
       </div>
@@ -80,9 +96,12 @@ export const RecognitionResultDisplay: React.FC<RecognitionResultDisplayProps> =
   }
 
   return (
-    <div className="flex flex-col items-center justify-center py-8 text-center">
-      <ImageIcon className="h-12 w-12 text-gray-400 mb-4" />
-      <p className="text-gray-500">
+    <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border px-6 py-16 text-center">
+      <span className="grid size-14 place-items-center rounded-2xl bg-primary-soft text-primary">
+        <ImageIcon className="size-6" />
+      </span>
+      <h3 className="font-display mt-5 text-lg font-bold">No result yet</h3>
+      <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
         Upload or capture a gesture image to see the recognition result
       </p>
     </div>

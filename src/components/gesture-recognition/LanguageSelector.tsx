@@ -2,13 +2,14 @@
 
 import React from 'react';
 import { Label } from "@/components/ui/label";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Languages } from 'lucide-react';
 
 interface LanguageSelectorProps {
   language: "ASL" | "MSL";
@@ -20,10 +21,13 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   onLanguageChange
 }) => {
   return (
-    <div className="mb-4">
-      <Label htmlFor="language">Sign Language</Label>
-      <Select 
-        value={language} 
+    <div className="space-y-2">
+      <Label htmlFor="language" className="flex items-center gap-1.5">
+        <Languages className="size-3.5 text-primary" />
+        Sign Language
+      </Label>
+      <Select
+        value={language}
         onValueChange={onLanguageChange}
       >
         <SelectTrigger id="language" className="w-full">

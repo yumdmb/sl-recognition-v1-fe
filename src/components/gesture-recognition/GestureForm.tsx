@@ -106,7 +106,7 @@ export const GestureForm: React.FC<GestureFormProps> = ({ gesture, onSuccess, on
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}.${fileExt}`;
         const filePath = `public/${fileName}`;
-        
+
         const { error: uploadError } = await supabase.storage
           .from('gestures')
           .upload(filePath, file);
@@ -148,7 +148,7 @@ export const GestureForm: React.FC<GestureFormProps> = ({ gesture, onSuccess, on
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
         <FormField
           control={form.control}
           name="name"
@@ -220,25 +220,30 @@ export const GestureForm: React.FC<GestureFormProps> = ({ gesture, onSuccess, on
             </FormItem>
           )}
         />
-        <FormItem>
+        <div className="space-y-2">
           <Label htmlFor="file">Gesture Media (Image/Video)</Label>
-          <Input id="file" type="file" accept="image/*,video/*" onChange={handleFileChange} />
-        </FormItem>
+          <Input id="file" type="file" accept="image/*,video/*" onChange={handleFileChange} className="cursor-pointer file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-primary-soft file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary" />
+          <p className="text-xs text-muted-foreground">
+            Choose a clear image or short video showing the gesture.
+          </p>
+        </div>
 
         {preview && (
-          <div className="mt-4">
+          <div className="space-y-2">
             <Label>Media Preview</Label>
-            {preview.startsWith('data:video') || preview.endsWith('.mp4') ? (
-              <video src={preview} controls className="w-full h-48 object-cover rounded-md" />
-            ) : (
-              <img src={preview} alt="Preview" className="w-full h-48 object-cover rounded-md" />
-            )}
+            <div className="overflow-hidden rounded-2xl border border-border bg-muted shadow-soft">
+              {preview.startsWith('data:video') || preview.endsWith('.mp4') ? (
+                <video src={preview} controls className="h-48 w-full object-cover" />
+              ) : (
+                <img src={preview} alt="Preview" className="h-48 w-full object-cover" />
+              )}
+            </div>
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto min-h-[44px]">Cancel</Button>
-          <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto min-h-[44px]">
+        <div className="flex justify-end gap-2 pt-2">
+          <Button type="button" variant="outline" onClick={onCancel} className="rounded-full">Cancel</Button>
+          <Button type="submit" disabled={isSubmitting} className="rounded-full">
             {isSubmitting ? 'Saving...' : 'Save Gesture'}
           </Button>
         </div>

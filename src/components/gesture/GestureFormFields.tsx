@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Languages, Image as ImageIcon, Video } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -53,6 +54,9 @@ export default function GestureFormFields({
           placeholder="Enter gesture title (e.g., 'Hello', 'Thank you')"
           required
         />
+        <p className="text-xs text-muted-foreground">
+          Keep it short — the word or phrase this gesture represents.
+        </p>
       </div>
 
       {/* Description */}
@@ -69,36 +73,56 @@ export default function GestureFormFields({
       </div>
 
       {/* Language */}
-      <div className="space-y-2">
-        <Label>Sign Language *</Label>
-        <RadioGroup value={language} onValueChange={setLanguage} className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-          <div className="flex items-center space-x-3 min-h-[44px] p-2 rounded-md hover:bg-muted cursor-pointer">
-            <RadioGroupItem value="ASL" id="asl" className="min-h-[24px] min-w-[24px]" />
-            <Label htmlFor="asl" className="cursor-pointer text-base">ASL (American Sign Language)</Label>
-          </div>
-          <div className="flex items-center space-x-3 min-h-[44px] p-2 rounded-md hover:bg-muted cursor-pointer">
-            <RadioGroupItem value="MSL" id="msl" className="min-h-[24px] min-w-[24px]" />
-            <Label htmlFor="msl" className="cursor-pointer text-base">MSL (Malaysian Sign Language)</Label>
-          </div>
+      <div className="space-y-2.5">
+        <Label className="flex items-center gap-1.5">
+          <Languages className="size-3.5 text-primary" />
+          Sign Language *
+        </Label>
+        <RadioGroup value={language} onValueChange={setLanguage} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Label
+            htmlFor="asl"
+            className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-border px-4 py-3 transition-colors hover:bg-accent/50 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary-soft/60"
+          >
+            <RadioGroupItem value="ASL" id="asl" />
+            <span className="text-sm font-medium">ASL <span className="font-normal text-muted-foreground">(American Sign Language)</span></span>
+          </Label>
+          <Label
+            htmlFor="msl"
+            className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-border px-4 py-3 transition-colors hover:bg-accent/50 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary-soft/60"
+          >
+            <RadioGroupItem value="MSL" id="msl" />
+            <span className="text-sm font-medium">MSL <span className="font-normal text-muted-foreground">(Malaysian Sign Language)</span></span>
+          </Label>
         </RadioGroup>
       </div>
 
       {/* Media Type */}
-      <div className="space-y-2">
-        <Label>Media Type *</Label>
-        <RadioGroup value={mediaType} onValueChange={setMediaType} className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-          <div className="flex items-center space-x-3 min-h-[44px] p-2 rounded-md hover:bg-muted cursor-pointer">
-            <RadioGroupItem value="image" id="image" className="min-h-[24px] min-w-[24px]" />
-            <Label htmlFor="image" className="cursor-pointer text-base">Image</Label>
-          </div>
-          <div className="flex items-center space-x-3 min-h-[44px] p-2 rounded-md hover:bg-muted cursor-pointer">
-            <RadioGroupItem value="video" id="video" className="min-h-[24px] min-w-[24px]" />
-            <Label htmlFor="video" className="cursor-pointer text-base">Video</Label>
-          </div>
+      <div className="space-y-2.5">
+        <Label className="flex items-center gap-1.5">
+          <ImageIcon className="size-3.5 text-primary" />
+          Media Type *
+        </Label>
+        <RadioGroup value={mediaType} onValueChange={setMediaType} className="grid grid-cols-2 gap-3">
+          <Label
+            htmlFor="image"
+            className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-border px-4 py-3 transition-colors hover:bg-accent/50 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary-soft/60"
+          >
+            <RadioGroupItem value="image" id="image" />
+            <ImageIcon className="size-4 text-muted-foreground" />
+            <span className="text-sm font-medium">Image</span>
+          </Label>
+          <Label
+            htmlFor="video"
+            className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-border px-4 py-3 transition-colors hover:bg-accent/50 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary-soft/60"
+          >
+            <RadioGroupItem value="video" id="video" />
+            <Video className="size-4 text-muted-foreground" />
+            <span className="text-sm font-medium">Video</span>
+          </Label>
         </RadioGroup>
       </div>
 
-      {/* Category */}
+      {/* Category - preserved from origin backend for duplicate detection / categorization */}
       {setCategoryId && categories.length > 0 && (
         <div className="space-y-2">
           <Label htmlFor="category">Category *</Label>
@@ -106,10 +130,10 @@ export default function GestureFormFields({
             value={categoryId?.toString() || ''} 
             onValueChange={(val) => setCategoryId(val ? parseInt(val, 10) : null)}
           >
-            <SelectTrigger id="category" className="min-h-[44px]">
+            <SelectTrigger id="category" className="rounded-xl min-h-[44px]">
               <SelectValue placeholder="Select a category" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="rounded-xl">
               {categories.map((cat) => (
                 <SelectItem key={cat.id} value={cat.id.toString()}>
                   {cat.icon && <span className="mr-2">{cat.icon}</span>}

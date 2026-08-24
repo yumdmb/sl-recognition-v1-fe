@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Save } from "lucide-react";
+import { Save, PersonStanding } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface AvatarPageHeaderProps {
@@ -13,16 +13,25 @@ const AvatarPageHeader: React.FC<AvatarPageHeaderProps> = ({ userRole }) => {
   const router = useRouter();
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-      <div>
-        <h1 className="text-xl md:text-2xl lg:text-3xl font-bold tracking-tight">Avatar Generation</h1>
-        <p className="text-muted-foreground text-sm md:text-base">Help us build a gesture dictionary using avatars, without worrying about your privacy.</p>
+    <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex items-center gap-4">
+        <span className="grid size-12 place-items-center rounded-xl bg-primary-soft text-primary">
+          <PersonStanding className="size-6" />
+        </span>
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Avatar Studio</p>
+          <h1 className="font-display mt-1 text-3xl font-extrabold tracking-tight">
+            Avatar Generation
+          </h1>
+          <p className="mt-1 text-muted-foreground">
+            Generate 3D avatars from your sign language gestures
+          </p>
+        </div>
       </div>
-      <Button 
+      <Button
         onClick={() => router.push(userRole === 'admin' ? '/avatar/admin-database' : '/avatar/my-avatars')}
         variant="outline"
-        className="gap-2 w-full md:w-auto"
-        size="sm"
+        className="gap-2 rounded-full"
       >
         <Save className="h-4 w-4" />
         <span className="truncate">{userRole === 'admin' ? 'View Avatar Database' : 'View My Avatar'}</span>

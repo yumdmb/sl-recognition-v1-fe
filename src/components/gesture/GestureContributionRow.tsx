@@ -38,16 +38,16 @@ interface GestureContributionRowProps {
   onSelect?: (checked: boolean) => void;
 }
 
-// Helper function to get status badge
+// Helper function to get status badge - botanical styling
 const getStatusBadge = (status: string) => {
   switch (status) {
     case 'approved':
-      return <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white">Approved</Badge>;
+      return <Badge className="bg-primary-soft text-primary border-transparent">Approved</Badge>;
     case 'rejected':
-      return <Badge variant="destructive">Rejected</Badge>;
+      return <Badge className="bg-destructive/10 text-destructive border-transparent">Rejected</Badge>;
     case 'pending':
     default:
-      return <Badge variant="secondary">Pending</Badge>;
+      return <Badge className="bg-sun/10 text-sun border-transparent">Pending</Badge>;
   }
 };
 
@@ -244,12 +244,12 @@ export default function GestureContributionRow({
       <td className={cellClass}>
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="rounded-full">
               <Eye className="h-4 w-4 mr-1" />
               View Media
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl rounded-2xl">
             <DialogHeader>
               <DialogTitle>{contribution.title}</DialogTitle>
               <DialogDescription>{contribution.description}</DialogDescription>

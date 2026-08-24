@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React from 'react';
 import { Material } from '@/types/database';
@@ -12,15 +12,15 @@ interface MaterialGridProps {
   onPreviewMaterial?: (material: Material) => void;
 }
 
-const MaterialGrid: React.FC<MaterialGridProps> = ({ 
-  materials, 
-  isAdmin, 
-  onEditMaterial, 
+const MaterialGrid: React.FC<MaterialGridProps> = ({
+  materials,
+  isAdmin,
+  onEditMaterial,
   onDeleteMaterial,
   onPreviewMaterial
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
       {materials.map(material => (
         <MaterialCard
           key={material.id}
@@ -36,4 +36,3 @@ const MaterialGrid: React.FC<MaterialGridProps> = ({
 };
 
 export default MaterialGrid;
-

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, UserX } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -32,7 +32,8 @@ export default function NewChatDialog({ onCreateChat, currentUserId }: NewChatDi
     if (searchTerm.trim() === "") {
       setSearchResults([]);
       return;
-    }    setIsSearching(true);
+    }
+    setIsSearching(true);
     searchTimeoutRef.current = setTimeout(async () => {
       try {
         const { data, error } = await supabase
@@ -71,44 +72,52 @@ export default function NewChatDialog({ onCreateChat, currentUserId }: NewChatDi
   return (
     <DialogContent className="sm:max-w-[425px]">
       <DialogHeader>
-        <DialogTitle>Start a new chat</DialogTitle>
+        <DialogTitle className="font-display">Start a new chat</DialogTitle>
         <DialogDescription>
-          Search for users to start a conversation with.
+          Search for someone to begin a conversation with.
         </DialogDescription>
       </DialogHeader>
 
-      <div className="relative mt-4">
-        <div className="flex items-center border rounded-md focus-within:ring-1 focus-within:ring-ring">
-          <Search className="ml-2 h-4 w-4 text-muted-foreground" />
+      <div className="relative mt-2">
+        <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 shadow-xs transition-colors focus-within:border-primary/50">
+          <Search className="size-4 shrink-0 text-muted-foreground" />
           <Input
-            placeholder="Search users..."
+            placeholder="Search by name…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="border-0 focus-visible:ring-0"
+            className="h-10 border-0 px-0 shadow-none focus-visible:ring-0"
           />
         </div>
 
-        <div className="mt-4 space-y-1 max-h-[300px] overflow-y-auto">
+        <div className="scrollbar-thin mt-4 max-h-[300px] space-y-1 overflow-y-auto">
           {isSearching ? (
-            <div className="flex justify-center p-4">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="flex justify-center p-5">
+              <Loader2 className="size-6 animate-spin text-muted-foreground/60" />
             </div>
           ) : searchResults.length === 0 && searchTerm.trim() !== "" ? (
-            <p className="text-muted-foreground text-center py-4">No users found</p>
+            <div className="flex flex-col items-center py-8 text-center">
+              <span className="grid size-10 place-items-center rounded-xl bg-muted text-muted-foreground">
+                <UserX className="size-5" />
+              </span>
+              <p className="mt-3 text-sm text-muted-foreground">No users found</p>
+            </div>
           ) : (
             searchResults.map((user) => (
-              <div
+              <button
                 key={user.id}
-                className="flex items-center gap-2 p-2 rounded-md hover:bg-muted cursor-pointer"
+                className="flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-colors hover:bg-accent"
                 onClick={() => onCreateChat(user.id)}
-              >                <Avatar className="h-10 w-10">
-                  <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+              >
+                <Avatar className="size-10 shrink-0">
+                  <AvatarFallback className="font-display bg-primary-soft text-xs font-bold text-primary">
+                    {getInitials(user.name)}
+                  </AvatarFallback>
                 </Avatar>
-                <div>
-                  <p className="font-medium">{user.name}</p>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{user.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">{user.email}</p>
                 </div>
-              </div>
+              </button>
             ))
           )}
         </div>

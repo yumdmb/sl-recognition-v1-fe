@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React from 'react';
 import Link from 'next/link';
@@ -15,43 +15,48 @@ export default function LearningLayout({
 }) {
   const pathname = usePathname();
   const { language } = useLanguage();
-  
+
   // Parse current path to determine active tab
   const currentPath = pathname ? pathname.split('/').pop() || '' : '';
-  
+
   return (
-    <div className="max-w-5xl mx-auto h-[calc(100vh-6rem)] flex flex-col">
-      {/* Sticky header section */}
-      <div className="sticky top-0 z-20 bg-background pb-4 flex-shrink-0">
-        <div className="flex flex-col space-y-4 md:space-y-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl md:text-3xl font-bold">Learning {language}</h1>
-            <div className="flex items-center space-x-4">
-              <AdminModeToggle />
-              <LanguageSelector className="w-[300px]" />
-            </div>
+    <div className="mx-auto w-full max-w-6xl">
+      <div className="flex flex-col space-y-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Learn</p>
+            <h1 className="font-display mt-2 text-3xl font-extrabold tracking-tight">
+              Learning hub
+              <span className="ml-3 align-middle inline-block rounded-full border border-primary/25 bg-primary-soft px-2.5 py-1 align-middle text-xs font-bold tracking-normal text-primary">
+                {language}
+              </span>
+            </h1>
+            <p className="mt-1.5 text-muted-foreground">
+              Tutorials, quizzes and reference materials for your level.
+            </p>
           </div>
-          
-          <Tabs value={currentPath}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="tutorials" asChild>
-                <Link href="/learning/tutorials">Tutorials</Link>
-              </TabsTrigger>
-              <TabsTrigger value="quizzes" asChild>
-                <Link href="/learning/quizzes">Quizzes</Link>
-              </TabsTrigger>
-              <TabsTrigger value="materials" asChild>
-                <Link href="/learning/materials">Materials</Link>
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex flex-wrap items-center gap-3">
+            <AdminModeToggle />
+            <LanguageSelector className="w-[190px]" />
+          </div>
         </div>
-      </div>
-      
-      {/* Scrollable content area */}
-      <div className="flex-1 overflow-y-auto pb-6">
+
+        <Tabs value={currentPath}>
+          <TabsList className="h-11 w-full justify-start gap-1 rounded-xl bg-muted p-1 sm:w-auto">
+            <TabsTrigger value="tutorials" asChild className="rounded-lg px-5 data-[state=active]:shadow-soft">
+              <Link href="/learning/tutorials">Tutorials</Link>
+            </TabsTrigger>
+            <TabsTrigger value="quizzes" asChild className="rounded-lg px-5 data-[state=active]:shadow-soft">
+              <Link href="/learning/quizzes">Quizzes</Link>
+            </TabsTrigger>
+            <TabsTrigger value="materials" asChild className="rounded-lg px-5 data-[state=active]:shadow-soft">
+              <Link href="/learning/materials">Materials</Link>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         {children}
       </div>
     </div>
   );
-} 
+}

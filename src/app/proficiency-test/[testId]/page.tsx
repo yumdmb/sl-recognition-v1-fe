@@ -5,10 +5,12 @@ import { useParams, useRouter } from 'next/navigation';
 import { useLearning } from '@/context/LearningContext';
 import ProficiencyTestQuestion from '@/components/proficiency-test/ProficiencyTestQuestion';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, ArrowLeft, ArrowRight, CheckCircle2, Loader2, ClipboardList } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 type UserAnswers = {
   [questionId: string]: string; // questionId: choiceId
@@ -220,22 +222,17 @@ const ProficiencyTestPage = () => {
 
   if (proficiencyTestLoading || !currentTest) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <Card className="w-full max-w-2xl">
-          <CardHeader>
-            <Skeleton className="h-8 w-3/4" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Skeleton className="h-6 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Skeleton className="h-10 w-24" />
-            <Skeleton className="h-10 w-24" />
-          </CardFooter>
-        </Card>
+      <div className="container mx-auto flex min-h-[70vh] max-w-3xl flex-col justify-center py-10">
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-36 rounded-lg" />
+          <Skeleton className="h-9 w-2/3 rounded-xl" />
+        </div>
+        <Skeleton className="mt-8 h-2.5 w-full rounded-full" />
+        <Skeleton className="mt-6 h-80 w-full rounded-2xl" />
+        <div className="mt-6 flex justify-between">
+          <Skeleton className="h-10 w-24 rounded-lg" />
+          <Skeleton className="h-10 w-24 rounded-lg" />
+        </div>
       </div>
     );
   }
@@ -251,16 +248,14 @@ const ProficiencyTestPage = () => {
 
   if (error) {
     return (
-      <div className="flex justify-center items-center min-h-screen p-4">
-        <Card className="max-w-lg w-full">
-          <CardHeader>
-            <Alert variant="destructive">
+      <div className="flex min-h-[70vh] items-center justify-center p-4">
+        <Card className="max-w-lg w-full rounded-2xl shadow-soft">
+          <CardContent className="space-y-4 p-6">
+            <Alert variant="destructive" className="rounded-2xl">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Error Loading Test</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
-          </CardHeader>
-          <CardContent className="space-y-4">
             {!isCriticalError && retryCount < 2 && (
               <div className="text-sm text-muted-foreground">
                 <p>This could be due to a temporary network issue. You can try loading the test again.</p>
@@ -273,7 +268,7 @@ const ProficiencyTestPage = () => {
               </div>
             )}
           </CardContent>
-          <CardFooter className="flex gap-2 justify-end">
+          <CardFooter className="flex gap-2 justify-end px-6 pb-6">
             <Button variant="outline" onClick={handleRedirectToSelection}>
               Back to Test Selection
             </Button>
@@ -290,104 +285,157 @@ const ProficiencyTestPage = () => {
   }
 
   if (!currentTest.questions || currentTest.questions.length === 0) {
-    return <div className="text-center p-8">No questions found for this test.</div>;
+    return (
+      <div className="container mx-auto flex min-h-[60vh] max-w-3xl items-center justify-center py-10">
+        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border px-6 py-16 text-center">
+          <span className="grid size-14 place-items-center rounded-2xl bg-primary-soft text-primary">
+            <ClipboardList className="size-6" />
+          </span>
+          <h3 className="font-display mt-5 text-lg font-bold">No questions found</h3>
+          <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
+            This test does not have any questions yet. Please try again later.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   const currentQuestion = currentTest.questions[currentQuestionIndex];
+  const totalQuestions = currentTest.questions.length;
+  const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
 
   return (
-    <div className="container mx-auto py-8">
-      <Card className="max-w-3xl mx-auto">
-        <CardHeader>
-          <CardTitle>{currentTest.title}</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Question {currentQuestionIndex + 1} of {currentTest.questions.length}
+    <div className="container mx-auto max-w-3xl py-10">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Proficiency Test</p>
+          <h1 className="font-display mt-2 text-3xl font-extrabold tracking-tight">{currentTest.title}</h1>
+          <p className="mt-1.5 max-w-xl text-muted-foreground">
+            Take your time — you can go back and change any answer before finishing.
           </p>
-          
-          {/* Question Navigation Bar */}
-          <div className="flex flex-wrap gap-2 justify-center mt-4 pt-4 border-t">
-            {currentTest.questions.map((question, index) => (
-              <button
-                key={question.id}
-                onClick={() => setCurrentQuestionIndex(index)}
-                disabled={isSubmitting}
-                className={`w-10 h-10 rounded-full font-medium text-sm transition-all border-2 ${
-                  index === currentQuestionIndex
-                    ? 'bg-signlang-primary border-signlang-primary text-white shadow-md scale-110'
-                    : userAnswers[question.id]
-                      ? 'bg-green-500 border-green-500 text-white hover:bg-green-600'
-                      : 'bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-signlang-primary hover:text-signlang-primary'
-                }`}
-                title={userAnswers[question.id] ? `Question ${index + 1} (Answered)` : `Question ${index + 1} (Not answered)`}
-              >
-                {index + 1}
-              </button>
-            ))}
-          </div>
-          
-          {/* Progress Indicator */}
-          <p className="text-xs text-muted-foreground text-center mt-2">
-            {Object.keys(userAnswers).length} of {currentTest.questions.length} answered
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Validation Error Alert */}
-          {error && !showManualRetry && submissionRetryCount === 0 && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Incomplete Test</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          {showManualRetry && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Submission Failed</AlertTitle>
-              <AlertDescription>
-                {error}
-                <Button 
-                  onClick={handleManualRetry} 
-                  className="mt-2 w-full"
-                  disabled={isSubmitting}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Retry Submission
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-          {!showManualRetry && submissionRetryCount > 0 && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          <ProficiencyTestQuestion
-            question={currentQuestion}
-            selectedChoice={userAnswers[currentQuestion.id] || null}
-            onSelectChoice={(choiceId) => handleAnswerSelect(currentQuestion.id, choiceId)}
-          />
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button onClick={handlePrevious} disabled={currentQuestionIndex === 0 || isSubmitting}>
-            Previous
-          </Button>
-          {currentQuestionIndex < currentTest.questions.length - 1 ? (
-            <Button onClick={handleNext} disabled={isSubmitting}>Next</Button>
-          ) : (
+        </div>
+      </div>
+
+      <div className="mt-8">
+        <div className="mb-2 flex items-center justify-between text-xs font-medium text-muted-foreground">
+          <span>
+            Question <span className="font-bold text-foreground">{currentQuestionIndex + 1}</span> of{' '}
+            {totalQuestions}
+          </span>
+          <span>{Math.round(progress)}%</span>
+        </div>
+        <Progress value={progress} className="h-2" />
+      </div>
+
+      {/* Question Navigation Bar with botanical style */}
+      <div className="mt-4 flex flex-wrap gap-2 justify-center">
+        {currentTest.questions.map((question, index) => (
+          <button
+            key={question.id}
+            onClick={() => setCurrentQuestionIndex(index)}
+            disabled={isSubmitting}
+            className={`size-10 rounded-full font-medium text-sm transition-all border-2 ${
+              index === currentQuestionIndex
+                ? 'bg-primary border-primary text-primary-foreground shadow-soft scale-110'
+                : userAnswers[question.id]
+                  ? 'bg-primary/15 border-primary/30 text-primary hover:bg-primary/20'
+                  : 'bg-card border-border text-muted-foreground hover:border-primary/40 hover:text-primary'
+            }`}
+            title={userAnswers[question.id] ? `Question ${index + 1} (Answered)` : `Question ${index + 1} (Not answered)`}
+          >
+            {index + 1}
+          </button>
+        ))}
+      </div>
+      <p className="text-xs text-muted-foreground text-center mt-2">
+        {Object.keys(userAnswers).length} of {totalQuestions} answered
+      </p>
+
+      {/* Validation Error Alert */}
+      {error && !showManualRetry && submissionRetryCount === 0 && (
+        <Alert variant="destructive" className="mt-4 rounded-2xl">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Incomplete Test</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      {showManualRetry && (
+        <Alert className="mt-4 rounded-2xl">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Submission Failed</AlertTitle>
+          <AlertDescription>
+            {error}
             <Button 
-              onClick={() => handleFinish()} 
-              disabled={isSubmitting || showManualRetry}
-              variant={getUnansweredCount() === 0 ? 'default' : 'outline'}
+              onClick={handleManualRetry} 
+              className="mt-2 w-full"
+              disabled={isSubmitting}
             >
-              {isSubmitting ? 'Submitting...' : 
-               getUnansweredCount() > 0 
-                 ? `Finish (${getUnansweredCount()} unanswered)` 
-                 : 'Finish Test'}
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry Submission
             </Button>
-          )}
-        </CardFooter>
-      </Card>
+          </AlertDescription>
+        </Alert>
+      )}
+      {!showManualRetry && submissionRetryCount > 0 && (
+        <Alert className="mt-4 rounded-2xl">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <motion.div
+        key={currentQuestion.id}
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        className="mt-6"
+      >
+        <Card className="card-lift gap-0 py-6 shadow-soft rounded-2xl">
+          <CardContent>
+            <ProficiencyTestQuestion
+              question={currentQuestion}
+              selectedChoice={userAnswers[currentQuestion.id] || null}
+              onSelectChoice={(choiceId) => handleAnswerSelect(currentQuestion.id, choiceId)}
+            />
+          </CardContent>
+          <CardFooter className="mt-6 flex items-center justify-between gap-4 px-6">
+            <Button
+              variant="ghost"
+              onClick={handlePrevious}
+              disabled={currentQuestionIndex === 0 || isSubmitting}
+            >
+              <ArrowLeft />
+              Back
+            </Button>
+            {currentQuestionIndex < currentTest.questions.length - 1 ? (
+              <Button onClick={handleNext} disabled={isSubmitting}>
+                Next
+                <ArrowRight />
+              </Button>
+            ) : (
+              <Button 
+                onClick={() => handleFinish()} 
+                disabled={isSubmitting || showManualRetry}
+                variant={getUnansweredCount() === 0 ? 'default' : 'outline'}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="animate-spin" />
+                    Submitting...
+                  </>
+                ) : getUnansweredCount() > 0 
+                  ? `Finish (${getUnansweredCount()} unanswered)` 
+                  : (
+                    <>
+                      <CheckCircle2 />
+                      Finish Test
+                    </>
+                  )}
+              </Button>
+            )}
+          </CardFooter>
+        </Card>
+      </motion.div>
     </div>
   );
 };
