@@ -12,6 +12,7 @@ import TutorialEmptyState from '@/components/learning/TutorialEmptyState';
 import TutorialLoadingState from '@/components/learning/TutorialLoadingState';
 import TutorialDialog from '@/components/learning/TutorialDialog';
 import type { TutorialWithProgress } from '@/types/database';
+import { isValidYouTubeUrl } from '@/lib/utils/youtube';
 
 // Helper to convert proficiency level to lowercase
 const toLowerLevel = (level: string | null | undefined): 'beginner' | 'intermediate' | 'advanced' | undefined => {
@@ -59,25 +60,18 @@ export default function TutorialsPage() {
     getTutorials(language, userLevel);
   }, [language, userLevel, getTutorials]);
 
-  // Reset saving state when tutorialsLoading changes
-  useEffect(() => {
-    if (!tutorialsLoading && isSaving) {
-      setIsSaving(false);
-    }
-  }, [tutorialsLoading, isSaving]);
-
   // Filter tutorials by level (admin only) and search (all users)
   const filteredTutorials = useMemo(() => {
-    let filtered = tutorials;
+    let filtered = tutorials.filter(tutorial => tutorial.language === language && (!userLevel || tutorial.level === userLevel));
     
     // Apply level filter for admins only
-    if (isAdmin && activeTab !== 'all') {
+    if (activeTab !== 'all') {
       filtered = filtered.filter(tutorial => tutorial.level === activeTab);
     }
     
     // Apply search filter for all users
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+      const query = searchQuery.trim().toLowerCase();
       filtered = filtered.filter(tutorial =>
         tutorial.title.toLowerCase().includes(query) ||
         tutorial.description?.toLowerCase().includes(query)
@@ -85,7 +79,7 @@ export default function TutorialsPage() {
     }
     
     return filtered;
-  }, [tutorials, activeTab, searchQuery, isAdmin]);  // Function to handle adding a new tutorial
+  }, [tutorials, activeTab, searchQuery, language, userLevel]);  // Function to handle adding a new tutorial
   const handleAddTutorial = () => {    setCurrentTutorial({
       id: '',
       title: '',
@@ -134,7 +128,7 @@ export default function TutorialsPage() {
     if (isSaving) return;
     
     // Form validation
-    if (!tutorial.title || !tutorial.description || !tutorial.video_url) {
+    if (!tutorial.title.trim() || !tutorial.description.trim() || !isValidYouTubeUrl(tutorial.video_url)) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -175,6 +169,7 @@ export default function TutorialsPage() {
   return (
     <>
       <TutorialHeader
+        activeTab={activeTab}
         onTabChange={setActiveTab}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -203,4 +198,4 @@ export default function TutorialsPage() {
       />
     </>
   );
-} 
+}

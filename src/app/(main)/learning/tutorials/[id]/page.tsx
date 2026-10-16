@@ -12,6 +12,8 @@ import YouTubeVideoPreview, { VideoProgressState } from '@/components/learning/Y
 import TutorialDialog from '@/components/learning/TutorialDialog';
 import type { TutorialWithProgress } from '@/types/database';
 import { toast } from 'sonner';
+import { isValidYouTubeUrl } from '@/lib/utils/youtube';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function TutorialDetailPage() {
   const params = useParams();
@@ -20,6 +22,7 @@ export default function TutorialDetailPage() {
 
   const { getTutorial, startTutorial, markTutorialDone, updateWatchPosition, updateTutorial, deleteTutorial: deleteFromDB } = useLearning();
   const { isAdmin } = useAdmin();
+  const { language, setLanguage } = useLanguage();
 
   const [tutorial, setTutorial] = useState<TutorialWithProgress | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,6 +30,7 @@ export default function TutorialDetailPage() {
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [draftTutorial, setDraftTutorial] = useState<TutorialWithProgress | null>(null);
 
   const hasStartedRef = useRef(false);
   const hasCompletedRef = useRef(false);
@@ -34,12 +38,19 @@ export default function TutorialDetailPage() {
 
   // Load tutorial data
   useEffect(() => {
+    let cancelled = false;
+    hasStartedRef.current = false;
+    hasCompletedRef.current = false;
+    lastSaveTimeRef.current = 0;
+    setWatchedPercent(0);
+    setIsVideoPlaying(false);
     async function loadTutorial() {
       if (!tutorialId) return;
       
       try {
         setIsLoading(true);
         const data = await getTutorial(tutorialId);
+        if (cancelled) return;
         
         if (!data) {
           toast.error('Tutorial not found');
@@ -48,6 +59,7 @@ export default function TutorialDetailPage() {
         }
         
         setTutorial(data);
+        setLanguage(data.language);
         
         // Initialize refs based on status
         if (data.status === 'started') {
@@ -60,12 +72,17 @@ export default function TutorialDetailPage() {
         console.error('Error loading tutorial:', error);
         toast.error('Failed to load tutorial');
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     }
 
     loadTutorial();
-  }, [tutorialId, getTutorial, router]);
+    return () => { cancelled = true; };
+  }, [tutorialId, getTutorial, router, setLanguage]);
+
+  useEffect(() => {
+    if (tutorial && tutorial.language !== language) router.push('/learning/tutorials');
+  }, [tutorial, language, router]);
 
   const handleVideoPlay = useCallback(() => {
     setIsVideoPlaying(true);
@@ -73,8 +90,9 @@ export default function TutorialDetailPage() {
     
     if (tutorial.status === 'not-started' && !hasStartedRef.current) {
       hasStartedRef.current = true;
-      startTutorial(tutorial.id);
-      setTutorial(prev => prev ? { ...prev, status: 'started' } : null);
+      void startTutorial(tutorial.id).then(() => {
+        setTutorial(prev => prev && prev.id === tutorial.id && prev.status !== 'completed' ? { ...prev, status: 'started' } : prev);
+      }).catch(() => { hasStartedRef.current = false; });
     }
   }, [isAdmin, tutorial, startTutorial]);
 
@@ -94,8 +112,9 @@ export default function TutorialDetailPage() {
     // Mark as completed at 90%
     if (state.played >= 0.9 && tutorial.status !== 'completed' && !hasCompletedRef.current) {
       hasCompletedRef.current = true;
-      markTutorialDone(tutorial.id);
-      setTutorial(prev => prev ? { ...prev, status: 'completed' } : null);
+      void markTutorialDone(tutorial.id).then(() => {
+        setTutorial(prev => prev?.id === tutorial.id ? { ...prev, status: 'completed' } : prev);
+      }).catch(() => { hasCompletedRef.current = false; });
     }
   }, [isAdmin, tutorial, markTutorialDone, updateWatchPosition]);
 
@@ -105,24 +124,22 @@ export default function TutorialDetailPage() {
     
     if (tutorial.status !== 'completed' && !hasCompletedRef.current) {
       hasCompletedRef.current = true;
-      markTutorialDone(tutorial.id);
-      setTutorial(prev => prev ? { ...prev, status: 'completed' } : null);
+      void markTutorialDone(tutorial.id).then(() => {
+        setTutorial(prev => prev?.id === tutorial.id ? { ...prev, status: 'completed' } : prev);
+      }).catch(() => { hasCompletedRef.current = false; });
     }
   }, [isAdmin, tutorial, markTutorialDone]);
 
   const handleStartTutorial = () => {
-    if (!tutorial) return;
-    startTutorial(tutorial.id);
-    setTutorial(prev => prev ? { ...prev, status: 'started' } : null);
+    handleVideoPlay();
   };
 
   const handleMarkDone = () => {
-    if (!tutorial) return;
-    markTutorialDone(tutorial.id);
-    setTutorial(prev => prev ? { ...prev, status: 'completed' } : null);
+    handleVideoEnded();
   };
 
   const handleEditTutorial = () => {
+    setDraftTutorial(tutorial ? { ...tutorial } : null);
     setEditDialogOpen(true);
   };
 
@@ -131,7 +148,6 @@ export default function TutorialDetailPage() {
     if (confirm('Are you sure you want to delete this tutorial?')) {
       try {
         await deleteFromDB(tutorial.id);
-        toast.success('Tutorial deleted');
         router.push('/learning/tutorials');
       } catch (error) {
         console.error('Error deleting tutorial:', error);
@@ -142,7 +158,7 @@ export default function TutorialDetailPage() {
   const handleSaveTutorial = async (updatedTutorial: TutorialWithProgress) => {
     if (isSaving || !tutorial) return;
     
-    if (!updatedTutorial.title || !updatedTutorial.description || !updatedTutorial.video_url) {
+    if (!updatedTutorial.title.trim() || !updatedTutorial.description.trim() || !isValidYouTubeUrl(updatedTutorial.video_url)) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -159,6 +175,7 @@ export default function TutorialDetailPage() {
       });
       
       setTutorial(prev => prev ? { ...prev, ...updatedTutorial } : null);
+      setLanguage(updatedTutorial.language);
       setEditDialogOpen(false);
     } catch (error) {
       console.error('Error saving tutorial:', error);
@@ -250,6 +267,10 @@ export default function TutorialDetailPage() {
               onVideoPlay={handleVideoPlay}
               onVideoProgress={handleVideoProgress}
               onVideoEnded={handleVideoEnded}
+              onVideoPause={(state) => {
+                setIsVideoPlaying(false);
+                if (!isAdmin) void updateWatchPosition(tutorial.id, state.playedSeconds);
+              }}
             />
             
             {/* Watch progress badge */}
@@ -297,8 +318,8 @@ export default function TutorialDetailPage() {
       <TutorialDialog
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
-        tutorial={tutorial}
-        onTutorialChange={setTutorial}
+        tutorial={draftTutorial}
+        onTutorialChange={setDraftTutorial}
         onSave={handleSaveTutorial}
         isSaving={isSaving}
       />

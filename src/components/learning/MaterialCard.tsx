@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { FileDown, FileText, BookOpen, Video, Edit, Trash2, Eye, Image, FileSpreadsheet } from 'lucide-react';
 import { Material } from '@/types/database';
 import { formatBytes } from '@/lib/utils';
+import { getMaterialDownloadUrl } from '@/lib/services/materialService';
 
 interface MaterialCardProps {
   material: Material;
@@ -108,12 +109,12 @@ const MaterialCard: React.FC<MaterialCardProps> = ({ material, isAdmin, onEdit, 
               Preview
             </Button>
           )}
-          <a href={material.download_url} download target="_blank" rel="noopener noreferrer" className="flex-1">
-            <Button size="sm" className="w-full">
+          <Button asChild size="sm" className="flex-1">
+            <a href={getMaterialDownloadUrl(material)} download target="_blank" rel="noopener noreferrer">
               <FileDown />
               Download
-            </Button>
-          </a>
+            </a>
+          </Button>
           {isAdmin && (
             <>
               <Button variant="ghost" size="sm" onClick={() => onEdit(material)} aria-label="Edit material">

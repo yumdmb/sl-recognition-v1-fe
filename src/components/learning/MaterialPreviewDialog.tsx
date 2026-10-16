@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FileDown, Loader2, FileWarning } from 'lucide-react';
 import { Material } from '@/types/database';
+import { getMaterialDownloadUrl } from '@/lib/services/materialService';
 
 interface MaterialPreviewDialogProps {
   open: boolean;
@@ -54,10 +55,16 @@ const MaterialPreviewDialog: React.FC<MaterialPreviewDialogProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
+  useEffect(() => {
+    setIsLoading(true);
+    setHasError(false);
+  }, [open, material?.id, material?.download_url]);
+
   if (!material) return null;
 
   const previewType = getPreviewType(material);
   const fileUrl = material.download_url;
+  const downloadUrl = getMaterialDownloadUrl(material);
 
 
   const handleLoad = () => {
@@ -68,15 +75,6 @@ const MaterialPreviewDialog: React.FC<MaterialPreviewDialogProps> = ({
   const handleError = () => {
     setIsLoading(false);
     setHasError(true);
-  };
-
-  // Reset state when dialog opens
-  const handleOpenChange = (newOpen: boolean) => {
-    if (newOpen) {
-      setIsLoading(true);
-      setHasError(false);
-    }
-    onOpenChange(newOpen);
   };
 
   const renderPreview = () => {
@@ -92,11 +90,11 @@ const MaterialPreviewDialog: React.FC<MaterialPreviewDialogProps> = ({
               ? 'There was an error loading the preview. Please try downloading the file instead.'
               : 'This file type cannot be previewed in the browser. Please download to view.'}
           </p>
-          <a href={fileUrl} download target="_blank" rel="noopener noreferrer">
-            <Button>
+          <Button asChild>
+            <a href={downloadUrl} download target="_blank" rel="noopener noreferrer">
               <FileDown className="mr-2 h-4 w-4" /> Download File
-            </Button>
-          </a>
+            </a>
+          </Button>
         </div>
       );
     }
@@ -187,18 +185,19 @@ const MaterialPreviewDialog: React.FC<MaterialPreviewDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-4 pr-10">
           <div className="flex items-start justify-between gap-4">
             <DialogTitle className="text-xl font-semibold flex-1">{material.title}</DialogTitle>
-            <a href={fileUrl} download target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
-              <Button variant="outline" size="sm">
+            <Button asChild variant="outline" size="sm" className="flex-shrink-0">
+              <a href={downloadUrl} download target="_blank" rel="noopener noreferrer">
                 <FileDown className="mr-2 h-4 w-4" /> Download
-              </Button>
-            </a>
+              </a>
+            </Button>
           </div>
         </DialogHeader>
+        <DialogDescription className="sr-only">Preview and download {material.title}.</DialogDescription>
         
         {renderPreview()}
       </DialogContent>

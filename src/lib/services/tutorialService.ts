@@ -32,10 +32,12 @@ export class TutorialService {
 
       // If userId provided, get status and watch_position for each tutorial
       if (userId) {
-        const { data: progressData } = await supabase
+        const { data: progressData, error: progressError } = await supabase
           .from('tutorial_progress')
           .select('tutorial_id, status, watch_position')
           .eq('user_id', userId);
+
+        if (progressError) throw progressError;
 
         const progressMap = new Map(
           progressData?.map(p => [p.tutorial_id, { status: p.status, watch_position: p.watch_position }]) || []
@@ -76,19 +78,21 @@ export class TutorialService {
         .from('tutorials')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       if (!tutorial) return null;
 
       // Get status and watch_position if userId provided
       if (userId) {
-        const { data: progress } = await supabase
+        const { data: progress, error: progressError } = await supabase
           .from('tutorial_progress')
           .select('status, watch_position')
           .eq('user_id', userId)
           .eq('tutorial_id', id)
-          .single();
+          .maybeSingle();
+
+        if (progressError) throw progressError;
 
         return {
           ...tutorial,
@@ -169,22 +173,27 @@ export class TutorialService {
     try {
       console.log('Starting tutorial with:', { userId, tutorialId });
       
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('tutorial_progress')
         .upsert({
           user_id: userId,
           tutorial_id: tutorialId,
           status: 'started',
           last_watched_at: new Date().toISOString()
-        })
-        .select()
+        }, { onConflict: 'user_id,tutorial_id', ignoreDuplicates: true });
+
+      if (error) throw error;
+
+      // Starting again must preserve completed status and the saved position.
+      const { data, error: fetchError } = await supabase
+        .from('tutorial_progress')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('tutorial_id', tutorialId)
         .single();
 
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
-      
+      if (fetchError) throw fetchError;
+
       console.log('Tutorial started successfully:', data);
       return data;    } catch (error) {
       console.error('Error starting tutorial:', error);
@@ -206,49 +215,20 @@ export class TutorialService {
     try {
       console.log('Marking tutorial as done with:', { userId, tutorialId });
       
-      // First, try to update the existing record
-      const { data: updateData, error: updateError } = await supabase
+      const { data, error } = await supabase
         .from('tutorial_progress')
-        .update({
+        .upsert({
+          user_id: userId,
+          tutorial_id: tutorialId,
           status: 'completed',
           last_watched_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        })
-        .eq('user_id', userId)
-        .eq('tutorial_id', tutorialId)
+        }, { onConflict: 'user_id,tutorial_id' })
         .select()
         .single();
 
-      if (updateError) {
-        // If update fails (record doesn't exist), try to insert
-        if (updateError.code === 'PGRST116') {
-          console.log('No existing record found, creating new one...');
-          const { data: insertData, error: insertError } = await supabase
-            .from('tutorial_progress')
-            .insert({
-              user_id: userId,
-              tutorial_id: tutorialId,
-              status: 'completed',
-              last_watched_at: new Date().toISOString()
-            })
-            .select()
-            .single();
-
-          if (insertError) {
-            console.error('Insert error:', insertError);
-            throw insertError;
-          }
-          
-          console.log('Tutorial marked as done successfully (new record):', insertData);
-          return insertData;
-        } else {
-          console.error('Update error:', updateError);
-          throw updateError;
-        }
-      }
-      
-      console.log('Tutorial marked as done successfully (updated):', updateData);
-      return updateData;
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Error marking tutorial as done:', error);
       console.error('Full error object:', JSON.stringify(error, null, 2));
@@ -262,6 +242,7 @@ export class TutorialService {
     tutorialId: string,
     watchPosition: number
   ): Promise<void> {
+    if (!Number.isFinite(watchPosition) || watchPosition < 0) return;
     const supabase = createClient();
     try {
       const { error } = await supabase
@@ -276,7 +257,7 @@ export class TutorialService {
       if (error) throw error;
     } catch (error) {
       console.error('Error updating watch position:', error);
-      // Don't throw - this is not critical, just log the error
+      throw error;
     }
   }
 

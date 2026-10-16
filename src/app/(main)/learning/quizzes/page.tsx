@@ -38,6 +38,7 @@ export default function QuizzesPage() {
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [currentQuizSet, setCurrentQuizSet] = useState<QuizSetWithProgress | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
 
     // Get the user's proficiency level for the currently selected language (only for non-admins)
     const userLevel = useMemo(() => {
@@ -62,16 +63,16 @@ export default function QuizzesPage() {
 
     // Filter quiz sets by level (admin only) and search (all users)
     const filteredQuizSets = useMemo(() => {
-        let filtered = quizSets;
+        let filtered = quizSets.filter(set => set.language === language && (!userLevel || set.level === userLevel));
         
         // Apply level filter for admins only
-        if (isAdmin && activeTab !== 'all') {
+        if (activeTab !== 'all') {
             filtered = filtered.filter(set => set.level === activeTab);
         }
         
         // Apply search filter for all users
         if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase();
+            const query = searchQuery.trim().toLowerCase();
             filtered = filtered.filter(set =>
                 set.title.toLowerCase().includes(query) ||
                 set.description?.toLowerCase().includes(query)
@@ -79,7 +80,7 @@ export default function QuizzesPage() {
         }
         
         return filtered;
-    }, [quizSets, activeTab, searchQuery, isAdmin]);
+    }, [quizSets, activeTab, searchQuery, language, userLevel]);
 
     // Function to handle adding a new quiz set
     const handleAddQuizSet = () => {
@@ -109,7 +110,6 @@ export default function QuizzesPage() {
         if (confirm('Are you sure you want to delete this quiz set? This will also delete all associated questions.')) {
             try {
                 await deleteQuizSet(id);
-                toast.success('Quiz set deleted successfully');
             } catch (error) {
                 toast.error('Error deleting quiz set');
                 console.error(error);
@@ -119,12 +119,14 @@ export default function QuizzesPage() {
 
     // Function to save quiz set (add or update)
     const handleSaveQuizSet = async (quizSet: QuizSetWithProgress) => {
+        if (isSaving) return;
         // Form validation
-        if (!quizSet.title || !quizSet.description) {
+        if (!quizSet.title.trim() || !quizSet.description.trim()) {
             toast.error('Please fill in all required fields');
             return;
         }
 
+        setIsSaving(true);
         try {
             const isNewQuizSet = !quizSet.id || quizSet.id === '';
             
@@ -145,10 +147,11 @@ export default function QuizzesPage() {
             }
             
             setEditDialogOpen(false);
-            toast.success(`Quiz set ${isNewQuizSet ? 'added' : 'updated'} successfully`);
         } catch (error) {
             toast.error('Error saving quiz set');
             console.error(error);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -193,6 +196,7 @@ export default function QuizzesPage() {
                 quizSet={currentQuizSet}
                 onQuizSetChange={setCurrentQuizSet}
                 onSave={handleSaveQuizSet}
+                isSaving={isSaving}
             />
         </>
     );

@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     const { url } = await request.json();
 
-    if (!url) {
+    if (typeof url !== 'string' || !url.trim()) {
       return NextResponse.json(
         { error: 'YouTube URL is required' },
         { status: 400 }

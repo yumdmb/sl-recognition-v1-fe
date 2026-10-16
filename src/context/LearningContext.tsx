@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, ReactNode } from 'react';
 import { toast } from "sonner";
 import { useAuth } from './AuthContext';
 import { TutorialService } from '@/lib/services/tutorialService';
@@ -119,7 +119,10 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [tutorials, setTutorials] = useState<TutorialWithProgress[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [quizSets, setQuizSets] = useState<QuizSetWithProgress[]>([]);
-  
+  const tutorialRequest = useRef(0);
+  const materialRequest = useRef(0);
+  const quizRequest = useRef(0);
+
   // Proficiency Test State
   const [proficiencyLevel, setProficiencyLevel] = useState<'Beginner' | 'Intermediate' | 'Advanced' | null>(null);
   const [currentTest, setCurrentTest] = useState<ProficiencyTestService.ProficiencyTest | null>(null);
@@ -170,14 +173,18 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     });
   };  // Tutorials
   const getTutorials = useCallback(async (language?: 'ASL' | 'MSL', level?: 'beginner' | 'intermediate' | 'advanced') => {
+    const request = ++tutorialRequest.current;
     try {
       setTutorialsLoading(true);
       const data = await TutorialService.getTutorials(currentUser?.id, language, level);
-      setTutorials(data);
+      if (request === tutorialRequest.current) setTutorials(data);
     } catch (error) {
-      handleError(error, 'fetch tutorials');
+      if (request === tutorialRequest.current) {
+        setTutorials([]);
+        handleError(error, 'fetch tutorials');
+      }
     } finally {
-      setTutorialsLoading(false);
+      if (request === tutorialRequest.current) setTutorialsLoading(false);
     }
   }, [currentUser?.id]);
 
@@ -192,6 +199,7 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       toast.success('Tutorial created successfully');
     } catch (error) {
       handleError(error, 'create tutorial');
+      throw error;
     } finally {
       setTutorialsLoading(false);
     }
@@ -201,11 +209,12 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
     try {
       setTutorialsLoading(true);
       const updatedTutorial = await TutorialService.updateTutorial(id, updates);      setTutorials(prev => prev.map(t => 
-        t.id === id ? { ...updatedTutorial, status: t.status } : t
+        t.id === id ? { ...t, ...updatedTutorial } : t
       ));
       toast.success('Tutorial updated successfully');
     } catch (error) {
       handleError(error, 'update tutorial');
+      throw error;
     } finally {
       setTutorialsLoading(false);
     }
@@ -218,27 +227,30 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       setTutorials(prev => prev.filter(t => t.id !== id));
       toast.success('Tutorial deleted successfully');
     } catch (error) {
-      handleError(error, 'delete tutorial');    } finally {
+      handleError(error, 'delete tutorial');
+      throw error;
+    } finally {
       setTutorialsLoading(false);
     }
   };
 
   const startTutorial = async (tutorialId: string) => {
     try {
-      if (!currentUser) return;
-      await TutorialService.startTutorial(currentUser.id, tutorialId);
+      if (!currentUser) throw new Error('User not authenticated');
+      const progress = await TutorialService.startTutorial(currentUser.id, tutorialId);
       setTutorials(prev => prev.map(t => 
-        t.id === tutorialId ? { ...t, status: 'started' } : t
+        t.id === tutorialId ? { ...t, status: t.status === 'completed' ? 'completed' : progress.status, watch_position: progress.watch_position } : t
       ));
       toast.success('Tutorial started! Track your progress.');
     } catch (error) {
       handleError(error, 'start tutorial');
+      throw error;
     }
   };
 
   const markTutorialDone = async (tutorialId: string) => {
     try {
-      if (!currentUser) return;
+      if (!currentUser) throw new Error('User not authenticated');
       await TutorialService.markTutorialDone(currentUser.id, tutorialId);
       setTutorials(prev => prev.map(t => 
         t.id === tutorialId ? { ...t, status: 'completed' } : t
@@ -251,13 +263,18 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       }
     } catch (error) {
       handleError(error, 'mark tutorial as done');
+      throw error;
     }
   };
 
   const updateWatchPosition = async (tutorialId: string, watchPosition: number) => {
+    if (!Number.isFinite(watchPosition) || watchPosition < 0) return;
     try {
       if (!currentUser) return;
       await TutorialService.updateWatchPosition(currentUser.id, tutorialId, watchPosition);
+      setTutorials(prev => prev.map(t =>
+        t.id === tutorialId ? { ...t, watch_position: watchPosition } : t
+      ));
     } catch (error) {
       // Silent fail - not critical
       console.error('Error updating watch position:', error);
@@ -280,19 +297,25 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   // Materials
   const getMaterials = useCallback(async (language: 'ASL' | 'MSL' = 'MSL', level?: 'beginner' | 'intermediate' | 'advanced') => {
+    const request = ++materialRequest.current;
     try {
       setMaterialsLoading(true);
       const data = await MaterialService.getMaterials(language, level);
-      setMaterials(data);
+      if (request === materialRequest.current) setMaterials(data);
     } catch (error) {
-      handleError(error, 'fetch materials');
+      if (request === materialRequest.current) {
+        setMaterials([]);
+        handleError(error, 'fetch materials');
+      }
     } finally {
-      setMaterialsLoading(false);
+      if (request === materialRequest.current) setMaterialsLoading(false);
     }
   }, []);
 
   const createMaterial = async (material: Material, file?: File) => {
+    let uploadedPath: string | undefined;
     try {
+      if (!currentUser) throw new Error('User not authenticated');
       setMaterialsLoading(true);
       let filePath: string | null = material.file_path || null;
       let downloadUrl: string = material.download_url || '';
@@ -301,6 +324,7 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       if (file) {
         const fileName = `${currentUser?.id || 'unknown_user'}/${Date.now()}_${file.name}`;
         filePath = await MaterialService.uploadMaterialFile(file, fileName);
+        uploadedPath = filePath;
         downloadUrl = MaterialService.getMaterialPublicUrl(filePath);
         fileSize = file.size;
       }
@@ -322,25 +346,30 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       setMaterials(prev => [newMaterial, ...prev]);
       toast.success('Material created successfully');
     } catch (error) {
+      if (uploadedPath) {
+        await MaterialService.deleteMaterialFile(uploadedPath).catch(cleanupError =>
+          console.error('Failed to clean up material upload:', cleanupError)
+        );
+      }
       handleError(error, 'create material');
+      throw error;
     } finally {
       setMaterialsLoading(false);
     }
   };
 
   const updateMaterial = async (id: string, updates: Partial<Omit<Material, 'id'>>, file?: File) => {
+    let uploadedPath: string | undefined;
     try {
+      if (!currentUser) throw new Error('User not authenticated');
       setMaterialsLoading(true);
       const finalUpdates = { ...updates };
+      const previousPath = materials.find(m => m.id === id)?.file_path;
 
       if (file) {
-        const currentMaterial = materials.find(m => m.id === id);
-        if (currentMaterial?.file_path) {
-          await MaterialService.deleteMaterialFile(currentMaterial.file_path);
-        }
-
         const fileName = `${currentUser?.id || 'unknown_user'}/${Date.now()}_${file.name}`;
         const newFilePath = await MaterialService.uploadMaterialFile(file, fileName);
+        uploadedPath = newFilePath;
         finalUpdates.file_path = newFilePath;
         finalUpdates.download_url = MaterialService.getMaterialPublicUrl(newFilePath);
         finalUpdates.file_size = file.size;
@@ -348,10 +377,22 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       }
 
       const updatedMaterial = await MaterialService.updateMaterial(id, finalUpdates);
+      uploadedPath = undefined; // The new file is now referenced by the saved record.
       setMaterials(prev => prev.map(m => (m.id === id ? updatedMaterial : m)));
+      if (file && previousPath) {
+        await MaterialService.deleteMaterialFile(previousPath).catch(cleanupError =>
+          console.error('Material saved, but the old file could not be cleaned up:', cleanupError)
+        );
+      }
       toast.success('Material updated successfully');
     } catch (error) {
+      if (uploadedPath) {
+        await MaterialService.deleteMaterialFile(uploadedPath).catch(cleanupError =>
+          console.error('Failed to clean up replacement upload:', cleanupError)
+        );
+      }
       handleError(error, 'update material');
+      throw error;
     } finally {
       setMaterialsLoading(false);
     }
@@ -365,30 +406,35 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       toast.success('Material deleted successfully');
     } catch (error) {
       handleError(error, 'delete material');
+      throw error;
     } finally {
       setMaterialsLoading(false);
     }
   };  // Quizzes
   const getQuizSets = useCallback(async (language?: 'ASL' | 'MSL', level?: 'beginner' | 'intermediate' | 'advanced') => {
+    const request = ++quizRequest.current;
     try {
       setQuizSetsLoading(true);
       const data = await QuizService.getQuizSets(currentUser?.id, language, level);
-      setQuizSets(data);
+      if (request === quizRequest.current) setQuizSets(data);
     } catch (error) {
-      handleError(error, 'fetch quiz sets');
+      if (request === quizRequest.current) {
+        setQuizSets([]);
+        handleError(error, 'fetch quiz sets');
+      }
     } finally {
-      setQuizSetsLoading(false);
+      if (request === quizRequest.current) setQuizSetsLoading(false);
     }
   }, [currentUser?.id]);
 
-  const getQuizSetWithQuestions = async (id: string): Promise<QuizSetWithQuestions | null> => {
+  const getQuizSetWithQuestions = useCallback(async (id: string): Promise<QuizSetWithQuestions | null> => {
     try {
       return await QuizService.getQuizSetWithQuestions(id);
     } catch (error) {
       handleError(error, 'fetch quiz questions');
       return null;
     }
-  };
+  }, []);
 
   const createQuizSet = async (quizSet: Database['public']['Tables']['quiz_sets']['Insert']) => {
     try {
@@ -401,6 +447,7 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       toast.success('Quiz set created successfully');
     } catch (error) {
       handleError(error, 'create quiz set');
+      throw error;
     } finally {
       setQuizSetsLoading(false);
     }
@@ -416,6 +463,7 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       toast.success('Quiz set updated successfully');
     } catch (error) {
       handleError(error, 'update quiz set');
+      throw error;
     } finally {
       setQuizSetsLoading(false);
     }
@@ -429,6 +477,7 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       toast.success('Quiz set deleted successfully');
     } catch (error) {
       handleError(error, 'delete quiz set');
+      throw error;
     } finally {
       setQuizSetsLoading(false);
     }
@@ -440,6 +489,7 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       toast.success('Question created successfully');
     } catch (error) {
       handleError(error, 'create question');
+      throw error;
     }
   };
 
@@ -449,6 +499,7 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       toast.success('Question updated successfully');
     } catch (error) {
       handleError(error, 'update question');
+      throw error;
     }
   };
   const deleteQuizQuestion = async (id: string) => {
@@ -458,6 +509,7 @@ export const LearningProvider: React.FC<{ children: ReactNode }> = ({ children }
       toast.success('Question deleted successfully');
     } catch (error) {
       handleError(error, 'delete question');
+      throw error;
     }
   };
 

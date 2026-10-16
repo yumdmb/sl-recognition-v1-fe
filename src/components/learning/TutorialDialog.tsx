@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,54 +30,40 @@ const TutorialDialog: React.FC<TutorialDialogProps> = ({
   onSave,
   isSaving = false
 }) => {
-  const [videoUrlDebounce, setVideoUrlDebounce] = useState('');
-  const { isLoading: isLoadingMetadata, metadata, error, fetchMetadata } = useYouTubeMetadata();
+  const { isLoading: isLoadingMetadata, error, fetchMetadata, reset } = useYouTubeMetadata();
+  const latest = useRef({ tutorial, isSaving });
+  latest.current = { tutorial, isSaving };
 
   // Reset video URL debounce when dialog closes
   useEffect(() => {
     if (!open) {
-      setVideoUrlDebounce('');
+      reset();
     }
-  }, [open]);
+  }, [open, reset]);
 
   // Debounce video URL changes to avoid too many API calls
   useEffect(() => {
-    if (!tutorial?.video_url) return;
-
-    const timer = setTimeout(() => {
-      if (tutorial.video_url && tutorial.video_url !== videoUrlDebounce && tutorial.video_url.trim() !== '') {
-        setVideoUrlDebounce(tutorial.video_url);
-        if (isValidYouTubeUrl(tutorial.video_url)) {
-          handleFetchMetadata(tutorial.video_url);
-        }
+    const url = tutorial?.video_url;
+    if (!open || !url || !isValidYouTubeUrl(url)) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const metadata = await fetchMetadata(url);
+      const current = latest.current.tutorial;
+      if (!cancelled && metadata && current?.video_url === url && !latest.current.isSaving) {
+        onTutorialChange({
+          ...current,
+          title: current.title || metadata.title,
+          thumbnail_url: metadata.thumbnail,
+        });
+        toast.success('Video metadata loaded');
       }
     }, 1000);
 
-    return () => clearTimeout(timer);
-  }, [tutorial?.video_url, videoUrlDebounce]);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [open, tutorial?.video_url, fetchMetadata, onTutorialChange]);
 
   // Early return AFTER all hooks
   if (!tutorial) return null;
-
-  const handleFetchMetadata = async (url: string) => {
-    try {
-      const metadata = await fetchMetadata(url);
-      if (metadata) {
-        // Auto-populate fields if they're empty
-        onTutorialChange({
-          ...tutorial,
-          title: tutorial.title || metadata.title,
-          thumbnail_url: metadata.thumbnail,
-        });
-        toast.success('Video metadata loaded', {
-          description: 'Title and thumbnail have been automatically detected.'
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching video metadata:', error);
-      // Silently fail for metadata fetching to not interrupt the save process
-    }
-  };
 
   const handleFieldChange = (field: keyof TutorialWithProgress, value: string) => {
     onTutorialChange({
@@ -101,8 +87,8 @@ const TutorialDialog: React.FC<TutorialDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px]">
+    <Dialog open={open} onOpenChange={(value) => { if (!isSaving) onOpenChange(value); }}>
+      <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display">{tutorial.id ? 'Edit' : 'New'} tutorial</DialogTitle>
           <DialogDescription className="flex items-start gap-2">
@@ -110,7 +96,7 @@ const TutorialDialog: React.FC<TutorialDialogProps> = ({
             Paste a YouTube URL and the title and thumbnail will be detected automatically.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-2">
+        <fieldset disabled={isSaving} className="space-y-4 py-2">
           <div className="space-y-2">
             <Label htmlFor="videoUrl">YouTube URL</Label>
             <div className="relative">
@@ -197,14 +183,14 @@ const TutorialDialog: React.FC<TutorialDialogProps> = ({
               </Select>
             </div>
           </div>
-        </div>
+        </fieldset>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
             Cancel
           </Button>
           <Button
             onClick={() => onSave(tutorial)}
-            disabled={!tutorial.title || !tutorial.description || !tutorial.video_url || isLoadingMetadata || isSaving}
+            disabled={!tutorial.title.trim() || !tutorial.description.trim() || !isValidYouTubeUrl(tutorial.video_url) || isLoadingMetadata || isSaving}
           >
             {isSaving ? (
               <>

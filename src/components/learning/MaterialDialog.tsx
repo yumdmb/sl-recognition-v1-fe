@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Material } from '@/types/database';
 import { Paperclip } from 'lucide-react';
+import { MATERIAL_FILE_ACCEPT, validateMaterialFile } from '@/lib/services/materialService';
+import { toast } from 'sonner';
 
 interface MaterialDialogProps {
   open: boolean;
@@ -16,6 +18,7 @@ interface MaterialDialogProps {
   material: Material | null;
   onMaterialChange: (material: Material | null) => void;
   onSave: (material: Material, file?: File) => void;
+  isSaving?: boolean;
 }
 
 const MaterialDialog: React.FC<MaterialDialogProps> = ({
@@ -23,7 +26,8 @@ const MaterialDialog: React.FC<MaterialDialogProps> = ({
   onOpenChange,
   material,
   onMaterialChange,
-  onSave
+  onSave,
+  isSaving = false
 }) => {
   const [file, setFile] = useState<File | undefined>();
 
@@ -44,8 +48,16 @@ const MaterialDialog: React.FC<MaterialDialogProps> = ({
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFile(e.target.files[0]);
+    const selected = e.target.files?.[0];
+    if (selected) {
+      try {
+        validateMaterialFile(selected);
+        setFile(selected);
+      } catch (error) {
+        setFile(undefined);
+        e.target.value = '';
+        toast.error(error instanceof Error ? error.message : 'Invalid file');
+      }
     }
   };
 
@@ -54,15 +66,15 @@ const MaterialDialog: React.FC<MaterialDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px]">
+    <Dialog open={open} onOpenChange={(value) => { if (!isSaving) onOpenChange(value); }}>
+      <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display">{material.id ? 'Edit' : 'New'} material</DialogTitle>
           <DialogDescription>
             Upload a PDF, video, or document learners can download.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-2">
+        <fieldset disabled={isSaving} className="space-y-4 py-2">
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
             <Input
@@ -102,10 +114,11 @@ const MaterialDialog: React.FC<MaterialDialogProps> = ({
             <Input
               id="file"
               type="file"
-              accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.webp,.svg,.mp4,.webm,.ogg,.mov"
+              accept={MATERIAL_FILE_ACCEPT}
               onChange={handleFileChange}
               className="hidden"
             />
+            <p className="text-xs text-muted-foreground">Maximum file size: 50 MB.</p>
             {!file && material.download_url && (
               <a
                 href={material.download_url}
@@ -151,10 +164,10 @@ const MaterialDialog: React.FC<MaterialDialogProps> = ({
               </Select>
             </div>
           </div>
-        </div>
+        </fieldset>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSave}>Save</Button>
+          <Button variant="outline" disabled={isSaving} onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button disabled={isSaving} onClick={handleSave}>{isSaving ? 'Saving…' : 'Save'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

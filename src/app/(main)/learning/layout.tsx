@@ -17,7 +17,7 @@ export default function LearningLayout({
   const { language } = useLanguage();
 
   // Parse current path to determine active tab
-  const currentPath = pathname ? pathname.split('/').pop() || '' : '';
+  const currentPath = pathname?.split('/')[2] || '';
 
   return (
     <div className="mx-auto w-full max-w-6xl">

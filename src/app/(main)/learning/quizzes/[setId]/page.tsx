@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,12 +14,14 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { QuizQuestion } from "@/types/database";
 import { cn } from "@/lib/utils";
+import YouTubeVideoPreview from '@/components/learning/YouTubeVideoPreview';
+import { isValidYouTubeUrl } from '@/lib/utils/youtube';
 
 export default function QuizPage() {
   const params = useParams();
   const setId = params?.setId as string;
   const router = useRouter();
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const { currentUser } = useAuth();
   const { getQuizSetWithQuestions, submitQuizAnswers } = useLearning();
 
@@ -28,6 +30,9 @@ export default function QuizPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedAnswers, setSelectedAnswers] = useState<{ [id: string]: string | null }>({});
   const [showResults, setShowResults] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const quizRequestRef = useRef(0);
   const [quizResults, setQuizResults] = useState<{
     score: number;
     totalQuestions: number;
@@ -36,33 +41,44 @@ export default function QuizPage() {
 
   // Load quiz data from Supabase
   useEffect(() => {
+    let cancelled = false;
+    const request = ++quizRequestRef.current;
+    submittingRef.current = false;
+    setIsSubmitting(false);
+    setQuizSet(null);
+    setQuestions([]);
+    setSelectedAnswers({});
+    setShowResults(false);
+    setQuizResults(null);
     async function loadQuizData() {
       try {
         setIsLoading(true);
         const data = await getQuizSetWithQuestions(setId);
+        if (cancelled) return;
 
         if (!data) {
           throw new Error("Quiz not found");
         }
 
-        // Check if this quiz belongs to the selected language
-        if (data.language !== language) {
-          router.push("/learning/quizzes");
-          return;
-        }
-
+        // A direct link or recommendation can open a quiz in either language.
+        setLanguage(data.language);
         setQuizSet(data);
         setQuestions(data.questions);
       } catch (error) {
         console.error("Error loading quiz:", error);
         toast.error("Failed to load quiz");
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     }
 
     loadQuizData();
-  }, [setId, language, router, getQuizSetWithQuestions]);
+    return () => { cancelled = true; quizRequestRef.current = request + 1; };
+  }, [setId, getQuizSetWithQuestions, setLanguage]);
+
+  useEffect(() => {
+    if (quizSet && quizSet.language !== language) router.push('/learning/quizzes');
+  }, [quizSet, language, router]);
 
   if (isLoading) {
     return (
@@ -100,6 +116,7 @@ export default function QuizPage() {
   }
 
   const handleSelect = (questionId: string, answer: string) => {
+    if (submittingRef.current || showResults) return;
     setSelectedAnswers((prev) => ({
       ...prev,
       [questionId]: answer,
@@ -108,6 +125,8 @@ export default function QuizPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current || showResults) return;
+    const request = quizRequestRef.current;
 
     // Check if all questions have been answered
     const unanswered = questions.filter(q => !selectedAnswers[q.id]);
@@ -123,13 +142,16 @@ export default function QuizPage() {
       }
 
       // Format answers for submission
-      const answers = Object.keys(selectedAnswers).map(questionId => ({
-        questionId,
-        answer: selectedAnswers[questionId] || ""
+      const answers = questions.map(question => ({
+        questionId: question.id,
+        answer: selectedAnswers[question.id] || ""
       }));
 
       // Submit answers to Supabase
+      submittingRef.current = true;
+      setIsSubmitting(true);
       const results = await submitQuizAnswers(setId, answers);
+      if (request !== quizRequestRef.current) return;
       setQuizResults(results);
       setShowResults(true);
 
@@ -142,6 +164,11 @@ export default function QuizPage() {
     } catch (error) {
       console.error("Error submitting quiz:", error);
       toast.error("Failed to submit quiz");
+    } finally {
+      if (request === quizRequestRef.current) {
+        submittingRef.current = false;
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -213,6 +240,17 @@ export default function QuizPage() {
                   </p>
                 </div>
 
+                {question.image_url && (
+                  <img src={question.image_url} alt={`Sign for question ${idx + 1}`} className="mx-auto max-h-80 max-w-full rounded-xl object-contain" />
+                )}
+                {question.video_url && (
+                  isValidYouTubeUrl(question.video_url) ? (
+                    <YouTubeVideoPreview key={question.video_url} videoUrl={question.video_url} title={`Video for question ${idx + 1}`} className="aspect-video w-full" />
+                  ) : (
+                    <video src={question.video_url} controls className="max-h-80 w-full rounded-xl" aria-label={`Video for question ${idx + 1}`} />
+                  )
+                )}
+
                 <div className="space-y-2.5 pl-[46px]">
                   {question.options.map((option, i) => {
                     const selected = selectedAnswers[question.id] === option;
@@ -221,7 +259,7 @@ export default function QuizPage() {
                       showResults && selected && option !== question.correct_answer;
 
                     return (
-                      <div
+                      <label
                         key={i}
                         className={cn(
                           "flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3.5 text-sm transition-all",
@@ -230,11 +268,19 @@ export default function QuizPage() {
                           showResults && isCorrect && "border-primary bg-primary-soft",
                           isWrongPick && "border-destructive/50 bg-destructive/5"
                         )}
-                        onClick={() => !showResults && handleSelect(question.id, option)}
                       >
+                        <input
+                          type="radio"
+                          name={`question-${question.id}`}
+                          value={option}
+                          checked={selected}
+                          disabled={showResults || isSubmitting}
+                          onChange={() => handleSelect(question.id, option)}
+                          className="sr-only peer"
+                        />
                         <span
                           className={cn(
-                            "mt-0.5 grid size-5.5 shrink-0 place-items-center rounded-full border text-[11px] font-bold transition-colors",
+                            "mt-0.5 grid size-5.5 shrink-0 place-items-center rounded-full border text-[11px] font-bold transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-ring",
                             selected || (showResults && isCorrect)
                               ? "border-primary bg-primary text-primary-foreground"
                               : "border-border text-muted-foreground",
@@ -250,7 +296,7 @@ export default function QuizPage() {
                         {isWrongPick && (
                           <XCircle className="mt-0.5 size-4.5 shrink-0 text-destructive" />
                         )}
-                      </div>
+                      </label>
                     );
                   })}
                 </div>
@@ -284,8 +330,8 @@ export default function QuizPage() {
                   </span>
                 )}
               </div>
-              <Button type="submit" size="lg">
-                Submit quiz
+              <Button type="submit" size="lg" disabled={isSubmitting}>
+                {isSubmitting ? 'Submitting…' : 'Submit quiz'}
               </Button>
             </div>
           ) : (
@@ -322,10 +368,10 @@ export default function QuizPage() {
                   Review the explanations above, then retake it when you're ready.
                 </p>
                 <div className="flex gap-2.5">
-                  <Button variant="outline" onClick={() => router.push("/learning/quizzes")}>
+                  <Button type="button" variant="outline" onClick={() => router.push("/learning/quizzes")}>
                     All quizzes
                   </Button>
-                  <Button onClick={handleRetry}>
+                  <Button type="button" onClick={handleRetry}>
                     <RotateCcw />
                     Try again
                   </Button>

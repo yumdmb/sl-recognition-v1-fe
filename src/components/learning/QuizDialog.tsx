@@ -15,6 +15,7 @@ interface QuizDialogProps {
   quizSet: QuizSetWithProgress | null;
   onQuizSetChange: (quizSet: QuizSetWithProgress) => void;
   onSave: (quizSet: QuizSetWithProgress) => void;
+  isSaving?: boolean;
 }
 
 const QuizDialog: React.FC<QuizDialogProps> = ({
@@ -22,7 +23,8 @@ const QuizDialog: React.FC<QuizDialogProps> = ({
   onOpenChange,
   quizSet,
   onQuizSetChange,
-  onSave
+  onSave,
+  isSaving = false
 }) => {
   if (!quizSet) return null;
 
@@ -41,7 +43,7 @@ const QuizDialog: React.FC<QuizDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(value) => { if (!isSaving) onOpenChange(value); }}>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle className="font-display">{quizSet.id ? 'Edit' : 'New'} quiz set</DialogTitle>
@@ -95,8 +97,8 @@ const QuizDialog: React.FC<QuizDialogProps> = ({
           </div>
         </div>
         <DialogFooter className="flex-col sm:flex-row gap-3">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Cancel</Button>
-          <Button onClick={() => onSave(quizSet)} className="w-full sm:w-auto">Save</Button>
+          <Button disabled={isSaving} variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Cancel</Button>
+          <Button disabled={isSaving} onClick={() => onSave(quizSet)} className="w-full sm:w-auto">{isSaving ? 'Saving…' : 'Save'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
