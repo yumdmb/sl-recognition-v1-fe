@@ -23,14 +23,17 @@ interface QuizQuestionEditorProps {
 
 export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEditorProps) {
   const router = useRouter();
-  const { isAdmin } = useAdmin();
+  const { isAdmin, isRoleLoading } = useAdmin();
   const { getQuizSetWithQuestions, createQuizQuestion, updateQuizQuestion, deleteQuizQuestion } = useLearning();
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState<QuizQuestion | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
+    if (isRoleLoading) return;
+    let cancelled = false;
     // Redirect non-admin users
     if (!isAdmin) {
       router.push('/learning/quizzes');
@@ -42,6 +45,7 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
       try {
         setIsLoading(true);
         const quizSet = await getQuizSetWithQuestions(setId);
+        if (cancelled) return;
         if (!quizSet) {
           router.push('/learning/quizzes');
           return;
@@ -51,12 +55,13 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
         console.error('Error fetching questions:', error);
         toast.error('Failed to load questions');
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     }
 
     fetchQuestions();
-  }, [setId, router, isAdmin]); // Removed getQuizSetWithQuestions from dependencies
+    return () => { cancelled = true; };
+  }, [setId, router, isAdmin, isRoleLoading, getQuizSetWithQuestions]);
 
   // Handle adding a new question
   const handleAddQuestion = () => {
@@ -69,7 +74,7 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
       explanation: '',
       video_url: null,
       image_url: null,
-      order_index: questions.length,
+      order_index: Math.max(-1, ...questions.map(q => q.order_index)) + 1,
       created_at: new Date().toISOString()
     });
     setEditDialogOpen(true);
@@ -77,7 +82,7 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
 
   // Handle editing an existing question
   const handleEditQuestion = (question: QuizQuestion) => {
-    setCurrentQuestion({...question});
+    setCurrentQuestion({...question, options: [...question.options]});
     setEditDialogOpen(true);
   };
 
@@ -87,7 +92,7 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
 
     try {
       await deleteQuizQuestion(id);
-      setQuestions(questions.filter(q => q.id !== id));
+      setQuestions(prev => prev.filter(q => q.id !== id));
       // Note: Success toast is shown in LearningContext
     } catch (error) {
       console.error('Error deleting question:', error);
@@ -97,10 +102,10 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
 
   // Handle saving a question (new or updated)
   const handleSaveQuestion = async () => {
-    if (!currentQuestion) return;
+    if (!currentQuestion || isSaving) return;
 
     // Validation
-    if (!currentQuestion.question) {
+    if (!currentQuestion.question.trim()) {
       toast.error('Question text is required');
       return;
     }
@@ -110,16 +115,22 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
       return;
     }
 
-    if (!currentQuestion.correct_answer) {
+    if (new Set(currentQuestion.options.map(option => option.trim().toLowerCase())).size !== currentQuestion.options.length) {
+      toast.error('Each answer option must be different');
+      return;
+    }
+
+    if (!currentQuestion.correct_answer.trim() || !currentQuestion.options.includes(currentQuestion.correct_answer)) {
       toast.error('Please select a correct answer');
       return;
     }
 
-    if (!currentQuestion.explanation) {
+    if (!currentQuestion.explanation?.trim()) {
       toast.error('Explanation is required');
       return;
     }
 
+    setIsSaving(true);
     try {
       if (!currentQuestion.id) {
         // Create new question
@@ -163,6 +174,8 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
     } catch (error) {
       console.error('Error saving question:', error);
       toast.error('Failed to save question');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -173,7 +186,10 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
     if (field === 'options' && typeof value === 'object' && 'index' in value) {
       const newOptions = [...currentQuestion.options];
       newOptions[value.index] = value.text;
-      setCurrentQuestion({...currentQuestion, options: newOptions});
+      const correctAnswer = currentQuestion.correct_answer && currentQuestion.options[value.index] === currentQuestion.correct_answer
+        ? value.text
+        : currentQuestion.correct_answer;
+      setCurrentQuestion({...currentQuestion, options: newOptions, correct_answer: correctAnswer});
     } else if (typeof value === 'string') {
       setCurrentQuestion({...currentQuestion, [field]: value});
     }
@@ -181,11 +197,11 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
 
   // Handle setting the correct answer
   const handleSetCorrectAnswer = (option: string) => {
-    if (!currentQuestion) return;
+    if (!currentQuestion || !option.trim()) return;
     setCurrentQuestion({...currentQuestion, correct_answer: option});
   };
 
-  if (isLoading) {
+  if (isLoading || isRoleLoading || !isAdmin) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
@@ -313,8 +329,8 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
       )}
 
       {/* Edit dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+      <Dialog open={editDialogOpen} onOpenChange={(open) => { if (!isSaving) setEditDialogOpen(open); }}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display">
               {currentQuestion?.id ? 'Edit question' : 'New question'}
@@ -338,7 +354,7 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
             <div className="space-y-2.5">
               <Label>Options — tap one to mark it correct</Label>
               {currentQuestion?.options.map((option, idx) => {
-                const isCorrect = option === currentQuestion?.correct_answer;
+                const isCorrect = !!option.trim() && option === currentQuestion?.correct_answer;
                 return (
                   <div key={idx} className="flex gap-2">
                     <Input
@@ -351,6 +367,7 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
                       type="button"
                       variant={isCorrect ? "default" : "outline"}
                       size="sm"
+                      disabled={!option.trim() || isSaving}
                       className="shrink-0"
                       onClick={() => handleSetCorrectAnswer(option)}
                     >
@@ -399,8 +416,8 @@ export default function QuizQuestionEditor({ setId, quizTitle }: QuizQuestionEdi
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveQuestion}>Save question</Button>
+            <Button disabled={isSaving} variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button disabled={isSaving} onClick={handleSaveQuestion}>{isSaving ? 'Saving…' : 'Save question'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

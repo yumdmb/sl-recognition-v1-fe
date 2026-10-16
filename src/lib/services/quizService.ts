@@ -36,26 +36,19 @@ export class QuizService {
       if (!quizSets) return [];
 
       // Get question counts for each quiz set
-      const quizSetsWithCounts = await Promise.all(
-        quizSets.map(async (quizSet) => {
-          const { count } = await supabase
-            .from('quiz_questions')
-            .select('*', { count: 'exact', head: true })
-            .eq('quiz_set_id', quizSet.id);
-
-          return {
-            ...quizSet,
-            questionCount: count || 0
-          };
-        })
-      );
+      const quizSetsWithCounts = quizSets.map(quizSet => ({
+        ...quizSet,
+        questionCount: quizSet.quiz_questions?.[0]?.count ?? 0
+      }));
 
       // If userId provided, get progress for each quiz set
       if (userId) {
-        const { data: progressData } = await supabase
+        const { data: progressData, error: progressError } = await supabase
           .from('quiz_progress')
           .select('*')
           .eq('user_id', userId);
+
+        if (progressError) throw progressError;
 
         const progressMap = new Map(
           progressData?.map(p => [p.quiz_set_id, p]) || []
@@ -82,7 +75,7 @@ export class QuizService {
         .from('quiz_sets')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (quizError) throw quizError;
       if (!quizSet) return null;
@@ -233,23 +226,28 @@ export class QuizService {
       // Get quiz questions to check answers
       const { data: questions, error: questionsError } = await supabase
         .from('quiz_questions')
-        .select('id, correct_answer')
+        .select('id, correct_answer, options')
         .eq('quiz_set_id', quizSetId);
 
       if (questionsError) throw questionsError;
-      if (!questions) throw new Error('No questions found');
+      if (!questions?.length) throw new Error('This quiz has no questions yet');
 
       // Calculate score
-      const correctAnswers = new Map(
-        questions.map(q => [q.id, q.correct_answer])
-      );
-
-      let score = 0;
+      const submittedAnswers = new Map<string, string>();
       for (const answer of answers) {
-        if (correctAnswers.get(answer.questionId) === answer.answer) {
-          score++;
+        if (submittedAnswers.has(answer.questionId)) {
+          throw new Error('Each question must be answered exactly once');
         }
+        submittedAnswers.set(answer.questionId, answer.answer);
       }
+
+      if (submittedAnswers.size !== questions.length || questions.some(q =>
+        !submittedAnswers.has(q.id) || !q.options.includes(submittedAnswers.get(q.id))
+      )) {
+        throw new Error('Please answer every question using one of its options');
+      }
+
+      const score = questions.filter(q => submittedAnswers.get(q.id) === q.correct_answer).length;
 
       const totalQuestions = questions.length;
       const passed = score >= Math.ceil(totalQuestions * 0.6); // 60% pass rate

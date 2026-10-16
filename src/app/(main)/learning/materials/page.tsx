@@ -27,13 +27,14 @@ export default function MaterialsPage() {
   const [currentMaterial, setCurrentMaterial] = useState<Material | null>(null);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   const { language } = useLanguage();
   const { isAdmin } = useAdmin();
   const { currentUser } = useAuth();
   const { 
     materials, 
-    isLoading, 
+    materialsLoading,
     getMaterials, 
     createMaterial, 
     updateMaterial, 
@@ -63,16 +64,16 @@ export default function MaterialsPage() {
 
   // Filter materials by level (admin only) and search (all users)
   const filteredMaterials = useMemo(() => {
-    let filtered = materials;
+    let filtered = materials.filter(material => material.language === language && (!userLevel || material.level === userLevel));
     
     // Apply level filter for admins only
-    if (isAdmin && activeTab !== 'all') {
+    if (activeTab !== 'all') {
       filtered = filtered.filter(material => material.level === activeTab);
     }
     
     // Apply search filter for all users
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+      const query = searchQuery.trim().toLowerCase();
       filtered = filtered.filter(material =>
         material.title.toLowerCase().includes(query) ||
         material.description?.toLowerCase().includes(query)
@@ -80,7 +81,7 @@ export default function MaterialsPage() {
     }
     
     return filtered;
-  }, [materials, activeTab, searchQuery, isAdmin]);
+  }, [materials, activeTab, searchQuery, language, userLevel]);
 
   // Function to handle adding a new material
   const handleAddMaterial = () => {
@@ -112,7 +113,6 @@ export default function MaterialsPage() {
     if (window.confirm('Are you sure you want to delete this material?')) {
       try {
         await deleteFromDB(id);
-        toast.success('Material deleted successfully.');
       } catch (error) {
         toast.error('Failed to delete material.');
         console.error('Error deleting material:', error);
@@ -128,8 +128,9 @@ export default function MaterialsPage() {
 
   // Function to save material (add or update)
   const handleSaveMaterial = async (material: Material, file?: File) => {
+    if (isSaving) return;
     // Form validation
-    if (!material.title || !material.description) {
+    if (!material.title.trim() || !material.description.trim()) {
       toast.error('Please fill in the title and description.');
       return;
     }
@@ -138,6 +139,7 @@ export default function MaterialsPage() {
       return;
     }
 
+    setIsSaving(true);
     try {
       if (material.id) {
         // Update existing material
@@ -155,6 +157,8 @@ export default function MaterialsPage() {
       setCurrentMaterial(null);
     } catch (error) {
       console.error('Error saving material:', error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -168,7 +172,7 @@ export default function MaterialsPage() {
         onAddMaterial={handleAddMaterial}
       />
       
-      {isLoading ? (
+      {materialsLoading ? (
         <MaterialLoadingState />
       ) : filteredMaterials.length > 0 ? (
         <MaterialGrid
@@ -188,6 +192,7 @@ export default function MaterialsPage() {
         material={currentMaterial}
         onMaterialChange={setCurrentMaterial}
         onSave={handleSaveMaterial}
+        isSaving={isSaving}
       />
 
       <MaterialPreviewDialog

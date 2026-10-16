@@ -1,6 +1,31 @@
 import { createClient } from '@/utils/supabase/client';
 import type { Material } from '@/types/database';
 
+export const MAX_MATERIAL_FILE_SIZE = 50 * 1024 * 1024;
+const materialMimeTypes: Record<string, string> = {
+  pdf: 'application/pdf', doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ppt: 'application/vnd.ms-powerpoint',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  xls: 'application/vnd.ms-excel',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp',
+  svg: 'image/svg+xml', mp4: 'video/mp4', webm: 'video/webm', ogg: 'video/ogg', mov: 'video/quicktime',
+};
+export const MATERIAL_FILE_ACCEPT = Object.keys(materialMimeTypes).map(ext => `.${ext}`).join(',');
+
+export function validateMaterialFile(file: File): string {
+  if (file.size <= 0) throw new Error('Please select a non-empty file.');
+  if (file.size > MAX_MATERIAL_FILE_SIZE) throw new Error('Material files must be 50 MB or smaller.');
+  const extension = file.name.split('.').pop()?.toLowerCase() || '';
+  const mimeType = materialMimeTypes[extension];
+  if (!mimeType) throw new Error('Please select a supported document, image, or video file.');
+  if (file.type && file.type !== 'application/octet-stream' && file.type !== mimeType) {
+    throw new Error('The file type does not match its extension.');
+  }
+  return mimeType;
+}
+
 /**
  * Fetches materials for a given language and optionally by level.
  * @param language - The language to filter materials by ('ASL' or 'MSL').
@@ -91,12 +116,7 @@ export const deleteMaterial = async (id: string): Promise<void> => {
     throw new Error('Material not found or error fetching it.');
   }
 
-  // If a file path exists, delete the file from storage
-  if (material.file_path) {
-    await deleteMaterialFile(material.file_path);
-  }
-
-  // Then, delete the material record from the database
+  // Keep the file available if deleting the database record fails.
   const { error: deleteError } = await supabase
     .from('materials')
     .delete()
@@ -105,6 +125,14 @@ export const deleteMaterial = async (id: string): Promise<void> => {
   if (deleteError) {
     console.error('Error deleting material from database:', deleteError);
     throw deleteError;
+  }
+
+  if (material.file_path) {
+    try {
+      await deleteMaterialFile(material.file_path);
+    } catch (error) {
+      console.error('Material deleted, but its file could not be cleaned up:', error);
+    }
   }
 };
 
@@ -115,10 +143,11 @@ export const deleteMaterial = async (id: string): Promise<void> => {
  * @returns A promise that resolves to the path of the uploaded file.
  */
 export const uploadMaterialFile = async (file: File, fileName: string): Promise<string> => {
+  const contentType = validateMaterialFile(file);
   const supabase = createClient();
   const { data, error } = await supabase.storage
     .from('materials')
-    .upload(fileName, file);
+    .upload(fileName, file, { contentType });
 
   if (error) {
     console.error('Error uploading material file:', error);
@@ -133,14 +162,17 @@ export const uploadMaterialFile = async (file: File, fileName: string): Promise<
  * @param filePath - The path of the file in the storage bucket.
  * @returns The public URL of the file.
  */
-export const getMaterialPublicUrl = (filePath: string): string => {
+export const getMaterialPublicUrl = (filePath: string, download = false): string => {
   const supabase = createClient();
   const { data } = supabase.storage
     .from('materials')
-    .getPublicUrl(filePath);
+    .getPublicUrl(filePath, { download });
 
   return data.publicUrl;
 };
+
+export const getMaterialDownloadUrl = (material: Material): string =>
+  material.file_path ? getMaterialPublicUrl(material.file_path, true) : material.download_url;
 
 /**
  * Deletes a material file from the 'materials' storage bucket.

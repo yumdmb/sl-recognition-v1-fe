@@ -26,7 +26,7 @@ const QuizCard: React.FC<QuizCardProps> = ({
   onDeleteQuizSet
 }) => {
   const progress = quizSet.progress;
-  const pct = progress
+  const pct = progress && progress.total_questions > 0
     ? Math.round((progress.score / progress.total_questions) * 100)
     : null;
 
@@ -58,9 +58,9 @@ const QuizCard: React.FC<QuizCardProps> = ({
         )}
 
         <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-border pt-4">
-          <Button size="sm" onClick={() => onStartQuiz(quizSet.id)} className="group">
+          <Button size="sm" disabled={quizSet.questionCount === 0} onClick={() => onStartQuiz(quizSet.id)} className="group">
             <Play />
-            {progress ? 'Retake' : 'Start quiz'}
+            {quizSet.questionCount === 0 ? 'No questions yet' : progress ? 'Retake' : 'Start quiz'}
           </Button>
           {isAdmin && (
             <>
@@ -77,6 +77,7 @@ const QuizCard: React.FC<QuizCardProps> = ({
                 variant="ghost"
                 className="ml-auto text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 onClick={() => onDeleteQuizSet(quizSet.id)}
+                aria-label={`Delete ${quizSet.title}`}
               >
                 <Trash2 />
               </Button>

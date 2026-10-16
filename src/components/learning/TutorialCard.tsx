@@ -50,7 +50,7 @@ const TutorialCard: React.FC<TutorialCardProps> = ({
     if (isAdmin) return;
     if (tutorial.status === 'not-started' && !hasStartedRef.current) {
       hasStartedRef.current = true;
-      startTutorial(tutorial.id);
+      void startTutorial(tutorial.id).catch(() => { hasStartedRef.current = false; });
     }
   }, [isAdmin, tutorial.status, tutorial.id, startTutorial]);
 
@@ -68,7 +68,7 @@ const TutorialCard: React.FC<TutorialCardProps> = ({
     
     if (state.played >= 0.9 && tutorial.status !== 'completed' && !hasCompletedRef.current) {
       hasCompletedRef.current = true;
-      markTutorialDone(tutorial.id);
+      void markTutorialDone(tutorial.id).catch(() => { hasCompletedRef.current = false; });
     }
   }, [isAdmin, tutorial.status, tutorial.id, markTutorialDone, updateWatchPosition]);
 
@@ -77,16 +77,16 @@ const TutorialCard: React.FC<TutorialCardProps> = ({
     if (isAdmin) return;
     if (tutorial.status !== 'completed' && !hasCompletedRef.current) {
       hasCompletedRef.current = true;
-      markTutorialDone(tutorial.id);
+      void markTutorialDone(tutorial.id).catch(() => { hasCompletedRef.current = false; });
     }
   }, [isAdmin, tutorial.status, tutorial.id, markTutorialDone]);
 
   const handleStartTutorial = () => {
-    startTutorial(tutorial.id);
+    handleVideoPlay();
   };
 
   const handleMarkDone = () => {
-    markTutorialDone(tutorial.id);
+    handleVideoEnded();
   };
 
   const getStatusBadge = () => {
@@ -112,6 +112,10 @@ const TutorialCard: React.FC<TutorialCardProps> = ({
           onVideoPlay={handleVideoPlay}
           onVideoProgress={handleVideoProgress}
           onVideoEnded={handleVideoEnded}
+          onVideoPause={(state) => {
+            setIsVideoPlaying(false);
+            if (!isAdmin) void updateWatchPosition(tutorial.id, state.playedSeconds);
+          }}
         />
 
         <span className="absolute left-3 top-3 rounded-full bg-ink/80 px-2.5 py-1 text-[11px] font-semibold capitalize text-mint backdrop-blur-sm">

@@ -12,20 +12,24 @@ export interface YouTubeVideoInfo {
  * Extracts YouTube video ID from various YouTube URL formats
  */
 export function extractVideoId(url: string): string | null {
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-    /(?:youtube\.com\/v\/)([^&\n?#]+)/,
-    /(?:youtube\.com\/.*[?&]v=)([^&\n?#]+)/
-  ];
-
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) {
-      return match[1];
+  if (typeof url !== 'string') return null;
+  try {
+    const parsed = new URL(url.trim());
+    if (!['https:', 'http:'].includes(parsed.protocol)) return null;
+    const host = parsed.hostname.toLowerCase();
+    const segments = parsed.pathname.split('/').filter(Boolean);
+    let id: string | null = null;
+    if (host === 'youtu.be') {
+      id = segments[0] ?? null;
+    } else if (['youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com'].includes(host)) {
+      id = parsed.pathname === '/watch'
+        ? parsed.searchParams.get('v')
+        : ['embed', 'v', 'shorts', 'live'].includes(segments[0]) ? segments[1] : null;
     }
+    return id && /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : null;
+  } catch {
+    return null;
   }
-
-  return null;
 }
 
 /**
